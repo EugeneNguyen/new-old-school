@@ -1,0 +1,29 @@
+[
+  {
+    "id": "dashboard",
+    "name": "Dashboard",
+    "href": "/dashboard",
+    "icon": "LayoutDashboard",
+    "description": "System overview and status",
+    "endpoint": "/api/system",
+    "category": "core"
+  },
+  {
+    "id": "terminal",
+    "name": "Terminal",
+    "href": "/dashboard/terminal",
+    "icon": "Terminal",
+    "description": "Interactive shell access",
+    "endpoint": "/api/shell",
+    "category": "utility"
+  },
+  {
+    "id": "settings",
+    "name": "Settings",
+    "href": "/dashboard/settings",
+    "icon": "Settings",
+    "description": "Configure system preferences",
+    "endpoint": "/api/settings",
+    "category": "core"
+  }
+]

@@ -7,12 +7,13 @@
     "nos": "./bin/cli.js"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 30128",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
+    "@radix-ui/react-slot": "^1.2.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "commander": "^12.0.0",
