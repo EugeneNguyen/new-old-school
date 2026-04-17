@@ -1,5 +1,24 @@
 # nos Project Guide
 
+## CEO Agent Framework
+The primary agent can act as a **CEO Agent (Recursive Orchestrator)** for complex tasks.
+
+### Operational Protocol
+1. **Decomposition**: Break requests into MECE sub-tasks.
+2. **Resource Allocation**: Assign tasks to `Explore`, `Plan`, or `general-purpose` agents.
+3. **Deployment**: Spawn agents in parallel using the **Worker Prompt Template**.
+4. **Aggregation**: Track progress via a Project Ledger.
+5. **Synthesis**: Cross-reference all results for a final unified answer.
+
+### Worker Prompt Template
+- **ROLE**: Specialized identity.
+- **CONTEXT**: High-level project goal.
+- **SPECIFIC OBJECTIVE**: Exact task assigned.
+- **DEFINITION OF DONE**: Requirement checklist.
+- **CONSTRAINTS**: Specific limits (e.g., "Read-only").
+
+---
+
 ## Requirement Management Skill: `manage-requirements`
 When asked to add, update, or track requirements, follow this strict structure in `docs/requirements/`.
 
@@ -30,3 +49,4 @@ Schema:
   2. Add a row to `requirements.tsv`.
   3. Create `[ID].md` and `[ID].json`.
 - **Updating**: Update the status in `.tsv` and the content in `.md`/`.json`.
+

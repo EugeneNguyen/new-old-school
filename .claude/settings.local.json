@@ -6,7 +6,15 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
-      "Bash(npx tailwindcss *)"
+      "Bash(npx tailwindcss *)",
+      "Bash(grep \":$\")",
+      "Bash(find /Volumes/EugeneSSD/MyProjects/new-old-school -maxdepth 3 -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) ! -path \"*/node_modules/*\" ! -path \"*/.next/*\" -exec grep -l \"registry\\\\|config\\\\|agent\\\\|factory\\\\|plugin\" {} \\\\;)",
+      "Bash(grep -r \"coordinator\\\\|architect\\\\|manager\\\\|agent.*spawn\" /Volumes/EugeneSSD/MyProjects/new-old-school --include=\"*.ts\" --include=\"*.tsx\" --include=\"*.js\" --include=\"*.md\" ! -path \"*/node_modules/*\")",
+      "Bash(grep -r \"import.*Agent\\\\|from.*agent\\\\|Agent\\\\s*{\" /Volumes/EugeneSSD/MyProjects/new-old-school --include=\"*.ts\" --include=\"*.tsx\" --include=\"*.js\" ! -path \"*/node_modules/*\")",
+      "Bash(find /Volumes/EugeneSSD/MyProjects/new-old-school -type f -name \"*.json\" ! -path \"*/node_modules/*\" ! -path \"*/.next/*\" ! -path \"*/.git/*\" -exec grep -l \"agent\\\\|Agent\\\\|spawn\\\\|coordinator\" {} \\\\;)",
+      "Bash(find /Volumes/EugeneSSD/MyProjects/new-old-school -type f \\\\\\( -name \"*.md\" -o -name \"*.txt\" -o -name \"*.prompt\" \\\\\\) ! -path \"*/node_modules/*\" -exec grep -l \"agent\\\\|Agent\\\\|system.*prompt\\\\|role\\\\|coordinator\" {} \\\\;)",
+      "Bash(grep -r \"Skill\\\\|Tool\\\\|registry\\\\|plugin\\\\|factory\\\\|adapter\" /Volumes/EugeneSSD/MyProjects/new-old-school --include=\"*.ts\" --include=\"*.tsx\" --include=\"*.js\" ! -path \"*/node_modules/*\" -l)",
+      "Bash(grep -r \"Skill\" /Volumes/EugeneSSD/MyProjects/new-old-school --include=\"*.ts\" --include=\"*.tsx\" ! -path \"*/node_modules/*\")"
     ]
   }
 }
