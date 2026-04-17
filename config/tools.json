@@ -10,11 +10,11 @@
   },
   {
     "id": "terminal",
-    "name": "Terminal",
+    "name": "Claude Terminal",
     "href": "/dashboard/terminal",
-    "icon": "Terminal",
-    "description": "Interactive shell access",
-    "endpoint": "/api/shell",
+    "icon": "MessageSquare",
+    "description": "Chat with Claude Code",
+    "endpoint": "/api/claude",
     "category": "utility"
   },
   {

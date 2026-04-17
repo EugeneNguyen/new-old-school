@@ -1,150 +1,358 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Terminal as TerminalIcon, Play, Trash2, RefreshCw } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MessageSquare, Send, Plus, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import SessionPanel from '@/components/terminal/SessionPanel';
+import type { SessionSummary, SessionHistory } from '@/types/session';
 
-interface LogEntry {
+interface ChatMessage {
   id: string;
-  command: string;
-  output: string;
-  type: 'success' | 'error';
+  role: 'user' | 'assistant' | 'system';
+  content: string;
   timestamp: string;
 }
 
-export default function ShellTerminal() {
+export default function ClaudeTerminal() {
   const [input, setInput] = useState('');
-  const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [isExecuting, setIsExecuting] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isThinking, setIsThinking] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<SessionSummary[]>([]);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const executeCommand = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isExecuting) return;
+  const scrollToBottom = useCallback(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, []);
 
-    const command = input.trim();
-    setInput('');
-    setIsExecuting(true);
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
+
+  const fetchSessions = useCallback(async () => {
+    try {
+      setIsLoadingSessions(true);
+      const res = await fetch('/api/claude/sessions');
+      if (res.ok) {
+        const data: SessionSummary[] = await res.json();
+        setSessions(data);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSessions();
+  }, [fetchSessions]);
+
+  const loadSession = async (id: string) => {
+    if (abortRef.current) abortRef.current.abort();
+    setIsThinking(false);
+    setSessionId(id);
 
     try {
-      const response = await fetch('/api/shell', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ command }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setLogs(prev => [...prev, {
-          id: Math.random().toString(36),
-          command,
-          output: data.message || 'An unexpected error occurred',
-          type: 'error',
+      const res = await fetch(`/api/claude/sessions?id=${encodeURIComponent(id)}`);
+      if (!res.ok) {
+        setMessages([{
+          id: crypto.randomUUID(),
+          role: 'system',
+          content: 'Failed to load session history.',
           timestamp: new Date().toLocaleTimeString(),
         }]);
-      } else {
-        setLogs(prev => [...prev, {
-          id: Math.random().toString(36),
-          command,
-          output: data.stdout || data.stderr || 'Command executed with no output',
-          type: data.stderr ? 'error' : 'success',
-          timestamp: new Date().toLocaleTimeString(),
-        }]);
+        return;
       }
-    } catch (err: any) {
-      setLogs(prev => [...prev, {
-        id: Math.random().toString(36),
-        command,
-        output: err.message || 'Failed to connect to shell API',
-        type: 'error',
+
+      const history: SessionHistory = await res.json();
+      const loaded: ChatMessage[] = [];
+
+      if (history.messages.length > 0) {
+        loaded.push({
+          id: crypto.randomUUID(),
+          role: 'system',
+          content: '--- Resumed session. Showing previous assistant responses. ---',
+          timestamp: '',
+        });
+
+        for (const msg of history.messages) {
+          loaded.push({
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: msg.content,
+            timestamp: '',
+          });
+        }
+      }
+
+      setMessages(loaded);
+    } catch {
+      setMessages([{
+        id: crypto.randomUUID(),
+        role: 'system',
+        content: 'Error loading session.',
         timestamp: new Date().toLocaleTimeString(),
       }]);
-    } finally {
-      setIsExecuting(false);
     }
   };
 
-  const clearLogs = () => setLogs([]);
+  const createNewSession = () => {
+    if (abortRef.current) abortRef.current.abort();
+    setMessages([]);
+    setSessionId(null);
+    setIsThinking(false);
+    setInput('');
+  };
+
+  const sendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isThinking) return;
+
+    const prompt = input.trim();
+    setInput('');
+    setIsThinking(true);
+
+    const userMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      content: prompt,
+      timestamp: new Date().toLocaleTimeString(),
+    };
+
+    const assistantId = crypto.randomUUID();
+    const assistantMessage: ChatMessage = {
+      id: assistantId,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date().toLocaleTimeString(),
+    };
+
+    setMessages(prev => [...prev, userMessage, assistantMessage]);
+
+    try {
+      abortRef.current = new AbortController();
+
+      const response = await fetch('/api/claude', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, sessionId }),
+        signal: abortRef.current.signal,
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === assistantId
+              ? { ...m, content: `Error: ${errData.message || 'Request failed'}` }
+              : m
+          )
+        );
+        setIsThinking(false);
+        return;
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response stream');
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let accumulated = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const jsonStr = line.slice(6).trim();
+          if (!jsonStr) continue;
+
+          try {
+            const event = JSON.parse(jsonStr);
+
+            if (event.type === 'assistant' && event.message?.content) {
+              for (const block of event.message.content) {
+                if (block.type === 'text') {
+                  accumulated = block.text;
+                  setMessages(prev =>
+                    prev.map(m =>
+                      m.id === assistantId ? { ...m, content: accumulated } : m
+                    )
+                  );
+                }
+              }
+            }
+
+            if (event.type === 'result') {
+              if (event.session_id) {
+                setSessionId(event.session_id);
+              }
+              if (event.result && !accumulated) {
+                accumulated = event.result;
+                setMessages(prev =>
+                  prev.map(m =>
+                    m.id === assistantId ? { ...m, content: accumulated } : m
+                  )
+                );
+              }
+            }
+
+            if (event.type === 'error') {
+              accumulated += `\n[Error: ${event.message}]`;
+              setMessages(prev =>
+                prev.map(m =>
+                  m.id === assistantId ? { ...m, content: accumulated } : m
+                )
+              );
+            }
+          } catch {
+            // skip malformed JSON lines
+          }
+        }
+      }
+
+      if (!accumulated) {
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === assistantId ? { ...m, content: '(No response received)' } : m
+          )
+        );
+      }
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === assistantId
+              ? { ...m, content: `Error: ${err.message || 'Failed to connect'}` }
+              : m
+          )
+        );
+      }
+    } finally {
+      setIsThinking(false);
+      abortRef.current = null;
+      fetchSessions();
+    }
+  };
 
   return (
-    <div className="p-8 space-y-8">
+    <div className="p-8 space-y-6 h-full">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Shell Terminal</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Claude Terminal</h1>
           <p className="text-muted-foreground">
-            Execute whitelisted system commands securely.
+            Chat with Claude Code directly from your dashboard.
           </p>
         </div>
         <Button
-          onClick={clearLogs}
+          onClick={createNewSession}
           variant="outline"
           className="flex items-center gap-2"
         >
-          <Trash2 className="w-4 h-4" />
-          Clear Terminal
+          <Plus className="w-4 h-4" />
+          New Session
         </Button>
       </div>
 
-      <Card className="bg-zinc-950 text-zinc-100 border-zinc-800">
-        <CardHeader className="border-b border-zinc-800 bg-zinc-900/50">
-          <div className="flex items-center gap-2">
-            <TerminalIcon className="w-4 h-4 text-zinc-400" />
-            <CardTitle className="text-sm font-medium">nos-terminal — bash</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <ScrollArea className="h-[500px] p-4 font-mono text-sm">
-            {logs.length === 0 && (
-              <div className="text-zinc-500 italic">
-                Welcome to the nos terminal. Enter a command to begin...
-              </div>
-            )}
-            <div className="space-y-4">
-              {logs.map((log) => (
-                <div key={log.id} className="space-y-1">
-                  <div className="flex items-center gap-2 text-zinc-400">
-                    <span className="text-zinc-600">[{log.timestamp}]</span>
-                    <span className="text-green-400 font-bold">$</span>
-                    <span className="text-zinc-200">{log.command}</span>
+      <div className="flex gap-4" style={{ height: 'calc(100vh - 200px)' }}>
+        <SessionPanel
+          sessions={sessions}
+          activeSessionId={sessionId}
+          onSelectSession={loadSession}
+          onNewSession={createNewSession}
+          isLoading={isLoadingSessions}
+        />
+
+        <Card className="flex-1 flex flex-col bg-zinc-950 text-zinc-100 border-zinc-800 overflow-hidden">
+          <CardHeader className="border-b border-zinc-800 bg-zinc-900/50 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-zinc-400" />
+              <CardTitle className="text-sm font-medium">
+                claude {sessionId ? `— session ${sessionId.slice(0, 8)}` : '— new session'}
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
+            <ScrollArea className="flex-1">
+              <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 font-mono text-sm" style={{ maxHeight: 'calc(100vh - 340px)' }}>
+                {messages.length === 0 && (
+                  <div className="text-zinc-500 italic">
+                    Start a conversation with Claude. Your messages will be sent via the Claude Code CLI.
                   </div>
-                  <pre className={cn(
-                    "pl-4 py-1 rounded whitespace-pre-wrap break-words",
-                    log.type === 'error' ? "text-red-400 bg-red-900/10" : "text-zinc-300"
-                  )}>
-                    {log.output}
-                  </pre>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-          <form onSubmit={executeCommand} className="p-4 border-t border-zinc-800 flex gap-2">
-            <div className="flex-1 relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-green-400 font-bold">$</span>
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Enter command (e.g. ls, git status)..."
-                className="bg-zinc-900 border-zinc-700 text-zinc-100 pl-7 focus:ring-zinc-600"
-                disabled={isExecuting}
-              />
-            </div>
-            <Button
-              type="submit"
-              disabled={isExecuting || !input.trim()}
-              className="bg-zinc-100 text-zinc-900 hover:bg-zinc-200"
-            >
-              {isExecuting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+                )}
+                {messages.map((msg) => (
+                  <div key={msg.id} className="space-y-1">
+                    {msg.role === 'system' ? (
+                      <div className="text-zinc-600 italic text-xs py-2">
+                        {msg.content}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2 text-zinc-400">
+                          {msg.timestamp && (
+                            <span className="text-zinc-600 text-xs">[{msg.timestamp}]</span>
+                          )}
+                          <span className={cn(
+                            "text-xs font-bold uppercase",
+                            msg.role === 'user' ? 'text-blue-400' : 'text-green-400'
+                          )}>
+                            {msg.role === 'user' ? 'you' : 'claude'}
+                          </span>
+                        </div>
+                        <pre className={cn(
+                          "pl-4 py-1 rounded whitespace-pre-wrap break-words",
+                          msg.role === 'user' ? 'text-zinc-200' : 'text-zinc-300'
+                        )}>
+                          {msg.content || (isThinking && msg.role === 'assistant' ? '' : msg.content)}
+                        </pre>
+                        {isThinking && msg.role === 'assistant' && !msg.content && msg.id === messages[messages.length - 1]?.id && (
+                          <div className="pl-4 flex items-center gap-2 text-zinc-500">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <span className="text-xs">Claude is thinking...</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+            <form onSubmit={sendMessage} className="p-4 border-t border-zinc-800 flex gap-2 flex-shrink-0">
+              <div className="flex-1 relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 font-bold">&gt;</span>
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Ask Claude something..."
+                  className="bg-zinc-900 border-zinc-700 text-zinc-100 pl-7 focus:ring-zinc-600"
+                  disabled={isThinking}
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={isThinking || !input.trim()}
+                className="bg-zinc-100 text-zinc-900 hover:bg-zinc-200"
+              >
+                {isThinking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
 }
