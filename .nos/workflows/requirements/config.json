@@ -1,0 +1,4 @@
+{
+  "name": "Requirements",
+  "stages": ["Analysis", "Documentation", "Implementation", "Validation"]
+}
