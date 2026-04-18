@@ -66,6 +66,10 @@ function parseSessionHistory(filePath: string): SessionHistoryMessage[] {
     try {
       const event = JSON.parse(line);
 
+      if (event.type === 'user_prompt' && event.content) {
+        messages.push({ role: 'user', content: event.content });
+      }
+
       if (event.type === 'result' && event.result) {
         messages.push({ role: 'assistant', content: event.result });
       }

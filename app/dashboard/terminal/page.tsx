@@ -9,12 +9,14 @@ import { MessageSquare, Send, Plus, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SessionPanel from '@/components/terminal/SessionPanel';
 import type { SessionSummary, SessionHistory } from '@/types/session';
+import type { InteractiveQuestion } from '@/types/question';
 import { useSlashComplete } from '@/hooks/useSlashComplete';
 import SlashPopup from '@/components/terminal/SlashPopup';
+import QuestionCard from '@/components/terminal/QuestionCard';
 
 function generateId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return generateId();
+    return crypto.randomUUID();
   }
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
@@ -27,6 +29,9 @@ interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: string;
+  interactiveQuestions?: InteractiveQuestion[];
+  questionsAnswered?: boolean;
+  answeredWith?: string[];
 }
 
 export default function ClaudeTerminal() {
@@ -105,6 +110,33 @@ export default function ClaudeTerminal() {
                   )
                 );
               }
+
+              if (block.type === 'tool_use' && block.name === 'AskUserQuestion') {
+                const input = block.input as {
+                  questions: Array<{
+                    question: string;
+                    header?: string;
+                    options?: Array<{ label: string; description?: string }>;
+                    multiSelect?: boolean;
+                  }>;
+                };
+                const questions: InteractiveQuestion[] = input.questions.map(
+                  (q: { question: string; header?: string; options?: Array<{ label: string; description?: string }>; multiSelect?: boolean }) => ({
+                    toolUseId: block.id,
+                    header: q.header,
+                    question: q.question,
+                    options: q.options || [],
+                    multiSelect: q.multiSelect ?? false,
+                  })
+                );
+                setMessages(prev =>
+                  prev.map(m =>
+                    m.id === assistantId
+                      ? { ...m, interactiveQuestions: [...(m.interactiveQuestions || []), ...questions] }
+                      : m
+                  )
+                );
+              }
             }
           }
 
@@ -161,14 +193,14 @@ export default function ClaudeTerminal() {
         loaded.push({
           id: generateId(),
           role: 'system',
-          content: '--- Resumed session. Showing previous assistant responses. ---',
+          content: '--- Resumed session ---',
           timestamp: '',
         });
 
         for (const msg of history.messages) {
           loaded.push({
             id: generateId(),
-            role: 'assistant',
+            role: msg.role,
             content: msg.content,
             timestamp: '',
           });
@@ -244,12 +276,7 @@ export default function ClaudeTerminal() {
     setInput('');
   };
 
-  const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || isThinking) return;
-
-    const prompt = input.trim();
-    setInput('');
+  const sendPrompt = useCallback(async (prompt: string) => {
     setIsThinking(true);
 
     const userMessage: ChatMessage = {
@@ -319,7 +346,39 @@ export default function ClaudeTerminal() {
       abortRef.current = null;
       fetchSessions();
     }
+  }, [sessionId, processStream, fetchSessions]);
+
+  const sendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isThinking) return;
+    const prompt = input.trim();
+    setInput('');
+    await sendPrompt(prompt);
   };
+
+  const handleQuestionAnswer = useCallback(async (
+    messageId: string,
+    question: InteractiveQuestion,
+    selectedLabels: string[],
+  ) => {
+    setMessages(prev =>
+      prev.map(m =>
+        m.id === messageId
+          ? { ...m, questionsAnswered: true, answeredWith: selectedLabels }
+          : m
+      )
+    );
+
+    const answerText = selectedLabels.length === 1
+      ? selectedLabels[0]
+      : selectedLabels.join(', ');
+
+    const followUp = question.header
+      ? `Regarding "${question.header}": ${question.question}\nMy answer: ${answerText}`
+      : `${question.question}\nMy answer: ${answerText}`;
+
+    await sendPrompt(followUp);
+  }, [sendPrompt]);
 
   return (
     <div className="p-8 space-y-6 h-full">
@@ -391,7 +450,23 @@ export default function ClaudeTerminal() {
                         )}>
                           {msg.content || (isThinking && msg.role === 'assistant' ? '' : msg.content)}
                         </pre>
-                        {isThinking && msg.role === 'assistant' && !msg.content && msg.id === messages[messages.length - 1]?.id && (
+                        {msg.interactiveQuestions && msg.interactiveQuestions.length > 0 && (
+                          <div className="pl-4 pt-2 space-y-3">
+                            {msg.interactiveQuestions.map((q, idx) => (
+                              <QuestionCard
+                                key={`${msg.id}-q-${idx}`}
+                                header={q.header}
+                                question={q.question}
+                                options={q.options}
+                                multiSelect={q.multiSelect}
+                                disabled={!!msg.questionsAnswered || isThinking}
+                                answeredWith={msg.questionsAnswered ? msg.answeredWith : undefined}
+                                onAnswer={(selectedLabels) => handleQuestionAnswer(msg.id, q, selectedLabels)}
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {isThinking && msg.role === 'assistant' && !msg.content && !msg.interactiveQuestions && msg.id === messages[messages.length - 1]?.id && (
                           <div className="pl-4 flex items-center gap-2 text-zinc-500">
                             <Loader2 className="w-3 h-3 animate-spin" />
                             <span className="text-xs">Claude is thinking...</span>

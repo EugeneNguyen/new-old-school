@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
 
     let resolvedSessionId = sessionId || null;
     let fileStream: ReturnType<typeof createWriteStream> | null = null;
+    let userPromptWritten = false;
 
     function getFileStream() {
       if (fileStream) return fileStream;
@@ -57,6 +58,20 @@ export async function POST(request: NextRequest) {
         return fileStream;
       }
       return null;
+    }
+
+    function writeUserPrompt() {
+      if (userPromptWritten) return;
+      const fs = getFileStream();
+      if (fs) {
+        const userEvent = JSON.stringify({ type: 'user_prompt', content: prompt });
+        fs.write(userEvent + '\n');
+        userPromptWritten = true;
+      }
+    }
+
+    if (resolvedSessionId) {
+      writeUserPrompt();
     }
 
     const stream = new ReadableStream({
@@ -72,6 +87,7 @@ export async function POST(request: NextRequest) {
               resolvedSessionId = extractSessionId(line);
               if (resolvedSessionId) {
                 streamRegistry.register(resolvedSessionId, claude);
+                writeUserPrompt();
               }
             }
 

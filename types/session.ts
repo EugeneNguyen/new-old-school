@@ -8,7 +8,7 @@ export interface SessionSummary {
 }
 
 export interface SessionHistoryMessage {
-  role: 'assistant';
+  role: 'user' | 'assistant';
   content: string;
 }
 

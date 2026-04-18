@@ -46,5 +46,11 @@
     "name": "/config",
     "description": "Open system configuration",
     "usage": "/config"
+  },
+  {
+    "id": "req-pipeline",
+    "name": "/req-pipeline",
+    "description": "Analyze, document, and implement a requirement end-to-end",
+    "usage": "/req-pipeline [requirement description]"
   }
 ]
