@@ -156,3 +156,55 @@ export function writeItemContent(
   fs.writeFileSync(contentPath, body.endsWith('\n') ? body : `${body}\n`, 'utf-8');
   return readItemFolder(workflowId, itemId);
 }
+
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 64);
+}
+
+export interface CreateItemInput {
+  title: string;
+  id?: string;
+}
+
+export function createItem(
+  workflowId: string,
+  input: CreateItemInput
+): WorkflowItem | null {
+  if (!workflowExists(workflowId)) return null;
+  const title = input.title.trim();
+  if (!title) return null;
+
+  const stages = readStages(workflowId);
+  if (stages.length === 0) return null;
+  const firstStage = stages[0].name;
+
+  let baseId = (input.id?.trim() || slugify(title)) || `item-${Date.now()}`;
+  const itemsRoot = path.join(workflowDir(workflowId), 'items');
+  fs.mkdirSync(itemsRoot, { recursive: true });
+
+  let finalId = baseId;
+  let counter = 1;
+  while (fs.existsSync(path.join(itemsRoot, finalId))) {
+    finalId = `${baseId}-${counter++}`;
+    if (counter > 9999) return null;
+  }
+
+  const dir = path.join(itemsRoot, finalId);
+  fs.mkdirSync(dir, { recursive: true });
+
+  const meta = {
+    title,
+    stage: firstStage,
+    status: 'Todo' as ItemStatus,
+    comments: [] as string[],
+  };
+  fs.writeFileSync(path.join(dir, META_FILE), yaml.dump(meta), 'utf-8');
+  fs.writeFileSync(path.join(dir, CONTENT_FILE), '', 'utf-8');
+
+  return readItemFolder(workflowId, finalId);
+}

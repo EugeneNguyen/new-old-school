@@ -1,9 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Stage, WorkflowItem, ItemStatus } from '@/types/workflow';
+import ItemDetailDialog from './ItemDetailDialog';
+import NewItemDialog from './NewItemDialog';
 
 interface Props {
   workflowId: string;
@@ -22,6 +26,8 @@ export default function KanbanBoard({ workflowId, stages, initialItems }: Props)
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [detailItem, setDetailItem] = useState<WorkflowItem | null>(null);
+  const [newItemOpen, setNewItemOpen] = useState(false);
 
   async function moveItem(itemId: string, newStage: string) {
     const previous = items;
@@ -55,8 +61,27 @@ export default function KanbanBoard({ workflowId, stages, initialItems }: Props)
     }
   }
 
+  function handleItemSaved(updated: WorkflowItem) {
+    setItems((curr) => curr.map((i) => (i.id === updated.id ? updated : i)));
+  }
+
+  function handleItemCreated(created: WorkflowItem) {
+    setItems((curr) => [...curr, created]);
+  }
+
   return (
     <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-end">
+        <Button
+          size="sm"
+          onClick={() => setNewItemOpen(true)}
+          disabled={stages.length === 0}
+        >
+          <Plus className="mr-1 h-4 w-4" />
+          Add item
+        </Button>
+      </div>
+
       {error && (
         <div className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
@@ -111,6 +136,8 @@ export default function KanbanBoard({ workflowId, stages, initialItems }: Props)
                 {stageItems.map((item) => (
                   <div
                     key={item.id}
+                    role="button"
+                    tabIndex={0}
                     draggable
                     onDragStart={(e) => {
                       setDraggingId(item.id);
@@ -121,9 +148,16 @@ export default function KanbanBoard({ workflowId, stages, initialItems }: Props)
                       setDraggingId(null);
                       setDragOverStage(null);
                     }}
+                    onClick={() => setDetailItem(item)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setDetailItem(item);
+                      }
+                    }}
                     className={cn(
                       'rounded-md border bg-card p-3 shadow-sm cursor-grab active:cursor-grabbing',
-                      'hover:border-primary/50 transition-colors',
+                      'hover:border-primary/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring',
                       draggingId === item.id && 'opacity-50'
                     )}
                   >
@@ -141,6 +175,25 @@ export default function KanbanBoard({ workflowId, stages, initialItems }: Props)
           );
         })}
       </div>
+
+      <ItemDetailDialog
+        open={detailItem !== null}
+        onOpenChange={(open) => {
+          if (!open) setDetailItem(null);
+        }}
+        workflowId={workflowId}
+        item={detailItem}
+        stages={stages}
+        onSaved={handleItemSaved}
+      />
+
+      <NewItemDialog
+        open={newItemOpen}
+        onOpenChange={setNewItemOpen}
+        workflowId={workflowId}
+        firstStageName={stages[0]?.name}
+        onCreated={handleItemCreated}
+      />
     </div>
   );
 }
