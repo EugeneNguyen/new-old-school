@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createItem, readStages, workflowExists } from '@/lib/workflow-store';
+import { triggerStagePipeline } from '@/lib/stage-pipeline';
 import { createErrorResponse } from '@/app/api/utils/errors';
 
 export async function POST(
@@ -36,7 +37,8 @@ export async function POST(
     if (!created) {
       return createErrorResponse('Failed to create item', 'BadRequest', 400);
     }
-    return NextResponse.json(created, { status: 201 });
+    const afterPipeline = await triggerStagePipeline(id, created.id);
+    return NextResponse.json(afterPipeline ?? created, { status: 201 });
   } catch (error) {
     console.error('Error creating workflow item:', error);
     return createErrorResponse('Failed to create item');

@@ -14,3 +14,4 @@ REQ-012	Workflow Foundation	In-Progress	2026-04-18
 REQ-013	Workflow Kanban Screen	Completed	2026-04-18
 REQ-014	Workflow Item Detail Modal & Add Item	Completed	2026-04-18
 REQ-015	Editable Stage Information from Kanban Column	Completed	2026-04-18
+REQ-016	Stage Prompt Pipeline: Auto-dispatch Todo Items to Agent Session	Completed	2026-04-18

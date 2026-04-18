@@ -6,6 +6,7 @@ import {
   workflowExists,
   type ItemMetaPatch,
 } from '@/lib/workflow-store';
+import { triggerStagePipeline } from '@/lib/stage-pipeline';
 import { ItemStatus } from '@/types/workflow';
 import { createErrorResponse } from '@/app/api/utils/errors';
 
@@ -89,6 +90,10 @@ export async function PATCH(
     const updated = updateItemMeta(id, itemId, patch);
     if (!updated) {
       return createErrorResponse(`Item '${itemId}' not found`, 'NotFound', 404);
+    }
+    if (patch.stage !== undefined) {
+      const afterPipeline = await triggerStagePipeline(id, itemId);
+      return NextResponse.json(afterPipeline ?? updated);
     }
     return NextResponse.json(updated);
   } catch (error) {

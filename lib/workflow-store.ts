@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
-import { Stage, WorkflowItem, ItemStatus, WorkflowDetail } from '@/types/workflow';
+import { Stage, WorkflowItem, ItemStatus, WorkflowDetail, ItemSession } from '@/types/workflow';
 
 const WORKFLOWS_ROOT = path.join(process.cwd(), '.nos', 'workflows');
 const META_FILE = 'meta.yml';
@@ -72,7 +72,25 @@ function readItemFolder(workflowId: string, itemId: string): WorkflowItem | null
     status: normalizeStatus(data.status),
     comments: Array.isArray(data.comments) ? data.comments.map(String) : [],
     body: body || undefined,
+    sessions: parseSessions(data.sessions),
   };
+}
+
+function parseSessions(raw: unknown): ItemSession[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const sessions: ItemSession[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object') continue;
+    const e = entry as Record<string, unknown>;
+    if (typeof e.sessionId !== 'string' || !e.sessionId) continue;
+    sessions.push({
+      stage: String(e.stage ?? ''),
+      adapter: String(e.adapter ?? ''),
+      sessionId: e.sessionId,
+      startedAt: String(e.startedAt ?? ''),
+    });
+  }
+  return sessions.length > 0 ? sessions : undefined;
 }
 
 export function readItems(workflowId: string): WorkflowItem[] {
@@ -141,6 +159,22 @@ export function updateItemMeta(
   if (stageChanged && patch.status === undefined) {
     meta.status = 'Todo';
   }
+
+  fs.writeFileSync(metaPath, yaml.dump(meta), 'utf-8');
+  return readItemFolder(workflowId, itemId);
+}
+
+export function appendItemSession(
+  workflowId: string,
+  itemId: string,
+  entry: ItemSession
+): WorkflowItem | null {
+  const metaPath = path.join(itemDir(workflowId, itemId), META_FILE);
+  if (!fs.existsSync(metaPath)) return null;
+  const meta = (yaml.load(fs.readFileSync(metaPath, 'utf-8')) as Record<string, unknown>) ?? {};
+
+  const existing = Array.isArray(meta.sessions) ? (meta.sessions as unknown[]) : [];
+  meta.sessions = [...existing, entry];
 
   fs.writeFileSync(metaPath, yaml.dump(meta), 'utf-8');
   return readItemFolder(workflowId, itemId);

@@ -12,6 +12,13 @@ export interface Stage {
 
 export type ItemStatus = 'Todo' | 'In Progress' | 'Done';
 
+export interface ItemSession {
+  stage: string;
+  adapter: string;
+  sessionId: string;
+  startedAt: string;
+}
+
 export interface WorkflowItem {
   id: string;
   title: string;
@@ -19,6 +26,7 @@ export interface WorkflowItem {
   status: ItemStatus;
   comments?: string[];
   body?: string;
+  sessions?: ItemSession[];
 }
 
 export interface WorkflowDetail {

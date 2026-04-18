@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { MoreVertical, Plus } from 'lucide-react';
+import { MoreVertical, Plus, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -118,7 +118,18 @@ export default function KanbanBoard({ workflowId, stages: initialStages, initial
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-semibold">{stage.name}</h3>
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm font-semibold">{stage.name}</h3>
+                    {stage.prompt && (
+                      <span
+                        title="AI-automated: items entering this stage start an agent session"
+                        className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+                      >
+                        <Sparkles className="h-3 w-3" />
+                        AI
+                      </span>
+                    )}
+                  </div>
                   {stage.description && (
                     <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
                       {stage.description}
