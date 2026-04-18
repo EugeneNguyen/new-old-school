@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { MoreVertical, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Stage, WorkflowItem, ItemStatus } from '@/types/workflow';
 import ItemDetailDialog from './ItemDetailDialog';
 import NewItemDialog from './NewItemDialog';
+import StageDetailDialog from './StageDetailDialog';
 
 interface Props {
   workflowId: string;
@@ -21,13 +22,15 @@ const STATUS_VARIANT: Record<ItemStatus, 'secondary' | 'default' | 'success'> = 
   Done: 'success',
 };
 
-export default function KanbanBoard({ workflowId, stages, initialItems }: Props) {
+export default function KanbanBoard({ workflowId, stages: initialStages, initialItems }: Props) {
+  const [stages, setStages] = useState<Stage[]>(initialStages);
   const [items, setItems] = useState<WorkflowItem[]>(initialItems);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [detailItem, setDetailItem] = useState<WorkflowItem | null>(null);
   const [newItemOpen, setNewItemOpen] = useState(false);
+  const [editStage, setEditStage] = useState<Stage | null>(null);
 
   async function moveItem(itemId: string, newStage: string) {
     const previous = items;
@@ -113,8 +116,8 @@ export default function KanbanBoard({ workflowId, stages, initialItems }: Props)
                 isOver && 'border-primary bg-primary/5'
               )}
             >
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
                   <h3 className="text-sm font-semibold">{stage.name}</h3>
                   {stage.description && (
                     <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
@@ -122,9 +125,24 @@ export default function KanbanBoard({ workflowId, stages, initialItems }: Props)
                     </p>
                   )}
                 </div>
-                <span className="text-xs text-muted-foreground rounded-full bg-background px-2 py-0.5">
-                  {stageItems.length}
-                </span>
+                <div className="flex shrink-0 items-center gap-1">
+                  <span className="text-xs text-muted-foreground rounded-full bg-background px-2 py-0.5">
+                    {stageItems.length}
+                  </span>
+                  <button
+                    type="button"
+                    draggable={false}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditStage(stage);
+                    }}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-background hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    aria-label={`Edit stage ${stage.name}`}
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
 
               <div className="flex flex-col gap-2 min-h-[40px]">
@@ -193,6 +211,20 @@ export default function KanbanBoard({ workflowId, stages, initialItems }: Props)
         workflowId={workflowId}
         firstStageName={stages[0]?.name}
         onCreated={handleItemCreated}
+      />
+
+      <StageDetailDialog
+        open={editStage !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditStage(null);
+        }}
+        workflowId={workflowId}
+        stage={editStage}
+        onSaved={({ stages: nextStages, items: nextItems }) => {
+          setStages(nextStages);
+          setItems(nextItems);
+          setEditStage(null);
+        }}
       />
     </div>
   );

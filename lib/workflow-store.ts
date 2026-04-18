@@ -157,6 +157,80 @@ export function writeItemContent(
   return readItemFolder(workflowId, itemId);
 }
 
+export interface StagePatch {
+  name?: string;
+  description?: string | null;
+  prompt?: string | null;
+  autoAdvanceOnComplete?: boolean | null;
+}
+
+export function updateStage(
+  workflowId: string,
+  stageName: string,
+  patch: StagePatch
+): { stages: Stage[]; items: WorkflowItem[] } | null {
+  if (!workflowExists(workflowId)) return null;
+  const stagesPath = path.join(workflowDir(workflowId), 'config', 'stages.yaml');
+  if (!fs.existsSync(stagesPath)) return null;
+  const raw = fs.readFileSync(stagesPath, 'utf-8');
+  const parsed = yaml.load(raw);
+  if (!Array.isArray(parsed)) return null;
+
+  const list = parsed as Array<Record<string, unknown>>;
+  const idx = list.findIndex((s) => s && String(s.name ?? '') === stageName);
+  if (idx === -1) return null;
+
+  const current = list[idx];
+  const newName =
+    patch.name !== undefined ? patch.name.trim() : String(current.name ?? '');
+  if (!newName) return null;
+
+  if (patch.name !== undefined && newName !== stageName) {
+    const duplicate = list.some(
+      (s, i) => i !== idx && s && String(s.name ?? '') === newName
+    );
+    if (duplicate) return null;
+  }
+
+  current.name = newName;
+  if (patch.description !== undefined) {
+    current.description = patch.description ?? null;
+  }
+  if (patch.prompt !== undefined) {
+    current.prompt = patch.prompt ?? null;
+  }
+  if (patch.autoAdvanceOnComplete !== undefined) {
+    current.autoAdvanceOnComplete = patch.autoAdvanceOnComplete ?? null;
+  }
+
+  fs.writeFileSync(stagesPath, yaml.dump(list), 'utf-8');
+
+  if (patch.name !== undefined && newName !== stageName) {
+    const itemsRoot = path.join(workflowDir(workflowId), 'items');
+    if (fs.existsSync(itemsRoot)) {
+      for (const entry of fs.readdirSync(itemsRoot)) {
+        const metaPath = path.join(itemsRoot, entry, META_FILE);
+        if (!fs.existsSync(metaPath)) continue;
+        try {
+          const meta =
+            (yaml.load(fs.readFileSync(metaPath, 'utf-8')) as Record<string, unknown>) ?? {};
+          if (String(meta.stage ?? '') === stageName) {
+            meta.stage = newName;
+            fs.writeFileSync(metaPath, yaml.dump(meta), 'utf-8');
+          }
+        } catch (err) {
+          console.error(`Failed to rename stage on item ${entry}:`, err);
+        }
+      }
+    }
+  }
+
+  return {
+    stages: readStages(workflowId),
+    items: readItems(workflowId),
+  };
+}
+
 function slugify(input: string): string {
   return input
     .toLowerCase()
