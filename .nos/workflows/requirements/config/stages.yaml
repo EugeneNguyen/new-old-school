@@ -1,24 +1,60 @@
 - name: Backlog
   description: Analyze the requirement scope, feasibility, and dependencies.
-  prompt:
-  autoAdvanceOnComplete:
-
+  prompt: null
+  autoAdvanceOnComplete: null
 - name: Analysis
   description: Analyze the requirement scope, feasibility, and dependencies.
-  prompt:
-  autoAdvanceOnComplete:
+  prompt: |
+    You are analyzing a new requirement in the `.nos/workflows/requirements/` system.
 
+    Read the item's `index.md` and `meta.yml` to understand the raw request, then produce an analysis that covers:
+    1. **Scope** — what is in and explicitly out of scope.
+    2. **Feasibility** — technical viability, risks, and unknowns that need spiking.
+    3. **Dependencies** — other requirements, modules, services, or external systems this touches.
+    4. **Open questions** — anything ambiguous that must be resolved before documentation.
+
+    Append the analysis to the item's `index.md` under an `## Analysis` section. Do not modify the original request text. Do not start implementation.
+  autoAdvanceOnComplete: false
 - name: Documentation
   description: Write detailed requirement specs, user stories, and acceptance criteria.
-  prompt:
-  autoAdvanceOnComplete:
+  prompt: |
+    You are writing the formal specification for a requirement that has already been analyzed.
 
+    Read the item's `index.md` (including the `## Analysis` section) and produce a `## Specification` section containing:
+    1. **User stories** — in `As a <role>, I want <capability>, so that <benefit>` form.
+    2. **Acceptance criteria** — testable, numbered, Given/When/Then where useful.
+    3. **Technical constraints** — APIs, data shapes, file paths, performance or compatibility limits.
+    4. **Out of scope** — explicit non-goals to prevent scope creep.
+
+    Keep the document the single source of truth — anything an implementer needs must be answerable from this section. Do not write code.
+  autoAdvanceOnComplete: false
 - name: Implementation
   description: Build the feature or fix according to the documented requirements.
-  prompt:
-  autoAdvanceOnComplete:
+  prompt: |
+    You are implementing a requirement whose `## Specification` is already finalized.
 
+    Workflow:
+    1. Re-read `index.md` — treat the spec as authoritative; if you find gaps, stop and flag them rather than guessing.
+    2. Plan the changes (files to touch, order of edits) before editing.
+    3. Implement only what the acceptance criteria require — no scope creep, no speculative refactors.
+    4. Follow existing project conventions (see `CLAUDE.md`).
+    5. Update `meta.yml` `status` to `In Progress` when you start and leave a brief `## Implementation Notes` section in `index.md` summarizing the changes and any deviations.
+
+    Do not mark the stage complete until every acceptance criterion is satisfied.
+  autoAdvanceOnComplete: false
 - name: Validation
   description: Verify the implementation meets all acceptance criteria.
-  prompt:
-  autoAdvanceOnComplete:
+  prompt: |
+    You are validating a completed implementation against its specification.
+
+    Steps:
+    1. Read the `## Specification` and `## Implementation Notes` sections of `index.md`.
+    2. For each acceptance criterion, verify it is met — by reading the changed code, running tests, exercising the UI, or whatever evidence is appropriate.
+    3. Check for regressions in adjacent functionality and for missed edge cases.
+    4. Append a `## Validation` section to `index.md` listing each criterion with a ✅ pass / ❌ fail / ⚠️ partial verdict and the evidence used.
+    5. If anything fails, leave the item in this stage with a clear list of follow-ups; do not advance to Done.
+  autoAdvanceOnComplete: false
+- name: Done
+  description: The requirement is complete and ready for release.
+  prompt: null
+  autoAdvanceOnComplete: null

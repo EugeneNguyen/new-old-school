@@ -93,12 +93,12 @@ export default function NewItemDialog({
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-muted-foreground">
-              ID <span className="text-muted-foreground/70">(optional, auto-generated from title)</span>
+              ID <span className="text-muted-foreground/70">(optional, auto-generated)</span>
             </label>
             <Input
               value={id}
               onChange={(e) => setId(e.target.value)}
-              placeholder="e.g. REQ-015"
+              placeholder="e.g. REQ-00015"
             />
           </div>
           {firstStageName && (

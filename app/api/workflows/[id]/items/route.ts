@@ -29,10 +29,27 @@ export async function POST(
     if (body.id !== undefined && typeof body.id !== 'string') {
       return createErrorResponse('"id" must be a string', 'BadRequest', 400);
     }
+    if (body.body !== undefined && typeof body.body !== 'string') {
+      return createErrorResponse('"body" must be a string', 'BadRequest', 400);
+    }
+    if (body.stage !== undefined) {
+      if (typeof body.stage !== 'string' || !body.stage.trim()) {
+        return createErrorResponse('"stage" must be a non-empty string', 'BadRequest', 400);
+      }
+      if (!stages.some((s) => s.name === body.stage)) {
+        return createErrorResponse(
+          `Unknown stage '${body.stage}'. Valid stages: ${stages.map((s) => s.name).join(', ')}`,
+          'BadRequest',
+          400
+        );
+      }
+    }
 
     const created = createItem(id, {
       title: body.title,
       id: typeof body.id === 'string' ? body.id : undefined,
+      body: typeof body.body === 'string' ? body.body : undefined,
+      stage: typeof body.stage === 'string' ? body.stage : undefined,
     });
     if (!created) {
       return createErrorResponse('Failed to create item', 'BadRequest', 400);

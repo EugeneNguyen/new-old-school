@@ -20,15 +20,40 @@ export function workflowExists(id: string): boolean {
   return fs.existsSync(dir) && fs.statSync(dir).isDirectory();
 }
 
-export function readWorkflowConfig(id: string): { name: string } | null {
+export interface WorkflowConfig {
+  name: string;
+  idPrefix?: string;
+}
+
+const ID_PADDING = 5;
+
+export function readWorkflowConfig(id: string): WorkflowConfig | null {
   const configPath = path.join(workflowDir(id), 'config.json');
   if (!fs.existsSync(configPath)) return null;
   try {
     const parsed = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    return { name: parsed.name || id };
+    const config: WorkflowConfig = { name: parsed.name || id };
+    if (typeof parsed.idPrefix === 'string' && parsed.idPrefix.trim()) {
+      config.idPrefix = parsed.idPrefix.trim();
+    }
+    return config;
   } catch {
     return null;
   }
+}
+
+function nextPrefixedId(itemsRoot: string, prefix: string): string {
+  const pattern = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-(\\d+)$`);
+  let max = 0;
+  if (fs.existsSync(itemsRoot)) {
+    for (const entry of fs.readdirSync(itemsRoot)) {
+      const m = entry.match(pattern);
+      if (!m) continue;
+      const n = parseInt(m[1], 10);
+      if (Number.isFinite(n) && n > max) max = n;
+    }
+  }
+  return `${prefix}-${String(max + 1).padStart(ID_PADDING, '0')}`;
 }
 
 export function readStages(id: string): Stage[] {
@@ -277,6 +302,8 @@ function slugify(input: string): string {
 export interface CreateItemInput {
   title: string;
   id?: string;
+  body?: string;
+  stage?: string;
 }
 
 export function createItem(
@@ -290,16 +317,38 @@ export function createItem(
   const stages = readStages(workflowId);
   if (stages.length === 0) return null;
   const firstStage = stages[0].name;
+  let stageName = firstStage;
+  if (input.stage !== undefined) {
+    const requested = input.stage.trim();
+    if (!requested) return null;
+    if (!stages.some((s) => s.name === requested)) return null;
+    stageName = requested;
+  }
 
-  let baseId = (input.id?.trim() || slugify(title)) || `item-${Date.now()}`;
   const itemsRoot = path.join(workflowDir(workflowId), 'items');
   fs.mkdirSync(itemsRoot, { recursive: true });
 
-  let finalId = baseId;
-  let counter = 1;
-  while (fs.existsSync(path.join(itemsRoot, finalId))) {
-    finalId = `${baseId}-${counter++}`;
-    if (counter > 9999) return null;
+  const config = readWorkflowConfig(workflowId);
+  const explicitId = input.id?.trim();
+
+  let finalId: string;
+  if (explicitId) {
+    finalId = explicitId;
+    let counter = 1;
+    while (fs.existsSync(path.join(itemsRoot, finalId))) {
+      finalId = `${explicitId}-${counter++}`;
+      if (counter > 9999) return null;
+    }
+  } else if (config?.idPrefix) {
+    finalId = nextPrefixedId(itemsRoot, config.idPrefix);
+  } else {
+    const baseId = slugify(title) || `item-${Date.now()}`;
+    finalId = baseId;
+    let counter = 1;
+    while (fs.existsSync(path.join(itemsRoot, finalId))) {
+      finalId = `${baseId}-${counter++}`;
+      if (counter > 9999) return null;
+    }
   }
 
   const dir = path.join(itemsRoot, finalId);
@@ -307,12 +356,14 @@ export function createItem(
 
   const meta = {
     title,
-    stage: firstStage,
+    stage: stageName,
     status: 'Todo' as ItemStatus,
     comments: [] as string[],
   };
   fs.writeFileSync(path.join(dir, META_FILE), yaml.dump(meta), 'utf-8');
-  fs.writeFileSync(path.join(dir, CONTENT_FILE), '', 'utf-8');
+  const initialBody = input.body ?? '';
+  const bodyToWrite = initialBody && !initialBody.endsWith('\n') ? `${initialBody}\n` : initialBody;
+  fs.writeFileSync(path.join(dir, CONTENT_FILE), bodyToWrite, 'utf-8');
 
   return readItemFolder(workflowId, finalId);
 }

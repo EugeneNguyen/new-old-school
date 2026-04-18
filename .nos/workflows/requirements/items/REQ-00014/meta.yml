@@ -1,0 +1,21 @@
+title: Create skills for agents to interact with NOS
+stage: Done
+status: Todo
+comments: []
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 11ddfe2f-34b8-4b19-aa84-b19f1bde8137
+    startedAt: '2026-04-18T06:43:03.743Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 3cf72f52-76ab-4607-8ac3-9a5459ca64e0
+    startedAt: '2026-04-18T07:30:24.236Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 109bfb25-b58e-436e-b3ce-a112a7202526
+    startedAt: '2026-04-18T07:40:02.005Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 758df9ed-7e2c-44bc-b86b-54f4a39657ba
+    startedAt: '2026-04-18T08:12:19.149Z'
