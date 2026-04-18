@@ -14,9 +14,11 @@
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
+    "@types/js-yaml": "^4.0.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "commander": "^12.0.0",
+    "js-yaml": "^4.1.1",
     "lucide-react": "^1.8.0",
     "next": "canary",
     "open": "^10.1.0",
