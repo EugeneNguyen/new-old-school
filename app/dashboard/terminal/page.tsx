@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageSquare, Send, Plus, Loader2 } from 'lucide-react';
+import { MessageSquare, Send, Plus, Loader2, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SessionPanel from '@/components/terminal/SessionPanel';
 import type { SessionSummary, SessionHistory } from '@/types/session';
@@ -41,6 +41,7 @@ export default function ClaudeTerminal() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+  const [copiedCommand, setCopiedCommand] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -268,6 +269,29 @@ export default function ClaudeTerminal() {
     }
   };
 
+  const copyResumeCommand = useCallback(async () => {
+    if (!sessionId) return;
+    const command = `claude --resume ${sessionId}`;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(command);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = command;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopiedCommand(true);
+      setTimeout(() => setCopiedCommand(false), 1500);
+    } catch {
+      // ignore clipboard failure
+    }
+  }, [sessionId]);
+
   const createNewSession = () => {
     if (abortRef.current) abortRef.current.abort();
     setMessages([]);
@@ -410,11 +434,30 @@ export default function ClaudeTerminal() {
 
         <Card className="flex-1 flex flex-col bg-zinc-950 text-zinc-100 border-zinc-800 overflow-hidden">
           <CardHeader className="border-b border-zinc-800 bg-zinc-900/50 flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-zinc-400" />
-              <CardTitle className="text-sm font-medium">
-                claude {sessionId ? `— session ${sessionId.slice(0, 8)}` : '— new session'}
-              </CardTitle>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-zinc-400" />
+                <CardTitle className="text-sm font-medium">
+                  claude {sessionId ? `— session ${sessionId.slice(0, 8)}` : '— new session'}
+                </CardTitle>
+              </div>
+              {sessionId && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={copyResumeCommand}
+                  title={copiedCommand ? 'Copied!' : 'Copy resume command'}
+                  aria-label={copiedCommand ? 'Copied resume command' : 'Copy resume command'}
+                  className={cn(
+                    "h-7 gap-1.5 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800",
+                    copiedCommand && "text-green-400 hover:text-green-400"
+                  )}
+                >
+                  {copiedCommand ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span className="text-xs">{copiedCommand ? 'Copied' : 'Copy resume command'}</span>
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">

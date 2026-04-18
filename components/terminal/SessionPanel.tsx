@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Plus, MessageSquare, Loader2 } from 'lucide-react';
+import { Plus, MessageSquare, Loader2, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SessionSummary } from '@/types/session';
 
@@ -18,6 +19,30 @@ function formatRelativeTime(dateString: string): string {
   if (days === 1) return 'yesterday';
   if (days < 7) return `${days}d ago`;
   return new Date(dateString).toLocaleDateString();
+}
+
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // fall through to textarea fallback
+  }
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return ok;
+  } catch {
+    return false;
+  }
 }
 
 interface SessionPanelProps {
@@ -35,6 +60,23 @@ export default function SessionPanel({
   onNewSession,
   isLoading,
 }: SessionPanelProps) {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyCommand = async (
+    event: React.MouseEvent<HTMLButtonElement>,
+    sessionId: string,
+  ) => {
+    event.stopPropagation();
+    event.preventDefault();
+    const ok = await copyToClipboard(`claude --resume ${sessionId}`);
+    if (ok) {
+      setCopiedId(sessionId);
+      setTimeout(() => {
+        setCopiedId((current) => (current === sessionId ? null : current));
+      }, 1500);
+    }
+  };
+
   return (
     <div className="w-72 flex-shrink-0 flex flex-col bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900/50">
@@ -66,13 +108,22 @@ export default function SessionPanel({
 
           {sessions.map((session) => {
             const isActive = session.id === activeSessionId;
+            const isCopied = copiedId === session.id;
             return (
-              <button
+              <div
                 key={session.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => onSelectSession(session.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelectSession(session.id);
+                  }
+                }}
                 className={cn(
-                  "w-full text-left px-4 py-3 border-b border-zinc-800/50 transition-colors",
-                  "hover:bg-zinc-800/50",
+                  "group relative w-full text-left px-4 py-3 border-b border-zinc-800/50 transition-colors cursor-pointer",
+                  "hover:bg-zinc-800/50 focus:outline-none focus-visible:bg-zinc-800/50",
                   isActive
                     ? "bg-zinc-800/50 border-l-2 border-l-blue-400"
                     : "border-l-2 border-l-transparent"
@@ -102,7 +153,21 @@ export default function SessionPanel({
                     </span>
                   )}
                 </div>
-              </button>
+                <button
+                  type="button"
+                  onClick={(e) => handleCopyCommand(e, session.id)}
+                  title={isCopied ? 'Copied!' : 'Copy resume command'}
+                  aria-label={isCopied ? 'Copied resume command' : 'Copy resume command'}
+                  className={cn(
+                    "absolute top-2 right-2 h-6 w-6 inline-flex items-center justify-center rounded",
+                    "text-zinc-500 hover:text-zinc-100 hover:bg-zinc-800 transition-colors",
+                    "opacity-0 group-hover:opacity-100 focus:opacity-100",
+                    isCopied && "opacity-100 text-green-400 hover:text-green-400"
+                  )}
+                >
+                  {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
             );
           })}
         </div>
