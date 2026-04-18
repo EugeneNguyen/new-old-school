@@ -77,8 +77,18 @@ export async function POST(request: NextRequest) {
     const stream = new ReadableStream({
       start(controller) {
         const encoder = new TextEncoder();
+        let closed = false;
+
+        function closeController() {
+          if (closed) return;
+          closed = true;
+          if (fileStream) fileStream.end();
+          if (resolvedSessionId) streamRegistry.deregister(resolvedSessionId);
+          controller.close();
+        }
 
         claude.stdout.on('data', (chunk: Buffer) => {
+          if (closed) return;
           const text = chunk.toString();
           for (const line of text.split('\n')) {
             if (!line.trim()) continue;
@@ -99,28 +109,30 @@ export async function POST(request: NextRequest) {
               streamRegistry.notifyListeners(resolvedSessionId, line);
             }
 
+            if (closed) return;
             controller.enqueue(encoder.encode(`data: ${line}\n\n`));
           }
         });
 
         claude.stderr.on('data', (chunk: Buffer) => {
+          if (closed) return;
           const errMsg = JSON.stringify({ type: 'error', message: chunk.toString() });
           controller.enqueue(encoder.encode(`data: ${errMsg}\n\n`));
         });
 
         claude.on('close', () => {
-          if (fileStream) fileStream.end();
-          if (resolvedSessionId) streamRegistry.deregister(resolvedSessionId);
-          controller.enqueue(encoder.encode('data: {"type":"done"}\n\n'));
-          controller.close();
+          if (!closed) {
+            controller.enqueue(encoder.encode('data: {"type":"done"}\n\n'));
+          }
+          closeController();
         });
 
         claude.on('error', (err) => {
-          if (fileStream) fileStream.end();
-          if (resolvedSessionId) streamRegistry.deregister(resolvedSessionId);
-          const errMsg = JSON.stringify({ type: 'error', message: err.message });
-          controller.enqueue(encoder.encode(`data: ${errMsg}\n\n`));
-          controller.close();
+          if (!closed) {
+            const errMsg = JSON.stringify({ type: 'error', message: err.message });
+            controller.enqueue(encoder.encode(`data: ${errMsg}\n\n`));
+          }
+          closeController();
         });
       },
     });

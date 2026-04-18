@@ -1,0 +1,19 @@
+- name: Analysis
+  description: Analyze the requirement scope, feasibility, and dependencies.
+  prompt:
+  autoAdvanceOnComplete:
+
+- name: Documentation
+  description: Write detailed requirement specs, user stories, and acceptance criteria.
+  prompt:
+  autoAdvanceOnComplete:
+
+- name: Implementation
+  description: Build the feature or fix according to the documented requirements.
+  prompt:
+  autoAdvanceOnComplete:
+
+- name: Validation
+  description: Verify the implementation meets all acceptance criteria.
+  prompt:
+  autoAdvanceOnComplete:

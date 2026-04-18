@@ -14,7 +14,31 @@
       "Bash(find /Volumes/EugeneSSD/MyProjects/new-old-school -type f -name \"*.json\" ! -path \"*/node_modules/*\" ! -path \"*/.next/*\" ! -path \"*/.git/*\" -exec grep -l \"agent\\\\|Agent\\\\|spawn\\\\|coordinator\" {} \\\\;)",
       "Bash(find /Volumes/EugeneSSD/MyProjects/new-old-school -type f \\\\\\( -name \"*.md\" -o -name \"*.txt\" -o -name \"*.prompt\" \\\\\\) ! -path \"*/node_modules/*\" -exec grep -l \"agent\\\\|Agent\\\\|system.*prompt\\\\|role\\\\|coordinator\" {} \\\\;)",
       "Bash(grep -r \"Skill\\\\|Tool\\\\|registry\\\\|plugin\\\\|factory\\\\|adapter\" /Volumes/EugeneSSD/MyProjects/new-old-school --include=\"*.ts\" --include=\"*.tsx\" --include=\"*.js\" ! -path \"*/node_modules/*\" -l)",
-      "Bash(grep -r \"Skill\" /Volumes/EugeneSSD/MyProjects/new-old-school --include=\"*.ts\" --include=\"*.tsx\" ! -path \"*/node_modules/*\")"
+      "Bash(grep -r \"Skill\" /Volumes/EugeneSSD/MyProjects/new-old-school --include=\"*.ts\" --include=\"*.tsx\" ! -path \"*/node_modules/*\")",
+      "Bash(claude -p --output-format json)",
+      "Bash(claude -p --output-format stream-json)",
+      "Bash(claude -p --output-format stream-json --verbose)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:30128/dashboard/terminal)",
+      "Bash(curl -sN -X POST http://localhost:30128/api/claude -H 'Content-Type: application/json' -d '{\"prompt\": \"say just hello\"}')",
+      "Bash(curl -s http://localhost:3000/api/claude/sessions)",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -sv http://localhost:3000/api/claude/sessions)",
+      "Bash(PORT=3001 npx next dev --port 3001)",
+      "Bash(curl -s http://localhost:3001/api/claude/sessions)",
+      "Bash(curl -sv http://localhost:3001/api/claude/sessions)",
+      "Bash(npx next *)",
+      "Bash(disown)",
+      "Bash(curl -s http://localhost:30128/api/claude/sessions)",
+      "Bash(curl -s 'http://localhost:30128/api/claude/sessions?id=bc19f5a6-9b36-4f05-9b6f-80433ff9191a')",
+      "Bash(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/dashboard)",
+      "Bash(mkdir -p /Volumes/EugeneSSD/MyProjects/new-old-school/app/api/claude/sessions/\\\\[id\\\\]/status)",
+      "Bash(mkdir -p /Volumes/EugeneSSD/MyProjects/new-old-school/app/api/claude/sessions/\\\\[id\\\\]/stream)",
+      "Bash(timeout 30 claude -p --output-format stream-json --verbose --dangerously-skip-permissions)",
+      "Bash(timeout 45 claude -p --output-format stream-json --verbose --dangerously-skip-permissions)",
+      "Bash(timeout 60 claude -p --output-format stream-json --verbose --dangerously-skip-permissions)",
+      "Bash(claude --version)",
+      "Bash(/Users/binhnguyenxuan/.local/bin/claude -p --output-format stream-json --verbose --dangerously-skip-permissions)"
     ]
   }
 }

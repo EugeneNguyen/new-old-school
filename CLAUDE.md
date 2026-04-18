@@ -1,5 +1,8 @@
 # nos Project Guide
 
+## Workflows
+When the user refers to "workflows", this relates to the `.nos/workflows/` directory.
+
 ## CEO Agent Framework
 The primary agent can act as a **CEO Agent (Recursive Orchestrator)** for complex tasks.
 
