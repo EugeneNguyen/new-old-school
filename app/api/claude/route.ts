@@ -3,6 +3,7 @@ import { spawn } from 'child_process';
 import { createWriteStream, mkdirSync } from 'fs';
 import { join } from 'path';
 import { createErrorResponse } from '@/app/api/utils/errors';
+import { streamRegistry } from '@/lib/stream-registry';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -69,10 +70,18 @@ export async function POST(request: NextRequest) {
 
             if (!resolvedSessionId) {
               resolvedSessionId = extractSessionId(line);
+              if (resolvedSessionId) {
+                streamRegistry.register(resolvedSessionId, claude);
+              }
             }
 
             const fs = getFileStream();
             if (fs) fs.write(line + '\n');
+
+            if (resolvedSessionId) {
+              streamRegistry.incrementLineCount(resolvedSessionId);
+              streamRegistry.notifyListeners(resolvedSessionId, line);
+            }
 
             controller.enqueue(encoder.encode(`data: ${line}\n\n`));
           }
@@ -85,12 +94,14 @@ export async function POST(request: NextRequest) {
 
         claude.on('close', () => {
           if (fileStream) fileStream.end();
+          if (resolvedSessionId) streamRegistry.deregister(resolvedSessionId);
           controller.enqueue(encoder.encode('data: {"type":"done"}\n\n'));
           controller.close();
         });
 
         claude.on('error', (err) => {
           if (fileStream) fileStream.end();
+          if (resolvedSessionId) streamRegistry.deregister(resolvedSessionId);
           const errMsg = JSON.stringify({ type: 'error', message: err.message });
           controller.enqueue(encoder.encode(`data: ${errMsg}\n\n`));
           controller.close();

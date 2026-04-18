@@ -5,3 +5,6 @@ REQ-003	Admin Dashboard UI	Completed	2026-04-16
 REQ-004	Tool Definition System	Completed	2026-04-16
 REQ-005	Claude Code Chat Terminal	Completed	2026-04-17
 REQ-006	Terminal Session Management	Completed	2026-04-17
+REQ-007	Slash Skill Auto-Complete	Completed	2026-04-17
+REQ-008	Collapsible Sidebar Toggle	Completed	2026-04-17
+REQ-009	Stream Reconnect on Session Reload	Completed	2026-04-18

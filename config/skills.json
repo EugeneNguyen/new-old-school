@@ -1,0 +1,50 @@
+[
+  {
+    "id": "help",
+    "name": "/help",
+    "description": "Show available commands and usage tips",
+    "usage": "/help"
+  },
+  {
+    "id": "clear",
+    "name": "/clear",
+    "description": "Clear the current conversation",
+    "usage": "/clear"
+  },
+  {
+    "id": "new",
+    "name": "/new",
+    "description": "Start a new session",
+    "usage": "/new"
+  },
+  {
+    "id": "model",
+    "name": "/model",
+    "description": "Switch the active Claude model",
+    "usage": "/model [model-name]"
+  },
+  {
+    "id": "compact",
+    "name": "/compact",
+    "description": "Summarize and compact conversation history",
+    "usage": "/compact"
+  },
+  {
+    "id": "status",
+    "name": "/status",
+    "description": "Show current session and system status",
+    "usage": "/status"
+  },
+  {
+    "id": "tools",
+    "name": "/tools",
+    "description": "List available tools in the dashboard",
+    "usage": "/tools"
+  },
+  {
+    "id": "config",
+    "name": "/config",
+    "description": "Open system configuration",
+    "usage": "/config"
+  }
+]

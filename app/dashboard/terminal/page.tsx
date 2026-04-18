@@ -9,6 +9,18 @@ import { MessageSquare, Send, Plus, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SessionPanel from '@/components/terminal/SessionPanel';
 import type { SessionSummary, SessionHistory } from '@/types/session';
+import { useSlashComplete } from '@/hooks/useSlashComplete';
+import SlashPopup from '@/components/terminal/SlashPopup';
+
+function generateId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return generateId();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
 
 interface ChatMessage {
   id: string;
@@ -26,6 +38,11 @@ export default function ClaudeTerminal() {
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  const { isOpen: slashOpen, filteredSkills, activeIndex, handleKeyDown } = useSlashComplete({
+    input,
+    onSelect: (value) => setInput(value),
+  });
 
   const scrollToBottom = useCallback(() => {
     if (scrollRef.current) {
@@ -54,7 +71,71 @@ export default function ClaudeTerminal() {
 
   useEffect(() => {
     fetchSessions();
+    return () => { abortRef.current?.abort(); };
   }, [fetchSessions]);
+
+  const processStream = useCallback(async (reader: ReadableStreamDefaultReader<Uint8Array>, assistantId: string) => {
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let accumulated = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const jsonStr = line.slice(6).trim();
+        if (!jsonStr) continue;
+
+        try {
+          const event = JSON.parse(jsonStr);
+
+          if (event.type === 'assistant' && event.message?.content) {
+            for (const block of event.message.content) {
+              if (block.type === 'text') {
+                accumulated = block.text;
+                setMessages(prev =>
+                  prev.map(m =>
+                    m.id === assistantId ? { ...m, content: accumulated } : m
+                  )
+                );
+              }
+            }
+          }
+
+          if (event.type === 'result') {
+            if (event.session_id) setSessionId(event.session_id);
+            if (event.result && !accumulated) {
+              accumulated = event.result;
+              setMessages(prev =>
+                prev.map(m =>
+                  m.id === assistantId ? { ...m, content: accumulated } : m
+                )
+              );
+            }
+          }
+
+          if (event.type === 'error') {
+            accumulated += `\n[Error: ${event.message}]`;
+            setMessages(prev =>
+              prev.map(m =>
+                m.id === assistantId ? { ...m, content: accumulated } : m
+              )
+            );
+          }
+        } catch {
+          // skip malformed JSON lines
+        }
+      }
+    }
+
+    return accumulated;
+  }, []);
 
   const loadSession = async (id: string) => {
     if (abortRef.current) abortRef.current.abort();
@@ -65,7 +146,7 @@ export default function ClaudeTerminal() {
       const res = await fetch(`/api/claude/sessions?id=${encodeURIComponent(id)}`);
       if (!res.ok) {
         setMessages([{
-          id: crypto.randomUUID(),
+          id: generateId(),
           role: 'system',
           content: 'Failed to load session history.',
           timestamp: new Date().toLocaleTimeString(),
@@ -78,7 +159,7 @@ export default function ClaudeTerminal() {
 
       if (history.messages.length > 0) {
         loaded.push({
-          id: crypto.randomUUID(),
+          id: generateId(),
           role: 'system',
           content: '--- Resumed session. Showing previous assistant responses. ---',
           timestamp: '',
@@ -86,7 +167,7 @@ export default function ClaudeTerminal() {
 
         for (const msg of history.messages) {
           loaded.push({
-            id: crypto.randomUUID(),
+            id: generateId(),
             role: 'assistant',
             content: msg.content,
             timestamp: '',
@@ -95,9 +176,59 @@ export default function ClaudeTerminal() {
       }
 
       setMessages(loaded);
+
+      const statusRes = await fetch(`/api/claude/sessions/${encodeURIComponent(id)}/status`);
+      if (statusRes.ok) {
+        const { streaming } = await statusRes.json();
+        if (streaming) {
+          const streamAssistantId = generateId();
+          setMessages(prev => [...prev, {
+            id: streamAssistantId,
+            role: 'assistant' as const,
+            content: '',
+            timestamp: new Date().toLocaleTimeString(),
+          }]);
+          setIsThinking(true);
+
+          abortRef.current = new AbortController();
+          try {
+            const streamRes = await fetch(
+              `/api/claude/sessions/${encodeURIComponent(id)}/stream?from=0`,
+              { signal: abortRef.current.signal }
+            );
+            if (streamRes.ok && streamRes.body) {
+              const reader = streamRes.body.getReader();
+              const accumulated = await processStream(reader, streamAssistantId);
+              if (!accumulated) {
+                setMessages(prev =>
+                  prev.map(m =>
+                    m.id === streamAssistantId
+                      ? { ...m, content: '(No response received)' }
+                      : m
+                  )
+                );
+              }
+            }
+          } catch (err: any) {
+            if (err.name !== 'AbortError') {
+              setMessages(prev =>
+                prev.map(m =>
+                  m.id === streamAssistantId
+                    ? { ...m, content: `Error reconnecting: ${err.message}` }
+                    : m
+                )
+              );
+            }
+          } finally {
+            setIsThinking(false);
+            abortRef.current = null;
+            fetchSessions();
+          }
+        }
+      }
     } catch {
       setMessages([{
-        id: crypto.randomUUID(),
+        id: generateId(),
         role: 'system',
         content: 'Error loading session.',
         timestamp: new Date().toLocaleTimeString(),
@@ -122,13 +253,13 @@ export default function ClaudeTerminal() {
     setIsThinking(true);
 
     const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       role: 'user',
       content: prompt,
       timestamp: new Date().toLocaleTimeString(),
     };
 
-    const assistantId = crypto.randomUUID();
+    const assistantId = generateId();
     const assistantMessage: ChatMessage = {
       id: assistantId,
       role: 'assistant',
@@ -164,66 +295,7 @@ export default function ClaudeTerminal() {
       const reader = response.body?.getReader();
       if (!reader) throw new Error('No response stream');
 
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let accumulated = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const jsonStr = line.slice(6).trim();
-          if (!jsonStr) continue;
-
-          try {
-            const event = JSON.parse(jsonStr);
-
-            if (event.type === 'assistant' && event.message?.content) {
-              for (const block of event.message.content) {
-                if (block.type === 'text') {
-                  accumulated = block.text;
-                  setMessages(prev =>
-                    prev.map(m =>
-                      m.id === assistantId ? { ...m, content: accumulated } : m
-                    )
-                  );
-                }
-              }
-            }
-
-            if (event.type === 'result') {
-              if (event.session_id) {
-                setSessionId(event.session_id);
-              }
-              if (event.result && !accumulated) {
-                accumulated = event.result;
-                setMessages(prev =>
-                  prev.map(m =>
-                    m.id === assistantId ? { ...m, content: accumulated } : m
-                  )
-                );
-              }
-            }
-
-            if (event.type === 'error') {
-              accumulated += `\n[Error: ${event.message}]`;
-              setMessages(prev =>
-                prev.map(m =>
-                  m.id === assistantId ? { ...m, content: accumulated } : m
-                )
-              );
-            }
-          } catch {
-            // skip malformed JSON lines
-          }
-        }
-      }
+      const accumulated = await processStream(reader, assistantId);
 
       if (!accumulated) {
         setMessages(prev =>
@@ -333,13 +405,31 @@ export default function ClaudeTerminal() {
             </ScrollArea>
             <form onSubmit={sendMessage} className="p-4 border-t border-zinc-800 flex gap-2 flex-shrink-0">
               <div className="flex-1 relative">
+                {slashOpen && (
+                  <SlashPopup
+                    skills={filteredSkills}
+                    activeIndex={activeIndex}
+                    onSelect={(skill) => setInput(skill.name + ' ')}
+                  />
+                )}
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 font-bold">&gt;</span>
                 <Input
+                  id="terminal-input"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   placeholder="Ask Claude something..."
                   className="bg-zinc-900 border-zinc-700 text-zinc-100 pl-7 focus:ring-zinc-600"
                   disabled={isThinking}
+                  role="combobox"
+                  aria-expanded={slashOpen}
+                  aria-controls="slash-popup"
+                  aria-activedescendant={
+                    slashOpen && filteredSkills[activeIndex]
+                      ? `slash-option-${filteredSkills[activeIndex].id}`
+                      : undefined
+                  }
+                  autoComplete="off"
                 />
               </div>
               <Button
