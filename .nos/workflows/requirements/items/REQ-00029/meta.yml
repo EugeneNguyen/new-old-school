@@ -1,0 +1,67 @@
+title: Side menu should highlight the select menu in screen
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis appended to index.md. The item body was empty, so I inferred scope
+    from the title and from components/dashboard/Sidebar.tsx, which currently
+    renders tool links and workflow links without any active-route highlighting.
+    Scope covers both nav lists plus the Workflows group auto-expand and
+    aria-current; feasibility is low risk using usePathname() from
+    next/navigation and the existing cn/Tailwind tokens. Main open questions for
+    the next stage: exact-vs-prefix match semantics for /dashboard, desired
+    active-state visual (background vs left-bar), collapsed-mode treatment, and
+    whether tools.json needs a per-tool activeMatch rule for non-tool subroutes.
+  - >-
+    Specification appended to index.md with user stories, 8 Given/When/Then
+    acceptance criteria, technical constraints, and out-of-scope items. Resolved
+    the open questions with defaults: /dashboard is exact-match while all other
+    routes use prefix-match with a / boundary (so /dashboard/work does not match
+    /dashboard/workflows); active style is tint-only using
+    bg-accent/text-accent-foreground (no new tokens or left-bar indicator);
+    Workflows group auto-expands on pathname changes into workflow routes but
+    respects subsequent user toggles; per-tool activeMatch rules in tools.json
+    deferred as out of scope. Implementation should be confined to
+    components/dashboard/Sidebar.tsx with usePathname(), a local isActive
+    helper, and aria-current='page' on active links.
+  - >-
+    Implemented sidebar active-route highlighting in
+    components/dashboard/Sidebar.tsx. Added usePathname and a local isActive
+    helper (exact match for /dashboard, prefix match with / boundary otherwise),
+    appended bg-accent text-accent-foreground via cn to tool links and workflow
+    child links when active, and set aria-current='page' only on active links.
+    Added a pathname-keyed useEffect that auto-expands the Workflows group when
+    the path is /dashboard/workflows or a subpath — because the effect only runs
+    on pathname changes, a user-initiated chevron close on the same workflow
+    route is respected, while navigating to a different workflow re-expands. No
+    other files changed, no new dependencies, and tsc --noEmit is clean. All 8
+    acceptance criteria satisfied with no deviations.
+  - >-
+    Validation complete. All 8 acceptance criteria pass: isActive helper at
+    Sidebar.tsx:12-16 implements exact-match for /dashboard and prefix-match
+    with a / boundary otherwise; active tool and workflow links get bg-accent
+    text-accent-foreground via cn plus aria-current='page'; the pathname-keyed
+    useEffect auto-expands Workflows on entering/switching workflow routes
+    without forcing closed, so user chevron-close on the same route is
+    respected; collapsed mode retains the icon highlight; usePathname keeps it
+    reactive across client navigations. npx tsc --noEmit passes with no errors.
+    No changes outside components/dashboard/Sidebar.tsx, no new deps, no
+    deviations from spec. Validation section appended to index.md.
+updatedAt: '2026-04-19T03:58:19.681Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 632066cb-e242-47f5-9006-e3140cbf43a0
+    startedAt: '2026-04-19T03:46:02.071Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 73102d16-fdcf-4343-b685-702779531663
+    startedAt: '2026-04-19T03:49:47.093Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: cedf9b00-b89a-4703-8a08-8c6514705857
+    startedAt: '2026-04-19T03:55:43.650Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: fecffd3e-9a5a-4b8c-acd1-01adb1798e8e
+    startedAt: '2026-04-19T03:57:07.177Z'

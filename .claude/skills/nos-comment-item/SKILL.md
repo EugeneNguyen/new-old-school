@@ -3,7 +3,7 @@ name: nos-comment-item
 description: >-
   Append a comment to a NOS workflow item's `meta.yml > comments` list via the
   running NOS dev server.
-disable-model-invocation: true
+disable-model-invocation: false
 argument-hint: "--workflow <id> --item <itemId> --text <comment>"
 ---
 

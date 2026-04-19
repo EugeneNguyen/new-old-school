@@ -5,7 +5,7 @@ description: >-
   following the project's requirement management structure (TSV index + markdown detail +
   JSON metadata in docs/requirements/), then implements it in code. Use when the user
   provides a new feature request, requirement, or spec to be added and built.
-disable-model-invocation: true
+disable-model-invocation: false
 argument-hint: "[requirement description]"
 ---
 

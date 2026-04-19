@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { readWorkflowDetail } from '@/lib/workflow-store';
-import KanbanBoard from '@/components/dashboard/KanbanBoard';
+import WorkflowItemsView from '@/components/dashboard/WorkflowItemsView';
 
 export default async function WorkflowPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,7 +25,7 @@ export default async function WorkflowPage({ params }: { params: Promise<{ id: s
           <code className="font-mono text-xs">.nos/workflows/{detail.id}/config/stages.yaml</code>.
         </div>
       ) : (
-        <KanbanBoard
+        <WorkflowItemsView
           workflowId={detail.id}
           stages={detail.stages}
           initialItems={detail.items}

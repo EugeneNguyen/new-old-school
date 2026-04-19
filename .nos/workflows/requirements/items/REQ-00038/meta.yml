@@ -1,0 +1,67 @@
+title: Remove ID when Add item
+stage: Documentation
+status: Todo
+comments:
+  - >-
+    Analysis appended to index.md. Scope: UI-only removal of the optional ID
+    field from NewItemDialog (lines 41/51/72/119-129); server already
+    auto-generates IDs when id is omitted, so no backend change needed.
+    Feasibility: low risk, single-file change, no migration. Dependencies
+    read-only: API route (app/api/workflows/[id]/items/route.ts) and
+    lib/workflow-store.ts#createItem. Open questions: whether to surface the
+    generated ID to the user post-create, whether to also tighten the API, and
+    whether any workflow relies on manual ID prefixes — recommend confirming
+    with product before implementation.
+  - >-
+    Added ## Specification to index.md: 3 user stories, 9 numbered acceptance
+    criteria covering UI removal, state cleanup, request-body shape (no id),
+    auto-generated ID appearing on the new card, preserved title/error/reset
+    behavior, and explicit non-change to the POST route; technical constraints
+    pin the single file to edit (components/dashboard/NewItemDialog.tsx), the
+    exact post-change request shape, and the manual smoke test as validation;
+    out-of-scope list codifies the three open questions from Analysis as
+    explicit non-goals (keep API's optional id, no post-create ID toast, no
+    automated tests). Implementer should need no further clarification.
+  - >-
+    Verified REQ-00038 already contains the required Analysis content in
+    .nos/workflows/requirements/items/REQ-00038/index.md: scope, feasibility,
+    dependencies, and open questions are all present and align with the stage
+    prompt. No further edits were needed, so I left the original request text
+    untouched and closed the Analysis stage as complete.
+  - >-
+    Verified that .nos/workflows/requirements/items/REQ-00038/index.md already
+    contains a complete ## Analysis section covering scope, feasibility,
+    dependencies, and open questions, so no content changes were needed. I left
+    the original request text untouched as required; next stages can rely on the
+    existing analysis and specification already captured on the item.
+updatedAt: '2026-04-19T07:07:05.479Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: fa32a1c7-a884-4b0f-be02-74d20b545f61
+    startedAt: '2026-04-19T05:58:32.472Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: e94cc6a8-27e9-4b53-86ee-1994e50b50a2
+    startedAt: '2026-04-19T05:59:31.403Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 14bcd097-30c9-45c8-afd0-2b350ac824b1
+    startedAt: '2026-04-19T06:00:43.516Z'
+    agentId: david-engineer
+  - stage: Analysis
+    adapter: claude
+    sessionId: 517b9823-1048-4faa-b1bd-5d16438b2cc8
+    startedAt: '2026-04-19T07:00:40.994Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 789b8e2c-ac5b-4a37-8a63-03508df53c04
+    startedAt: '2026-04-19T07:01:59.761Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 07ed434d-4db9-46aa-909f-9fa432a97cad
+    startedAt: '2026-04-19T07:06:15.172Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 81d932fb-6ccc-4d5d-9b60-6e0ad21cc046
+    startedAt: '2026-04-19T07:07:05.478Z'

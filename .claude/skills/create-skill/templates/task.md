@@ -6,7 +6,7 @@ Use this for step-by-step workflows invoked manually (deployments, commits, code
 ---
 name: <skill-name>
 description: <What the task does. Use when X.>
-disable-model-invocation: true
+disable-model-invocation: false
 allowed-tools: <space-separated tools Claude can use without prompting>
 ---
 

@@ -181,7 +181,28 @@ comments:
     runtime-verified via next build + browser sweep in this session. Appended a
     'Validation (post AC4 <style> fix, 2026-04-19)' section with verdicts + one
     follow-up. npx tsc --noEmit clean. No failing ACs — advancing to Done.
-updatedAt: '2026-04-19T05:50:42.677Z'
+  - >-
+    Independent validation re-run after the AC4 style fix. Exercised the exact
+    unified pipeline used by the comment MarkdownPreview path (remark-parse →
+    remark-gfm → escapeDisallowedHtml → remark-rehype{allowDangerousHtml:true} →
+    rehype-raw → rehype-sanitize w/ markdownSanitizeSchema) and inspected
+    resulting HAST. Verdicts confirm what the prior validation already wrote
+    into index.md: AC1 (iso/anonymous verbatim), AC2 (List<string> verbatim),
+    AC3 (language-ts class preserved), AC4 (<script> AND <style> both removed
+    with children — div+style yields <div>content</div> only), AC5 (img
+    http/https/data preserved with alt/title; javascript: src stripped; GFM
+    table renders fully), AC6 (only ItemDetailDialog comment list invokes the
+    markdown pipeline; KanbanBoard/SessionPanel render plain React text), AC7
+    (write-path byte-identical; setBody hands onChange straight through) — all
+    ✅. AC8/AC9 remain ⚠️ Partial: structurally satisfied but not verified
+    end-to-end in a live next build + browser sweep this session. tsc --noEmit
+    clean. Did not duplicate the existing Validation section (concurrent worker
+    had already appended an identical-conclusion section). Per stage prompt,
+    leaving in this stage with one follow-up — the AC8/AC9 runtime sweep — and
+    committed+pushed as 7b08755. Flipping status to Failed so the operator can
+    reset to Todo to re-run after the runtime sweep, rather than auto-advancing
+    to Done with partial verdicts unresolved.
+updatedAt: '2026-04-19T05:52:23.694Z'
 sessions:
   - stage: Analysis
     adapter: claude

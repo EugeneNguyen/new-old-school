@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { updateStage, workflowExists, type StagePatch } from '@/lib/workflow-store';
+import { agentExists } from '@/lib/agents-store';
 import { createErrorResponse } from '@/app/api/utils/errors';
 
 export async function PATCH(
@@ -47,6 +48,45 @@ export async function PATCH(
         );
       }
       patch.autoAdvanceOnComplete = (body.autoAdvanceOnComplete as boolean | null) ?? null;
+    }
+
+    if (body.agentId !== undefined) {
+      if (body.agentId !== null && typeof body.agentId !== 'string') {
+        return createErrorResponse('"agentId" must be a string or null', 'BadRequest', 400);
+      }
+      if (typeof body.agentId === 'string' && body.agentId.trim()) {
+        const nextAgentId = body.agentId.trim();
+        if (!agentExists(nextAgentId)) {
+          return createErrorResponse(
+            `Agent '${nextAgentId}' not found`,
+            'BadRequest',
+            400
+          );
+        }
+        patch.agentId = nextAgentId;
+      } else {
+        patch.agentId = null;
+      }
+    }
+
+    if (body.maxDisplayItems !== undefined) {
+      const raw = body.maxDisplayItems;
+      if (raw === null) {
+        patch.maxDisplayItems = null;
+      } else if (
+        typeof raw === 'number' &&
+        Number.isFinite(raw) &&
+        Number.isInteger(raw) &&
+        raw >= 0
+      ) {
+        patch.maxDisplayItems = raw === 0 ? null : raw;
+      } else {
+        return createErrorResponse(
+          '"maxDisplayItems" must be a non-negative integer or null',
+          'BadRequest',
+          400
+        );
+      }
     }
 
     if (Object.keys(patch).length === 0) {

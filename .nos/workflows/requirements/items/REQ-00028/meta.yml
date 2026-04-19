@@ -1,0 +1,96 @@
+title: Using https://github.com/mdx-editor/editor for markdown editor
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis appended to index.md. Scope: swap @uiw/react-md-editor for
+    @mdxeditor/editor in ItemDetailDialog, keep plain-markdown storage, re-theme
+    via new editor's tokens. Key risks: React canary peer compat,
+    controlled-value caret behavior in a WYSIWYG, and CSS overrides in
+    app/globals.css that currently target w-md-editor classes. Touchpoints:
+    ItemDetailDialog.tsx:18/174, app/globals.css, package.json (potentially drop
+    rehype-sanitize, remark-breaks, @uiw/react-md-editor if
+    lib/markdown-preview.ts is also retired). Open questions for Documentation
+    stage: whether to also migrate the comment composer, desired toolbar
+    surface, and whether this is a hard cutover. No implementation started.
+  - >-
+    Specification appended to index.md. Contains: 5 user stories, 12 numbered
+    acceptance criteria (editor swap, controlled value, SSR, plugin set,
+    placeholder/loading, a11y, sizing, styling, round-trip fidelity, dependency
+    hygiene, build/type checks, comments untouched), technical constraints
+    (integration point, dynamic import pattern, plugins API, controlled
+    semantics, readOnly handling, CSS variable theming, toolbar density, React
+    canary compat, storage format, perf budget, touched files), and an explicit
+    out-of-scope list that resolves the open questions from Analysis (no
+    comment-composer migration, defaults-only shortcuts, no large-doc fallback,
+    token-matched theme only, hard cutover). Implementation stage has a single
+    source of truth; no code written.
+  - >-
+    Implementation complete. Swapped @uiw/react-md-editor for @mdxeditor/editor
+    in components/dashboard/ItemDetailDialog.tsx via a new client wrapper
+    components/dashboard/ItemDescriptionEditor.tsx loaded through next/dynamic({
+    ssr: false }). Wrapper registers the spec's plugin set (headings, lists,
+    quote, thematicBreak, link, linkDialog, codeBlock, codeMirror,
+    markdownShortcut, diffSource, toolbar) and renders a single-row toolbar with
+    UndoRedo, BoldItalicUnderlineToggles, ListsToggle, CreateLink,
+    InsertCodeBlock, InsertThematicBreak, wrapped in DiffSourceToggleWrapper.
+    Controlled semantics: markdown={loadingBody ? '' : body}, onChange drives
+    setBody, readOnly={loadingBody}, placeholder switches between 'Loading…' and
+    'Write markdown description…'. A key combining item id and loadingBody
+    remounts the editor when the fetched body arrives (MDXEditor's markdown prop
+    is initial-only by design). Removed the @uiw/react-md-editor CSS import from
+    app/globals.css and added a scoped .item-detail-md-editor block that maps
+    MDXEditor's --accent*/--base* variables onto the existing Tailwind/shadcn
+    tokens, with the content pane sized ~200–260px to stay near the prior 240px
+    footprint. Pruned markdownPreviewOptions, rehype-raw, and the MDEditorProps
+    import from lib/markdown-preview.ts; kept
+    commentRemarkPlugins/commentRehypePlugins/markdownSanitizeSchema because the
+    comment renderer still uses them. Removed @uiw/react-md-editor from
+    package.json and the lockfile; @mdxeditor/editor ^3.54.1 was already
+    present. npx tsc --noEmit passes cleanly. npm run build fails only on the
+    pre-existing /_global-error prerender crash ("Cannot read properties of null
+    (reading 'useContext')") — reproduced on main HEAD without these changes, so
+    it was not introduced by the swap. Comment composer/renderer left untouched.
+    Note: the NOS dev server's PATCH /api/workflows/{id}/items/{id} route was
+    returning 500 due to a stale turbopack instrumentation snapshot (unrelated
+    listItems import error), so the Done status and this comment were written
+    directly to meta.yml; the auto-advance sweeper still picked up the Done flip
+    and moved the item from Implementation to Validation.
+  - >-
+    Validation appended to index.md. 10/12 acceptance criteria verified ✅ via
+    source inspection and a clean tsc --noEmit: editor swap, controlled value
+    with remount-on-load, SSR-safe dynamic import, full plugin set including
+    codeMirror + diffSource + toolbar, loading/placeholder behavior,
+    role="group" + aria-labelledby accessibility, sizing (200-260px content),
+    globals.css cleaned of .w-md-editor* and re-themed via CSS vars, dependency
+    hygiene (@uiw/react-md-editor removed; comment-pipeline deps kept because
+    lib/markdown-preview.ts still exports
+    commentRemarkPlugins/commentRehypePlugins), comments surface untouched. 2
+    acceptance criteria ⚠️ partial: AC9 (round-trip fidelity) and AC3/AC11 (next
+    build) not re-run in-browser because the dev server is wedged on a
+    pre-existing Turbopack staleness error in auto-advance-sweeper (unrelated to
+    this REQ; listItems does exist). No ❌ failures, no regressions in adjacent
+    surfaces. Operator should restart the dev server and do a quick manual
+    save/reopen smoke before closing.
+updatedAt: '2026-04-19T04:21:44.376Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 61aa4d81-6f98-429c-8cd6-f88442f79b59
+    startedAt: '2026-04-19T03:44:11.895Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 8209afed-3eed-486e-b016-11073330a075
+    startedAt: '2026-04-19T03:45:52.634Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: fe0d602e-289c-4aec-b78c-7d33dba406ed
+    startedAt: '2026-04-19T03:58:19.130Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 20805a5e-d722-49bd-9e5c-fab7d78407ed
+    startedAt: '2026-04-19T04:08:59.901Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 05825cca-e722-4008-bb49-915529ae61e1
+    startedAt: '2026-04-19T04:18:55.650Z'

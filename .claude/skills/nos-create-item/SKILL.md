@@ -4,7 +4,7 @@ description: >-
   Create a new item inside a NOS workflow via the running NOS dev server.
   Use when an agent needs to add a requirement/task to `.nos/workflows/<id>/`
   without touching the dashboard UI.
-disable-model-invocation: true
+disable-model-invocation: false
 argument-hint: "--workflow <id> --title <title> [--body <markdown>] [--stage <stage>]"
 ---
 

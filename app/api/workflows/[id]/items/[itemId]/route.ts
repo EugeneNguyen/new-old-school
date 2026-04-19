@@ -7,6 +7,7 @@ import {
   type ItemMetaPatch,
 } from '@/lib/workflow-store';
 import { triggerStagePipeline } from '@/lib/stage-pipeline';
+import { autoAdvanceIfEligible } from '@/lib/auto-advance';
 import { ItemStatus } from '@/types/workflow';
 import { createErrorResponse } from '@/app/api/utils/errors';
 
@@ -98,22 +99,9 @@ export async function PATCH(
       return NextResponse.json(afterPipeline ?? updated);
     }
 
-    if (
-      patch.status === 'Done' &&
-      priorStatus !== 'Done' &&
-      updated.status === 'Done'
-    ) {
-      const stages = readStages(id);
-      const currentIdx = stages.findIndex((s) => s.name === updated.stage);
-      if (currentIdx !== -1 && currentIdx < stages.length - 1) {
-        const current = stages[currentIdx];
-        if (current.autoAdvanceOnComplete === true) {
-          const next = stages[currentIdx + 1];
-          const advanced = updateItemMeta(id, itemId, { stage: next.name });
-          const afterPipeline = await triggerStagePipeline(id, itemId);
-          return NextResponse.json(afterPipeline ?? advanced ?? updated);
-        }
-      }
+    if (patch.status === 'Done' && priorStatus !== 'Done') {
+      const advanced = await autoAdvanceIfEligible(id, itemId);
+      if (advanced) return NextResponse.json(advanced);
     }
 
     return NextResponse.json(updated);

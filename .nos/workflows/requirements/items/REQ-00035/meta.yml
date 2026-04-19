@@ -1,0 +1,93 @@
+title: Set max number of items in the stage to display
+stage: Done
+status: Done
+comments:
+  - >-
+    Appended an ## Analysis section to index.md covering scope (per-stage
+    maxDisplayItems config + 'Show all' toggle in KanbanBoard, render-time
+    only), feasibility (small additive change touching types/workflow.ts,
+    lib/workflow-store.ts, the stage PATCH route, StageDetailDialog, and
+    KanbanBoard; main risks are drop-into-collapsed UX and empty-state copy),
+    dependencies (no external systems; sits alongside REQ-014/015/016
+    stage-config work), and 6 open questions for Documentation to resolve (field
+    name, unset serialization, negative-value handling, toggle persistence,
+    drop-into-collapsed behavior, header badge semantics). Original request text
+    untouched.
+  - >-
+    Added ## Specification to index.md: 5 user stories, 25 numbered acceptance
+    criteria grouped by data model / PATCH API / StageDetailDialog / KanbanBoard
+    / non-regression, technical constraints (camelCase YAML key
+    'maxDisplayItems'; 0 and null both canonicalize to key-absent; integer ≥ 0
+    validation with 400 on bad input; file paths listed), and an explicit
+    out-of-scope list. Resolved the analysis open questions with these choices:
+    field name = maxDisplayItems; unset serializes as key-absent (0/null
+    accepted as clear-equivalents); negative/non-integer values rejected with
+    400; Show-all toggle is per-column in-memory only; drop-into-collapsed
+    auto-expands the column; header badge stays at total count. Next stage
+    (implementation) can treat this section as the single source of truth.
+  - >-
+    Implemented maxDisplayItems across the stack: extended Stage type, added
+    load/persist + StagePatch in workflow-store (0 and null canonicalize to
+    key-absent), validated the field in the stage PATCH route (non-negative
+    integer or null; 400 on anything else), added a 'Max items shown' number
+    input to StageDetailDialog with inline validation, and updated KanbanBoard
+    to truncate the column at the cap, render a 'Show all (N of M)' / 'Show
+    less' toggle, auto-expand on cross-stage drops into a capped column, and
+    keep the header badge on the true total. Per-column expansion is local
+    useState, in-memory only. tsc --noEmit clean. No existing stages.yaml files
+    were rewritten; the field is written on the stage's next natural save.
+    Implementation notes appended to index.md. All 25 acceptance criteria
+    addressed.
+  - >-
+    Implemented per-stage maxDisplayItems cap per the spec. Touched
+    types/workflow.ts (added optional number|null field), lib/workflow-store.ts
+    (readStages hydrates only positive integers; StagePatch + updateStage
+    normalize 0/null → delete YAML key),
+    app/api/workflows/[id]/stages/[stageName]/route.ts (400 on
+    negatives/non-integers/non-numerics; 0 and null both clear),
+    components/dashboard/StageDetailDialog.tsx (new 'Max items shown' number
+    input with inline validation text 'Enter a whole number ≥ 0, or leave blank
+    for no limit'), and components/dashboard/KanbanBoard.tsx (per-column
+    expandedStages useState, slice to first N when collapsed, 'Show all (N of
+    M)' / 'Show less' toggle, auto-expand when dropping into a capped-and-full
+    column from a different stage). Header badge still shows total. Typecheck
+    clean (npx tsc --noEmit). Note: another concurrent Implementation session
+    wrote the Implementation Notes block in index.md — content matches the work
+    I did, left it in place. No regressions expected to prompt /
+    autoAdvanceOnComplete / agentId round-trip or to drag-drop stage
+    reassignment.
+  - >-
+    Validated REQ-00035. All 25 acceptance criteria pass — data model (1–4),
+    PATCH API including 0/null canonicalization and 400-on-bad-input (5–9),
+    StageDetailDialog number input with exact error copy (10–14), KanbanBoard
+    cap/toggle/expanded-state/auto-expand-on-drop (15–23), and non-regression
+    for other stage fields and drag-drop (24–25). Evidence: read-through of
+    types/workflow.ts, lib/workflow-store.ts,
+    app/api/workflows/[id]/stages/[stageName]/route.ts, StageDetailDialog.tsx,
+    KanbanBoard.tsx plus a clean npx tsc --noEmit. Appended a ## Validation
+    section to index.md with per-criterion verdicts and file:line evidence. No
+    follow-ups; no commit since the working tree carries unrelated in-progress
+    work from other items and the stage-prompt's commit-and-push clause applies
+    to the failure branch.
+updatedAt: '2026-04-19T05:57:59.656Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 054cfd6c-3abb-4454-82d5-c00cb6d5e702
+    startedAt: '2026-04-19T05:50:02.357Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 8482286b-40aa-4016-9c42-58602ff53001
+    startedAt: '2026-04-19T05:51:19.903Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 8e6bec56-a00d-474e-aa3a-10b17dcc221b
+    startedAt: '2026-04-19T05:52:37.135Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 321c94bc-4842-42a7-ba21-f16159bd6412
+    startedAt: '2026-04-19T05:52:43.297Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: ea718c21-e786-4d4c-9ec3-ec5bce885c24
+    startedAt: '2026-04-19T05:56:05.692Z'

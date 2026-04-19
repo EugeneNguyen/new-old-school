@@ -1,4 +1,3 @@
-@import "@uiw/react-md-editor/markdown-editor.css";
 @import "@uiw/react-markdown-preview/markdown.css";
 
 @tailwind base;
@@ -58,4 +57,48 @@
 }
 .comment-markdown .wmde-markdown a {
   color: hsl(var(--primary));
+}
+
+/* Description editor (MDXEditor) — match dialog tokens via MDXEditor's
+   CSS-variable theming contract, and keep the edit surface sized so the
+   combined editor height (toolbar + content) is ~240px. */
+.item-detail-md-editor {
+  --accentBase: hsl(var(--background));
+  --accentBgSubtle: hsl(var(--background));
+  --accentBg: hsl(var(--muted));
+  --accentBgHover: hsl(var(--accent));
+  --accentBgActive: hsl(var(--accent));
+  --accentLine: hsl(var(--border));
+  --accentBorder: hsl(var(--input));
+  --accentBorderHover: hsl(var(--ring));
+  --accentSolid: hsl(var(--primary));
+  --accentSolidHover: hsl(var(--primary));
+  --accentText: hsl(var(--foreground));
+  --accentTextContrast: hsl(var(--primary-foreground));
+  --baseBase: hsl(var(--background));
+  --baseBg: hsl(var(--background));
+  --baseBgSubtle: hsl(var(--background));
+  --baseBgHover: hsl(var(--accent));
+  --baseBgActive: hsl(var(--accent));
+  --baseLine: hsl(var(--border));
+  --baseBorder: hsl(var(--input));
+  --baseBorderHover: hsl(var(--ring));
+  --baseSolid: hsl(var(--foreground));
+  --baseSolidHover: hsl(var(--foreground));
+  --baseText: hsl(var(--foreground));
+  --baseTextContrast: hsl(var(--foreground));
+  color: hsl(var(--foreground));
+  font-family: inherit;
+}
+.item-detail-md-editor .mdxeditor {
+  background: transparent;
+}
+.item-detail-md-editor__content {
+  min-height: 200px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  outline: none;
 }

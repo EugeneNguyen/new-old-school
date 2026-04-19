@@ -1,4 +1,40 @@
 title: Workflow Foundation
 stage: Backlog
 status: Todo
-comments: []
+comments:
+  - >-
+    Analysis appended to index.md covering scope (in: .nos/ layout, stages.yaml,
+    meta.yml/index.md schema, settings.yaml; out: engine runtime, UI, legacy
+    migration), feasibility (high — schema already exists in-tree; main risks
+    are schema drift across multiple writers, YAML edge cases, and ID-collision
+    under concurrent mints), dependencies (REQ-011 engine, REQ-013 Kanban,
+    REQ-014 skills, workflow-store/stage-pipeline/auto-advance), and 8 open
+    questions for Documentation to resolve — most pressing: canonical status
+    enum, comment record shape, ID-padding rule (REQ-011 vs REQ-00018
+    inconsistency in-tree), and whether stage-section appends to index.md are
+    idempotent on re-run.
+  - >-
+    Specification appended to index.md defining the canonical .nos storage
+    contract: required workflow/item file paths, required fields and enums,
+    append-only index.md behavior, whole-file meta.yml rewrites, session audit
+    entries, ID minting and enumeration rules, validation behavior, technical
+    constraints, and explicit out-of-scope boundaries for runtime, UI, richer
+    comment schema, and migrations.
+updatedAt: '2026-04-19T06:22:15.316Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 5365b251-5ba0-43d6-a9ba-ab8683c5d9fe
+    startedAt: '2026-04-19T06:00:11.615Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: e779b039-e581-487f-990e-20e0980e7899
+    startedAt: '2026-04-19T06:01:41.231Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 8d7dc4a1-5f5d-4e8e-a778-a60563ff87fb
+    startedAt: '2026-04-19T06:03:30.151Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: acc671c3-685b-46cb-b932-6c96074eeb23
+    startedAt: '2026-04-19T06:07:23.737Z'

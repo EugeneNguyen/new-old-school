@@ -1,0 +1,95 @@
+title: Update heartbeat
+stage: Done
+status: Done
+comments:
+  - >-
+    Analysis appended to index.md under ## Analysis. Scope: widen the heartbeat
+    sweeper so it also kicks Todo items whose current stage has a prompt (not
+    just advancing Done items), while keeping POST/PATCH-time kicks as the
+    low-latency path. Feasibility is low-risk since triggerStagePipeline already
+    gates on status==='Todo' and stage.prompt; the main hazard is duplicate
+    adapter sessions on every tick, so a dedup gate (likely sessions[].stage ===
+    item.stage, paired with a sessions clear on stage reset) is required.
+    Dependencies center on lib/auto-advance-sweeper.ts, lib/auto-advance.ts (add
+    sibling autoStartIfEligible), and lib/stage-pipeline.ts; no schema change
+    required for MVP. Key open questions: retry semantics after Failed→Todo
+    reset, whether to introduce a per-stage autoStartOnTodo flag analogous to
+    autoAdvanceOnComplete, dedup TOCTOU across tick/PATCH boundary,
+    observability on skips. No implementation done; original request text
+    preserved.
+  - >-
+    Added ## Specification section to index.md with: 5 user stories (operator +
+    developer perspectives), 21 acceptance criteria (HS-1 through HS-21)
+    covering sweeper tick shape, start-branch eligibility, dedup/stage-visit
+    semantics, failure handling, compatibility with existing kick paths, and
+    Given/When/Then scenarios, plus a technical-constraints block (file paths,
+    data shapes, four invariants I-1..I-4) and an explicit out-of-scope list.
+    Resolved all seven Analysis open questions inline (Q1: clear matching
+    sessions on Todo-transition; Q2: implicit-on-prompt; Q3..Q4:
+    invariants/accepted; Q5: shared interval; Q6: log on kick only; Q7:
+    autoStartIfEligible). No code changes — spec only, per stage prompt.
+  - >-
+    Implemented per spec. lib/auto-advance.ts gains autoStartIfEligible (Todo +
+    non-empty stage.prompt + no existing sessions[stage] entry) which awaits
+    triggerStagePipeline and logs once on kick. lib/auto-advance-sweeper.ts
+    per-item loop now calls autoAdvanceIfEligible then autoStartIfEligible
+    (HS-1/HS-19); the Done-only pre-filter and unused readItem import were
+    dropped since each primitive gates itself. lib/workflow-store.ts
+    updateItemMeta filters meta.sessions entries whose stage matches the
+    post-write stage whenever a write transitions status to Todo from non-Todo
+    (covers stage-change auto-reset, Failed->Todo PATCH, drag-to-Todo) per HS-8.
+    Stage-pipeline, PATCH route, instrumentation, types, and settings unchanged
+    (HS-14/HS-15). tsc --noEmit passes. Implementation Notes appended to
+    index.md. No deviations.
+  - >-
+    Validated all 21 acceptance criteria (HS-1 through HS-21) by reading
+    lib/auto-advance.ts, lib/auto-advance-sweeper.ts, lib/workflow-store.ts,
+    lib/stage-pipeline.ts, and the POST/PATCH item routes. tsc --noEmit passes.
+    All criteria pass; appended a ## Validation section to index.md with
+    file:line evidence for each. One implementation nuance worth noting for the
+    next stage: HS-19 (advance-then-start in one tick) is satisfied, but the
+    kick is actually performed by autoAdvanceIfEligible's existing inline
+    triggerStagePipeline call rather than by the follow-on autoStartIfEligible —
+    the latter no-ops because the session entry is already present. Functionally
+    equivalent and within spec. No follow-ups; advancing to Done.
+  - >-
+    Validated all 21 HS-criteria against the implementation in
+    lib/auto-advance.ts, lib/auto-advance-sweeper.ts, lib/workflow-store.ts, and
+    the unchanged kick paths in
+    app/api/workflows/[id]/items/{route.ts,[itemId]/route.ts}. tsc --noEmit
+    passes clean. Sweeper now calls autoAdvanceIfEligible then
+    autoStartIfEligible per item; start branch correctly gates on Todo +
+    non-empty trimmed prompt + no matching sessions[] entry, calls
+    triggerStagePipeline, and catches errors. updateItemMeta clears
+    matching-stage sessions on any Todo-transition (covers stage-change
+    auto-reset, Failed→Todo PATCH, drag writes). HS-19 deserves a small note:
+    the in-tick kick after advance is actually performed by
+    autoAdvanceIfEligible's existing awaited triggerStagePipeline call, with
+    autoStartIfEligible then no-op'ing on the freshly-written session entry —
+    operationally equivalent (one kick on stage B inside the same tick), just
+    performed by a different primitive than the spec's literal wording suggests.
+    Everything else matches the spec exactly. Verdict: Pass; advancing to Done.
+    The Validation section was already present in index.md and accurately
+    reflects the current implementation.
+updatedAt: '2026-04-19T04:48:07.272Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 24cf59d6-6053-4961-a196-7db221fad76c
+    startedAt: '2026-04-19T04:38:51.038Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 44d66bcf-36fb-4dce-83c1-ef810437b349
+    startedAt: '2026-04-19T04:41:23.825Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 938dc5e8-4f66-470f-9972-95e0e76fcfe7
+    startedAt: '2026-04-19T04:43:08.118Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 25ae6f92-72d0-4861-8fa1-fc95493c2aa8
+    startedAt: '2026-04-19T04:45:39.068Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: bfcdb0d3-d154-44dc-b0ab-f3abfa42c27e
+    startedAt: '2026-04-19T04:45:41.746Z'

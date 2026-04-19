@@ -1,0 +1,84 @@
+title: >-
+  New item modal should be similar to update item modal, can create with title,
+  description, stage (default first stage, status is to do)
+stage: Done
+status: Done
+comments:
+  - >-
+    Analysis appended. Scoped to redesigning NewItemDialog.tsx to mirror
+    ItemDetailDialog.tsx (larger dialog, MDEditor description, sidebar stage
+    picker defaulting to first stage, status pinned to Todo). Backend (POST
+    /items) already accepts title/id/body/stage so no API changes needed. Main
+    risks: dialog-size jump, auto-pipeline trigger if a non-first stage is
+    chosen on create, and ~70% markup duplication with the detail dialog. Open
+    questions flagged: shared component extraction (recommend
+    duplicate-now/refactor-later), whether to render status as read-only Todo,
+    ID field placement, auto-focus target, comments placeholder, and whether to
+    allow non-first-stage creation.
+  - >-
+    Specification appended. User stories cover dialog parity, inline
+    description, sidebar stage default, read-only Todo status, and ID
+    preservation. Acceptance criteria codify layout (max-w-4xl, two-column),
+    title auto-focus + required validation, MDEditor via dynamic import, full
+    stages[] picker with stages[0] default, Todo badge non-editable, ID optional
+    pass-through, POST body {title, body?, stage, id?}, and reset on reopen.
+    Technical constraints name the new Props shape (stages: Stage[] replaces
+    firstStageName), files to touch (NewItemDialog.tsx + KanbanBoard caller), no
+    API or store changes. Out-of-scope lists shared-component extraction,
+    editable status, comments section, and stage restrictions.
+  - >-
+    Implementation verified against spec. NewItemDialog.tsx already matches all
+    acceptance criteria: max-w-4xl Dialog, header title input with autoFocus +
+    'Title is required' inline validation, optional ID input,
+    dynamically-imported ItemDescriptionEditor, sidebar stage picker defaulting
+    to stages[0] with active-row styling, non-interactive Todo badge (secondary
+    variant), POST body shaped as {title, body?, stage, id?} with no status
+    field, reset useEffect keyed on open and stages, no comments section.
+    KanbanBoard.tsx already passes stages={stages} to NewItemDialog. tsc
+    --noEmit is clean. No further code changes required; status moved to Done.
+  - >-
+    Implementation verified against spec. NewItemDialog.tsx already matches all
+    23 acceptance criteria: max-w-4xl dialog, header title input (autoFocus +
+    required validation), two-column body with ItemDescriptionEditor (dynamic
+    import) and optional ID field in the main column, sidebar with full stages[]
+    picker defaulting to stages[0] and non-editable Todo status badge
+    (STATUS_VARIANT.Todo = secondary), reset on open, POST body {title, body?,
+    stage, id?} without status, onCreated callback preserved, no comments
+    section. KanbanBoard.tsx passes stages={stages} in place of firstStageName.
+    Typecheck clean. Implementation Notes already present in index.md — no
+    further edits required this run. Deviation (already documented): description
+    editor uses the project's ItemDescriptionEditor per the technical
+    constraint, while ItemDetailDialog still uses @uiw/react-md-editor directly
+    (left untouched per reference-only constraint).
+  - >-
+    Validation complete. All acceptance criteria pass (Layout/sizing, Title +
+    required validation, Description via dynamic ItemDescriptionEditor, Stage
+    picker defaulting to stages[0], read-only Todo status, optional ID
+    passthrough, POST body shape {title, body?, stage, id?}, reset on
+    open/stages change, KanbanBoard wiring, no comments section). Evidence:
+    static review of NewItemDialog.tsx/KanbanBoard.tsx against
+    ItemDetailDialog.tsx, full-project npx tsc --noEmit clean, live dev server
+    returning stages for the requirements workflow. No regressions in the detail
+    dialog or items POST route. Validation section appended to index.md.
+updatedAt: '2026-04-19T04:55:33.801Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 25d54430-f934-4c55-b4da-586598666309
+    startedAt: '2026-04-19T04:09:53.470Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 3151a02b-d7e4-4b26-94a6-666dcdd4a75f
+    startedAt: '2026-04-19T04:11:21.270Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 39d3cac7-248b-4d4d-899a-22b67f648ab5
+    startedAt: '2026-04-19T04:53:01.559Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: a052e55b-2742-48c5-81a3-1c7448c87f2b
+    startedAt: '2026-04-19T04:53:05.236Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 346d81c0-0552-43a9-8894-09323341a3f2
+    startedAt: '2026-04-19T04:53:59.440Z'

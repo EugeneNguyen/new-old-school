@@ -8,6 +8,10 @@ export interface Stage {
   description?: string;
   prompt?: string | null;
   autoAdvanceOnComplete?: boolean | null;
+  agentId?: string | null;
+  // Positive integer limit on how many items to render in the column.
+  // `0`, `null`, or absent all mean "no limit".
+  maxDisplayItems?: number | null;
 }
 
 export type ItemStatus = 'Todo' | 'In Progress' | 'Done' | 'Failed';
@@ -17,6 +21,7 @@ export interface ItemSession {
   adapter: string;
   sessionId: string;
   startedAt: string;
+  agentId?: string;
 }
 
 export interface WorkflowItem {
@@ -35,4 +40,13 @@ export interface WorkflowDetail {
   name: string;
   stages: Stage[];
   items: WorkflowItem[];
+}
+
+export interface Agent {
+  id: string;
+  displayName: string;
+  model: string | null;
+  prompt: string;
+  createdAt: string;
+  updatedAt: string;
 }

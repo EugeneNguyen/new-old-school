@@ -1,0 +1,60 @@
+title: Workflow stage auto advance stage indicate
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis appended to index.md covering scope (display-only stage-header
+    indicator for autoAdvanceOnComplete), feasibility (trivial — data already on
+    Stage type, mirrors existing AI badge in KanbanBoard.tsx:251), dependencies
+    (KanbanBoard.tsx plus parity check in StageDetailDialog.tsx; no
+    backend/auto-advance engine changes), and open questions (icon vs labeled
+    pill, icon choice, placement alongside AI badge, terminal-stage handling,
+    tooltip copy). Next stage (Documentation) should resolve the open questions
+    before specifying.
+  - >-
+    Added the ## Specification section to REQ-00031's index.md with three user
+    stories, eight numbered acceptance criteria (Given/When/Then where useful),
+    technical constraints pinning the file/icon/markup (FastForward pill in
+    components/dashboard/KanbanBoard.tsx:251 with muted colors to distinguish
+    from the primary AI badge), and an explicit out-of-scope list. Resolved the
+    analysis's open questions in-line: labeled pill for symmetry with the AI
+    badge, FastForward icon, side-by-side placement when both flags are set, no
+    indicator on terminal stages, and fixed tooltip copy 'Auto-advances to the
+    next stage when items complete'. Display-only change scoped to
+    KanbanBoard.tsx; no runtime, API, types, or config touched.
+  - >-
+    Implemented REQ-00031 per spec: added FastForward to the lucide-react import
+    in components/dashboard/KanbanBoard.tsx and rendered a muted 'Auto' pill
+    badge in the existing stage-header flex row directly after the AI badge,
+    guarded by stage.autoAdvanceOnComplete truthiness. Classes, icon sizing, and
+    tooltip copy match the specification exactly. No other files touched;
+    display-only change, terminal stages render no badge. Appended ##
+    Implementation Notes to index.md.
+  - >-
+    Validation complete — all 8 acceptance criteria pass. Verified against
+    components/dashboard/KanbanBoard.tsx:262-270: FastForward + 'Auto' pill with
+    exact spec classes (bg-muted text-muted-foreground, h-3 w-3 icon), exact
+    tooltip copy, rendered inside the existing flex items-center gap-1.5 header
+    row immediately after the AI badge, guarded by stage.autoAdvanceOnComplete
+    truthiness. tsc --noEmit clean; AI badge and edit menu unaffected.
+    Working-tree edits to stages.yaml and app/api .../route.ts belong to
+    separate concurrent requirements (auto-advance refactor), not this one.
+    Validation section appended to index.md.
+updatedAt: '2026-04-19T04:31:46.055Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 1713d3a3-6cb0-4f83-a189-654c521e5999
+    startedAt: '2026-04-19T04:27:23.605Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 75b9b5b3-fb4f-4723-a158-62b2a4dc82fd
+    startedAt: '2026-04-19T04:28:24.438Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: ff58af1b-5259-43df-baa1-6116ba2ca450
+    startedAt: '2026-04-19T04:29:25.587Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 1fc31f97-eff8-4079-8ee4-5013235994a6
+    startedAt: '2026-04-19T04:30:24.802Z'

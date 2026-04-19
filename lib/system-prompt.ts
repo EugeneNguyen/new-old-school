@@ -20,13 +20,15 @@ export function saveSystemPrompt(projectRoot: string, content: string): void {
 export function buildAgentPrompt(input: {
   systemPrompt: string | null;
   stagePrompt: string;
+  memberPrompt?: string | null;
   title: string;
   body: string | null | undefined;
   comments?: string[] | null;
   workflowId: string;
   itemId: string;
 }): string {
-  const { systemPrompt, stagePrompt, title, body, comments, workflowId, itemId } = input;
+  const { systemPrompt, stagePrompt, memberPrompt, title, body, comments, workflowId, itemId } =
+    input;
   const bodySection = body ? `\n${body}\n` : '';
   const commentsSection = renderCommentsSection(comments);
   const itemContent = `# ${title}\n${bodySection}${commentsSection}\nworkflowId: ${workflowId}\nitemId: ${itemId}`;
@@ -34,6 +36,9 @@ export function buildAgentPrompt(input: {
   const parts: string[] = [];
   if (systemPrompt !== null) {
     parts.push(`<system-prompt>\n${systemPrompt}\n</system-prompt>`);
+  }
+  if (typeof memberPrompt === 'string' && memberPrompt.trim().length > 0) {
+    parts.push(`<member-prompt>\n${memberPrompt}\n</member-prompt>`);
   }
   parts.push(`<stage-prompt>\n${stagePrompt}\n</stage-prompt>`);
   parts.push(`<item-content>\n${itemContent}\n</item-content>`);

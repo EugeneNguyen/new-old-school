@@ -1,0 +1,65 @@
+title: Setting heart beat should be in second
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analyzed REQ-00032. This is a UI-only change in
+    app/dashboard/settings/page.tsx: relabel 'Interval (minutes)' to seconds and
+    swap the /60000 ↔ *60000 conversions for /1000 ↔ *1000. Storage key
+    (autoAdvanceHeartbeatMs in ms) and API contract (intervalMs) stay unchanged,
+    so the sweeper in lib/auto-advance-sweeper.ts needs no edits and existing
+    saved values load cleanly as whole seconds. Flagged three open questions for
+    the next stage: whether to enforce a soft minimum (e.g. >=5s) to avoid
+    tight-loop sweeping, whether to revisit the 60000ms default, and whether to
+    add an explicit seconds example to the card description.
+  - >-
+    Appended a Specification section to index.md with 3 user stories, 9 numbered
+    acceptance criteria (covering label, load, save, validation, state renames,
+    contract preservation, backward-compat, default, untouched cards), technical
+    constraints (file scope = app/dashboard/settings/page.tsx only, conversion
+    constants ms/1000 and seconds*1000, unchanged API/storage contract, no soft
+    floor), and an explicit out-of-scope list. Resolved the analysis open
+    questions inside the spec: keep current non-negative-integer validation (no
+    soft floor), keep DEFAULT_HEARTBEAT_MS = 60000 (surfaces as 60), and leave
+    card description copy unchanged. Implementer should be able to make the
+    change from this section alone — no code written.
+  - >-
+    Implemented the minutes→seconds switch in app/dashboard/settings/page.tsx
+    only. Renamed heartbeatMinutes/initialHeartbeatMinutes/parsedMinutes to the
+    *Seconds equivalents (no Minutes identifier remains), swapped conversions to
+    ms/1000 on load and seconds*1000 on save, relabelled the input to 'Interval
+    (seconds)' and renamed the id/htmlFor pair to heartbeat-seconds. Validation
+    predicate, '0 = disabled' hint, error copy, and input attrs are unchanged.
+    API and storage contracts are untouched — existing ms values (e.g. 300000)
+    now surface as 300 s and round-trip cleanly, default surfaces as 60 s. tsc
+    --noEmit is clean; one pre-existing 'returnValue is deprecated' warning at
+    line 132 is unrelated to this change. Appended an Implementation Notes
+    section to index.md. No deviations from the spec.
+  - >-
+    Validated REQ-00032 against the spec. All 9 acceptance criteria pass: label
+    + id renamed to heartbeat-seconds, load uses ms/1000 with 60000 default
+    fallback, save uses seconds*1000, validation predicate and copy unchanged,
+    no Minutes-suffixed identifier remains (grep clean), and git diff confirms
+    only app/dashboard/settings/page.tsx was touched — lib/settings.ts, the
+    heartbeat API route, lib/auto-advance-sweeper.ts, and instrumentation.ts are
+    untouched vs HEAD. Backward-compat checked: 300000 ms → displays as 300,
+    round-trips to 300000. npx tsc --noEmit is clean. System Prompt and
+    Notifications cards verified unaffected. No follow-ups; ready to advance.
+updatedAt: '2026-04-19T04:34:20.907Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 2dd04672-0a76-47ba-b744-24f34420dc96
+    startedAt: '2026-04-19T04:29:13.130Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: f36fcce4-6ed9-4701-bc24-852e0ba529a9
+    startedAt: '2026-04-19T04:30:14.903Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 5e874f52-1416-48a3-acd2-4f0a8bad7034
+    startedAt: '2026-04-19T04:31:27.214Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 92b010fc-4a1e-4c67-b10e-cf8acf58350d
+    startedAt: '2026-04-19T04:32:57.983Z'

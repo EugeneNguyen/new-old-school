@@ -2,6 +2,7 @@
   description: Analyze the requirement scope, feasibility, and dependencies.
   prompt: null
   autoAdvanceOnComplete: null
+  agentId: null
 - name: Analysis
   description: Analyze the requirement scope, feasibility, and dependencies.
   prompt: >
@@ -26,7 +27,7 @@
 
     Append the analysis to the item's `index.md` under an `## Analysis` section.
     Do not modify the original request text. Do not start implementation.
-  autoAdvanceOnComplete: false
+  autoAdvanceOnComplete: true
 - name: Documentation
   description: Write detailed requirement specs, user stories, and acceptance criteria.
   prompt: >
@@ -51,7 +52,7 @@
 
     Keep the document the single source of truth — anything an implementer needs
     must be answerable from this section. Do not write code.
-  autoAdvanceOnComplete: false
+  autoAdvanceOnComplete: true
 - name: Implementation
   description: Build the feature or fix according to the documented requirements.
   prompt: >
@@ -78,7 +79,8 @@
 
     Do not mark the stage complete until every acceptance criterion is
     satisfied.
-  autoAdvanceOnComplete: false
+  autoAdvanceOnComplete: true
+  agentId: david-engineer
 - name: Validation
   description: Verify the implementation meets all acceptance criteria.
   prompt: >
@@ -100,9 +102,11 @@
     with a ✅ pass / ❌ fail / ⚠️ partial verdict and the evidence used.
 
     5. If anything fails, leave the item in this stage with a clear list of
-    follow-ups; do not advance to Done.
-  autoAdvanceOnComplete: false
+    follow-ups; do not advance to Done. And then commit and push the code.
+  autoAdvanceOnComplete: true
 - name: Done
   description: The requirement is complete and ready for release.
   prompt: null
-  autoAdvanceOnComplete: null
+  autoAdvanceOnComplete: false
+  agentId: null
+  maxDisplayItems: 10

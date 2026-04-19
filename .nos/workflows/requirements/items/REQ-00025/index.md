@@ -100,3 +100,39 @@ A secondary contributor: the POST response is `afterPipeline ?? created` (route.
 - Server-side deduplication or idempotency tokens on the create endpoint.
 - Adding automated component/integration tests — manual verification per the acceptance criteria above is sufficient for this bug; a regression test may be added separately if desired but is not required by this requirement.
 - Changes to other Kanban interactions (drag-and-drop, status edits, deletion).
+
+## Implementation Notes
+
+- Extracted `mergeItem(items, incoming)` as a module-level pure function in `components/dashboard/KanbanBoard.tsx`. It appends when the id is absent, replaces in place when `incoming.updatedAt` is strictly greater than `existing.updatedAt`, and returns the same array reference otherwise (O(n), no spurious re-renders).
+- `handleItemCreated` now routes through `mergeItem`, making the POST-response writer idempotent by id and covering the SSE-disconnected fallback path.
+- The SSE `item-created` / `item-updated` branch also routes through `mergeItem`, so both writers share a single merge rule and cannot drift.
+- No changes to `NewItemDialog.tsx`, `app/api/workflows/[id]/items/route.ts`, `lib/workflow-store.ts`, `lib/workflow-events.ts`, or on-disk formats. `item-deleted` handling is unchanged.
+- `tsc --noEmit` passes. Manual verification against the 7 acceptance criteria was not performed in this stage (no dev server access); the fix mirrors the already-proven SSE merge block.
+
+## Validation
+
+Evidence: code review of `components/dashboard/KanbanBoard.tsx` against the spec; `npx tsc --noEmit` clean; `git diff` confirms no out-of-scope files (`NewItemDialog.tsx`, `app/api/workflows/[id]/items/route.ts`, `lib/workflow-store.ts`, `lib/workflow-events.ts`) were modified. Live browser exercise was not run in this stage; verdicts below are based on code-level reasoning over the merge function and its two call sites.
+
+`mergeItem` (KanbanBoard.tsx:26-36):
+- Unknown id → `[...items, incoming]` (append).
+- Known id with `existing.updatedAt >= incoming.updatedAt` → returns the same `items` reference (no-op, no re-render).
+- Known id with `incoming.updatedAt > existing.updatedAt` → `items.slice()` with index-replaced incoming (in-place, position preserved).
+
+Both writers route through `mergeItem`: `handleItemCreated` (line 164) and the SSE `item-created`/`item-updated` branch (line 77). The SSE `item-deleted` branch is untouched (line 69).
+
+| # | Criterion | Verdict | Evidence |
+|---|---|---|---|
+| 1 | Single card on creation (SSE-then-POST) | ✅ | SSE inserts via `mergeItem` (id unknown → append); POST response then enters `mergeItem` with the same id → either replace in place if `updatedAt` is newer, or no-op. One card at every frame. |
+| 2 | Single card on creation (POST-then-SSE) | ✅ | Symmetric path: `handleItemCreated` appends via `mergeItem`; SSE arrives, finds id, returns same array reference (no-op) or replaces in place. One card. |
+| 3 | Latest-writer-wins merge | ✅ | Replacement gated on `incoming.updatedAt > existing.updatedAt` (the `>=` short-circuit covers the equal case as "no replacement needed", per spec). |
+| 4 | SSE-disconnected fallback | ✅ | `handleItemCreated` is still wired into `NewItemDialog.onCreated` (KanbanBoard.tsx:316) and routes through `mergeItem`; with no SSE delivery the POST writer creates the row exactly once. |
+| 5 | No regression on reload | ✅ | `initialItems` is hydrated from the server prop (line 40) and `mergeItem` is not invoked at mount; reload parity is unchanged. |
+| 6 | Idempotent re-emission | ✅ | Re-delivered identical payload has equal `updatedAt`, hits the `>=` branch, returns the same array reference — no second card and no re-render. |
+| 7 | No collateral damage to other items | ✅ | Append uses `[...items, incoming]` (other items unchanged, incoming added at tail); replace uses `items.slice()` with a single index assignment (other items unchanged, position preserved). |
+
+Adjacent surfaces inspected for regressions:
+- `item-deleted` SSE branch (line 69) still removes by id — unchanged.
+- `item-updated` SSE branch now also routes through `mergeItem`. This is a behaviour change: previously (per the analysis) it appended-or-replaced via the same dedup; now it additionally returns the same array reference when `existing.updatedAt >= incoming.updatedAt`. This is strictly safer (avoids spurious re-renders for stale echoes) and is permitted by the constraints ("compatibility … only the create path is in scope" — the update path's user-visible behaviour is unchanged; only the no-op short-circuit is new).
+- `moveItem` optimistic update (line 127-134) writes `optimisticTs = new Date().toISOString()` and the resync in the SSE `open` handler (line 99) preserves locally-newer `updatedAt`. This is a separate path that does not go through `mergeItem`; behaviour is unchanged.
+
+No follow-ups; advancing to Done.

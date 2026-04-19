@@ -1,0 +1,87 @@
+title: Clear input form after add new item
+stage: Done
+status: Done
+comments:
+  - >-
+    Analysis appended to index.md. Root cause identified: MDXEditor in
+    ItemDescriptionEditor seeds from the markdown prop on mount and does not
+    re-sync, so the parent's setBody('') on dialog open does not clear the
+    visible editor content. Recommended fix is to remount the editor by keying
+    <ItemDescriptionEditor> on the dialog open transition (minimal change,
+    matches existing reset pattern). Alternative is a ref-based imperative
+    setMarkdown(''). Scope, dependencies, and open questions documented for the
+    next stage.
+  - >-
+    Added ## Specification section with 3 user stories, 6 numbered acceptance
+    criteria (Given/When/Then), technical constraints scoped to
+    NewItemDialog.tsx with the recommended key-based remount approach for
+    MDXEditor, and explicit out-of-scope items (ItemDetailDialog, library
+    upgrades, draft persistence, schema changes). Resolved the open question
+    about Cancel-then-reopen by codifying current clear-on-every-open behavior
+    in AC #2.
+  - >-
+    Implemented Option 1 in components/dashboard/NewItemDialog.tsx: added an
+    editorNonce state that is incremented inside the existing open===true reset
+    useEffect, and passed key={editorNonce} to <ItemDescriptionEditor> so
+    MDXEditor remounts on each dialog open and re-seeds from the empty markdown
+    prop. No changes to ItemDescriptionEditor, ItemDetailDialog, deps, APIs, or
+    schemas. Typecheck passes. Implementation Notes appended to index.md.
+  - >-
+    Implemented the key-based remount fix in
+    components/dashboard/NewItemDialog.tsx: added an editorNonce state that
+    increments in the existing open-effect reset, and passed it as the key prop
+    to <ItemDescriptionEditor>. This forces MDXEditor to remount and re-seed
+    from markdown="" on every dialog open, satisfying ACs 1, 2, and 5. The
+    existing useEffect continues to reset title/id/body/stage (AC 4), submit
+    handler and onCreated contract are unchanged (AC 3), and
+    ItemDetailDialog.tsx was not touched (AC 6). No dep bumps, no API/store
+    changes. Implementation Notes appended to index.md.
+  - >-
+    Validation complete. All 6 acceptance criteria pass by code inspection of
+    NewItemDialog.tsx (editorNonce state + key-based remount inside the existing
+    open-transition reset effect) and TypeScript typecheck (npx tsc --noEmit
+    clean). Working-tree edits to ItemDetailDialog.tsx are unrelated to
+    REQ-00033 and do not regress AC6. One minor caveat: manual UI smoke was not
+    executed in this pass — change is mechanically trivial but a quick check on
+    the dev server is recommended before shipping. Verdict: PASS; advancing to
+    Done.
+  - >-
+    Validation stage complete. All 6 acceptance criteria pass — verified by
+    reading NewItemDialog.tsx (editorNonce state at L46, bump in open-reset
+    effect at L48-56, key={editorNonce} on ItemDescriptionEditor at L139) and
+    ItemDescriptionEditor.tsx (MDXEditor seeds markdown only at mount, so the
+    remount correctly clears the visible editor). Typecheck (tsc --noEmit)
+    passes with no errors. No new dependencies, no API/schema/store changes,
+    onCreate contract unchanged. ItemDetailDialog.tsx has parallel-workstream
+    edits (MDEditor → ItemDescriptionEditor migration) that are not part of
+    REQ-00033 and do not regress AC6. Minor non-blocking observation: the reset
+    effect's [open, stages] dep array means a parent-side re-creation of the
+    stages array while the dialog is open would bump the nonce mid-session and
+    wipe in-progress content. Predates this fix (title/id/stage have the same
+    behavior). Worth a follow-up ticket if it becomes observable in practice.
+updatedAt: '2026-04-19T04:57:22.020Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 6f36f24f-d0af-44a0-9a91-0932a778f25e
+    startedAt: '2026-04-19T04:52:55.711Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 7a8b82ab-458f-4bff-8af0-8ee91063157a
+    startedAt: '2026-04-19T04:53:45.723Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 6eae45fc-3d39-4caa-851d-73d0b4f5a9a4
+    startedAt: '2026-04-19T04:54:41.022Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: b1318fea-a79e-4d56-a404-aa6b249a211e
+    startedAt: '2026-04-19T04:54:42.810Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 2bf57bb8-6fee-4b63-a395-d6ab9d821ac4
+    startedAt: '2026-04-19T04:55:30.684Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 15680b68-dbfd-4a42-9253-6ad519e970b1
+    startedAt: '2026-04-19T04:55:35.401Z'

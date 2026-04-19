@@ -3,7 +3,7 @@ name: nos-edit-item
 description: >-
   Edit a NOS workflow item's title and/or markdown body via the running NOS
   dev server. Use when an agent needs to refine an item's spec in place.
-disable-model-invocation: true
+disable-model-invocation: false
 argument-hint: "--workflow <id> --item <itemId> [--title <title>] [--body <markdown>]"
 ---
 

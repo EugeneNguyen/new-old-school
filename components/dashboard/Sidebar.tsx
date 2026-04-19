@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { PanelLeftClose, PanelLeftOpen, Folder, ChevronDown, ChevronRight } from 'lucide-react';
 import { ToolRegistry } from '@/lib/tool-registry';
 import { cn } from '@/lib/utils';
@@ -8,9 +9,16 @@ import { useSidebar } from './SidebarContext';
 import { useEffect, useState } from 'react';
 import { Workflow } from '@/types/workflow';
 
+function isActive(href: string, pathname: string | null): boolean {
+  if (!pathname) return false;
+  if (href === '/dashboard') return pathname === href;
+  return pathname === href || pathname.startsWith(href + '/');
+}
+
 export default function Sidebar() {
   const tools = ToolRegistry.getAllTools();
   const { collapsed, toggleSidebar } = useSidebar();
+  const pathname = usePathname();
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
   const [workflowsExpanded, setWorkflowsExpanded] = useState(false);
 
@@ -29,6 +37,12 @@ export default function Sidebar() {
     fetchWorkflows();
   }, []);
 
+  useEffect(() => {
+    if (pathname && (pathname === '/dashboard/workflows' || pathname.startsWith('/dashboard/workflows/'))) {
+      setWorkflowsExpanded(true);
+    }
+  }, [pathname]);
+
   return (
     <aside
       className={cn(
@@ -46,16 +60,19 @@ export default function Sidebar() {
       <nav className="flex-1 px-2 py-4 space-y-1">
         {tools.map((tool) => {
           const Icon = ToolRegistry.getIcon(tool.icon);
+          const active = isActive(tool.href, pathname);
           return (
             <Link
               key={tool.id}
               href={tool.href}
               title={tool.name}
+              aria-current={active ? 'page' : undefined}
               className={cn(
                 'flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium',
                 'hover:bg-accent hover:text-accent-foreground',
                 'text-muted-foreground',
-                collapsed && 'justify-center px-0'
+                collapsed && 'justify-center px-0',
+                active && 'bg-accent text-accent-foreground'
               )}
             >
               <Icon className="w-4 h-4 shrink-0" />
@@ -84,19 +101,25 @@ export default function Sidebar() {
           </button>
           {!collapsed && workflowsExpanded && (
             <div className="pl-4 space-y-1">
-              {workflows.map((wf) => (
-                <Link
-                  key={wf.id}
-                  href={`/dashboard/workflows/${wf.id}`}
-                  className={cn(
-                    'flex items-center px-3 py-2 rounded-md transition-colors text-sm font-medium',
-                    'hover:bg-accent hover:text-accent-foreground',
-                    'text-muted-foreground'
-                  )}
-                >
-                  <span className="truncate">{wf.name}</span>
-                </Link>
-              ))}
+              {workflows.map((wf) => {
+                const href = `/dashboard/workflows/${wf.id}`;
+                const active = isActive(href, pathname);
+                return (
+                  <Link
+                    key={wf.id}
+                    href={href}
+                    aria-current={active ? 'page' : undefined}
+                    className={cn(
+                      'flex items-center px-3 py-2 rounded-md transition-colors text-sm font-medium',
+                      'hover:bg-accent hover:text-accent-foreground',
+                      'text-muted-foreground',
+                      active && 'bg-accent text-accent-foreground'
+                    )}
+                  >
+                    <span className="truncate">{wf.name}</span>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>

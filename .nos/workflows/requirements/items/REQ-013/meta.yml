@@ -1,4 +1,55 @@
 title: Workflow Kanban Screen
 stage: Backlog
 status: Todo
-comments: []
+comments:
+  - >-
+    Analysis stage complete. Appended a ## Analysis section to index.md covering
+    scope (Kanban at /dashboard/workflows/[id] driven by stages.yaml + items/,
+    with DnD, detail dialog, and SSE live updates in scope; stage editing and
+    workflow CRUD out), feasibility (viable on existing stack; risks: concurrent
+    writes vs optimistic UI, large-workflow read cost, manual-drag vs
+    auto-advance semantics, DnD a11y, failed-item recovery UX), dependencies
+    (REQ-011/012/014/00018; lib/workflow-store, workflow-events SSE,
+    items/stages APIs, types/workflow, existing dashboard components), and 7
+    open questions for Documentation to resolve (manual drag triggers prompts?,
+    failed-item reset UX, per-stage maxDisplayItems, intra-column ordering,
+    sidebar nav, running-stage indicator, malformed-YAML surfacing). Did not
+    modify original request text or start implementation.
+  - >-
+    Added a formal Specification section to REQ-013 covering user stories,
+    numbered acceptance criteria, technical constraints, and explicit
+    out-of-scope boundaries. The spec resolves the main open UX questions by
+    defining manual drag as a pure stage/status mutation that resets moved items
+    to Todo without triggering prompts, keeps failed-item recovery discoverable
+    via the item UI, and requires SSE-based reconciliation for concurrent
+    updates.
+  - >-
+    Added and tightened the Specification section in REQ-013 so it can serve as
+    the implementation source of truth. It now defines user stories, numbered
+    acceptance criteria, technical constraints, and out-of-scope boundaries,
+    including explicit decisions for manual drag behavior, failed-item recovery,
+    ordering, truncation, navigation scope, and error handling expectations for
+    the workflow Kanban board.
+updatedAt: '2026-04-19T06:22:18.770Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 7f2f3224-a598-4034-9594-04ab32224c53
+    startedAt: '2026-04-19T06:00:12.866Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: a3a9a0d8-3a69-4ceb-a0d4-cfaf969f6448
+    startedAt: '2026-04-19T06:01:28.664Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 920932de-1609-4ddd-8a72-580b0356c6fd
+    startedAt: '2026-04-19T06:01:30.062Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 1b9623a3-1c74-42ef-a74a-d8b6d7c10c0a
+    startedAt: '2026-04-19T06:03:08.507Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 79c98d89-6d10-46d4-b162-464512139143
+    startedAt: '2026-04-19T06:04:42.254Z'

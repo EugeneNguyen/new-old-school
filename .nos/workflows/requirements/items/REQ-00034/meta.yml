@@ -1,0 +1,85 @@
+title: Introduct Member Agent
+stage: Done
+status: Todo
+comments:
+  - >-
+    Appended an ## Analysis section to index.md covering Scope (in/out),
+    Feasibility (storage, model override via claude --model flag, prompt
+    assembly, pipeline plumbing, risks), Dependencies (lib/agent-adapter.ts,
+    lib/system-prompt.ts, lib/stage-pipeline.ts, lib/workflow-store.ts,
+    types/workflow.ts, new lib/agents-store.ts + /api/agents routes +
+    app/dashboard/agents page, StageDetailDialog, KanbanBoard, Sidebar; reuses
+    .nos/<resource>/<id>/{meta.yml,index.md} convention), and 10 Open questions.
+    Key recommendation for the Documentation stage: stage owns the agentId
+    assignment in stages.yaml (parallels existing prompt/autoAdvanceOnComplete
+    fields), one agent per stage in v1, agent id immutable after create, model
+    picker is a curated dropdown with Other escape hatch, no implicit default
+    agent. Open question #8 (exact claude CLI model flag spelling) should be
+    verified during Implementation. Original request text untouched.
+  - >-
+    Wrote the ## Specification section: locked decisions from the analysis
+    (stage-owns-assignment, slug ids, curated model dropdown with Other, no
+    default agent, immutable id, one agent per stage, column-header pill,
+    top-level Members sidebar entry); 8 user stories; 30 numbered
+    Given/When/Then acceptance criteria covering storage layout, stage<->agent
+    linkage (incl. 409-on-delete-when-referenced), prompt assembly (member block
+    strictly between system and stage), adapter --model passthrough, pipeline
+    fallbacks for missing agents, full HTTP CRUD shape, dashboard UI (Members
+    page reusing ItemDescriptionEditor, agent select in StageDetailDialog,
+    KanbanBoard column pill), and a behavioral-compatibility clause guaranteeing
+    byte-identical output when no agents are defined; technical constraints
+    fixing on-disk paths, slug regex, type additions, argv ordering, and error
+    codes; explicit out-of-scope list. One verification note for the next stage:
+    confirm the installed claude CLI flag is --model (AC 15) — if it differs,
+    update the adapter accordingly; the contract holds regardless of spelling.
+  - >-
+    Implemented REQ-00034 Member Agent. New: lib/agents-store.ts with slug-based
+    ids + atomic writes, app/api/agents CRUD routes (POST/GET/PATCH/DELETE with
+    409+references on delete-while-referenced), app/dashboard/agents Members
+    page (list/create/edit/delete, curated model dropdown with Other escape
+    hatch, ItemDescriptionEditor for prompt), and a top-level Members sidebar
+    entry via config/tools.json. Extended: types/workflow.ts (Stage.agentId,
+    ItemSession.agentId, Agent type); lib/workflow-store.ts to round-trip
+    agentId on stages and sessions and accept it in StagePatch;
+    lib/system-prompt.ts buildAgentPrompt gained memberPrompt that emits
+    <member-prompt> strictly between <system-prompt> and <stage-prompt>
+    (byte-identical output when omitted/blank); lib/agent-adapter.ts
+    startSession accepts model and appends --model <id> immediately before
+    --dangerously-skip-permissions when set; lib/stage-pipeline.ts resolves
+    stage.agentId, threads prompt+model, records agentId on the session, warns
+    and runs-through when agent missing; stage PATCH route validates agent
+    existence with 400. KanbanBoard renders an inline agent pill next to AI/Auto
+    pills (muted italic for missing). Tests: npm test 9/9 pass including two new
+    member-prompt cases; npx tsc --noEmit clean. No deviations. Verification
+    note for the next stage: AC 15 — confirm the installed claude CLI accepts
+    --model; if it differs, update lib/agent-adapter.ts:30.
+  - >-
+    Validation complete. 30/30 ACs verified via code review, npm test (9/9 incl.
+    two new member-prompt cases), tsc --noEmit (clean), and live API smoke-tests
+    against localhost:30128: agent CRUD (201/400/404/409 all exercised), stage
+    PATCH agentId (accepts, rejects unknown with 400, clears with null),
+    stages.yaml round-trips agentId, 409 deletion lists {workflowId,stageName}
+    references, and GET /dashboard/agents returns 200. AC 15 is marked partial
+    (⚠️) solely because the claude CLI flag spelling was not verified against
+    the installed binary — the adapter matches the spec contract (--model <id>
+    immediately before --dangerously-skip-permissions). Validation section
+    appended to index.md (commit be92204, pushed to main). No follow-ups.
+    Advancing to Done.
+updatedAt: '2026-04-19T05:56:43.048Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: f399a9a4-8032-4e05-b1cb-a8b9bf719598
+    startedAt: '2026-04-19T05:40:22.010Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 81c980ed-19a5-4740-8ca1-56d04e7251f5
+    startedAt: '2026-04-19T05:42:38.186Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: ff67f556-00d7-44ba-a405-3a7f13542c61
+    startedAt: '2026-04-19T05:44:20.490Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 799cd7ed-4046-43e9-95ae-a0e31c28c685
+    startedAt: '2026-04-19T05:52:50.132Z'

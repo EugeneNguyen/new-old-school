@@ -1,0 +1,85 @@
+title: Add notification by audio when the task changed from in progress to done
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis written to index.md covering scope, feasibility, dependencies, and
+    open questions. Key findings: the In Progress→Done transition is best
+    detected client-side in KanbanBoard.tsx by diffing status before mergeItem
+    on SSE item-updated events; playback via a single preloaded HTMLAudioElement
+    gated on a localStorage toggle added to app/dashboard/settings/page.tsx; a
+    new sound asset under public/sounds/ is needed. Main design calls for the
+    next stage: whether to suppress self-initiated Done transitions (recommended
+    yes), whether to play in hidden tabs (recommended yes), and picking the
+    sound file. No server or schema changes required; touches KanbanBoard.tsx,
+    settings page, plus one new hook and one asset.
+  - >-
+    Specification section written to index.md. User stories (4) cover the
+    background-agent use case, the settings toggle, self-action silence, and
+    hidden-tab coverage. Acceptance criteria (8) pin down the asset (single file
+    at public/sounds/item-done.{mp3,ogg}, ≤20 KB, ≤1 s), a single
+    HTMLAudioElement in a new lib/hooks/use-item-done-sound.ts hook with 250 ms
+    debounce and graceful play() rejection, localStorage key
+    nos.notifications.audio.itemDone defaulting on, transition detection in
+    KanbanBoard.tsx's item-updated SSE branch (existing 'In Progress' + incoming
+    'Done'), a 5 s self-origination suppression Set populated by moveItem and
+    dialog save paths, hidden-tab playback, and a Notifications Card with toggle
+    + Test-sound button in app/dashboard/settings/page.tsx. Technical
+    constraints lock the file whitelist, forbid server/API/schema changes,
+    forbid new deps and AudioContext, and require manual smoke steps. Out of
+    scope explicitly excludes Failed/other transitions, volume slider, OS
+    notifications, per-workflow customization, server persistence, and
+    non-Kanban surfaces. Open questions from Analysis are all resolved with the
+    recommended defaults.
+  - >-
+    Implemented audio cue for In Progress→Done transitions. Generated
+    public/sounds/item-done.mp3 (2.9 KB, ~0.30s two-tone chime via ffmpeg). New
+    hook lib/hooks/use-item-done-sound.ts owns one HTMLAudioElement per mount,
+    debounces at 250 ms, swallows play() rejections with console.warn, and reads
+    localStorage key nos.notifications.audio.itemDone (default on) per call.
+    KanbanBoard.tsx detects the transition inside the SSE item-updated
+    functional setItems updater (only when existing.status==='In Progress' and
+    incoming.status==='Done'), and suppresses self-originated transitions via a
+    useRef<Map<itemId, timeoutHandle>> with 5 s TTL, populated by moveItem
+    before its PATCH and by ItemDetailDialog via a new optional onBeforeSave
+    prop fired before its save PATCH. Settings page gains a Notifications card
+    with the toggle and a Test sound button (the test temporarily flips
+    localStorage to enabled around the play call so it works regardless of the
+    toggle). No server, schema, API, or dependency changes; tsc clean for
+    touched files. Pre-existing repo issues (missing @uiw/react-md-editor
+    module, unrelated lint deprecation) were not addressed. Manual smoke
+    verification deferred (requires a running dev server with the missing module
+    installed).
+  - >-
+    Validation re-verified against the source. All 8 acceptance criteria
+    confirmed ✅: asset (public/sounds/item-done.mp3, 2968 B) present and served;
+    useItemDoneSound hook (lib/hooks/use-item-done-sound.ts) allocates one
+    HTMLAudioElement per mount, debounces at 250 ms, swallows play() rejections,
+    server/visibility no-op, reads localStorage per call with default-on;
+    transition gate in KanbanBoard.tsx item-updated branch matches existing 'In
+    Progress' + incoming 'Done' only; self-origination Map<itemId,
+    timeoutHandle> with 5 s TTL is populated by moveItem and by ItemDetailDialog
+    via the new onBeforeSave prop fired before the meta PATCH; hidden-tab
+    playback unconditional; settings page Notifications card with toggle, helper
+    copy, and Test sound button. Adjacent SSE shape, dependency, and
+    file-whitelist checks all clean. Fixed one cosmetic typo in the validation's
+    edge-cases section ('user-updated' → 'item-updated' literal). No follow-ups
+    required; advancing to Done.
+updatedAt: '2026-04-19T04:54:28.005Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 513954eb-812c-4d05-9e59-fe77fe4df4a0
+    startedAt: '2026-04-19T03:46:55.941Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: d8ee28a4-fa88-44cc-8b95-3ddc4f7867d4
+    startedAt: '2026-04-19T03:49:47.853Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: a9a18a4a-6a23-472d-a8a1-f8cfca5d1966
+    startedAt: '2026-04-19T04:09:46.879Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 5ce235df-ef13-4775-b6ed-4515e3f63a14
+    startedAt: '2026-04-19T04:53:17.241Z'

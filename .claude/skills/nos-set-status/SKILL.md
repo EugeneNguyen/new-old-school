@@ -3,7 +3,7 @@ name: nos-set-status
 description: >-
   Change a NOS workflow item's status between `Todo`, `In Progress`, and
   `Done` via the running NOS dev server.
-disable-model-invocation: true
+disable-model-invocation: false
 argument-hint: "--workflow <id> --item <itemId> --status <Todo|In Progress|Done>"
 ---
 

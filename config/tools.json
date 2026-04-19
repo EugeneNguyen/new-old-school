@@ -18,6 +18,15 @@
     "category": "utility"
   },
   {
+    "id": "members",
+    "name": "Members",
+    "href": "/dashboard/agents",
+    "icon": "Users",
+    "description": "Manage member agents",
+    "endpoint": "/api/agents",
+    "category": "core"
+  },
+  {
     "id": "settings",
     "name": "Settings",
     "href": "/dashboard/settings",

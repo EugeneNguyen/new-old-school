@@ -1,8 +1,6 @@
-import rehypeRaw from 'rehype-raw';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import remarkBreaks from 'remark-breaks';
 import type { Schema } from 'hast-util-sanitize';
-import type { MDEditorProps } from '@uiw/react-md-editor';
 import type { Plugin, PluggableList } from 'unified';
 
 type AttrList = NonNullable<Schema['attributes']>[string];
@@ -48,6 +46,12 @@ const escapeDisallowedHtml: Plugin<[], any> = () => (tree: any) => {
 
 export const markdownSanitizeSchema: Schema = {
   ...defaultSchema,
+  // Remove these elements *together with their children* — not just the wrapper.
+  // `defaultSchema.strip` ships only with `script`; without adding `style`,
+  // `hast-util-sanitize` drops the `<style>` element but keeps its CSS text
+  // children, which leaks `body{color:red}`-style text into the rendered DOM
+  // (REQ-00018 AC4).
+  strip: [...(defaultSchema.strip ?? []), 'style'],
   attributes: {
     ...(defaultSchema.attributes ?? {}),
     code: [
@@ -72,12 +76,6 @@ export const markdownSanitizeSchema: Schema = {
     ...(defaultSchema.protocols ?? {}),
     src: [...(defaultSchema.protocols?.src ?? []), 'data'],
   },
-};
-
-export const markdownPreviewOptions: NonNullable<MDEditorProps['previewOptions']> = {
-  remarkPlugins: [escapeDisallowedHtml],
-  remarkRehypeOptions: { allowDangerousHtml: true },
-  rehypePlugins: [rehypeRaw, [rehypeSanitize, markdownSanitizeSchema]],
 };
 
 // Comment-render pipeline: no rehype-raw (raw HTML passthrough is not allowed on

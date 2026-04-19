@@ -1,0 +1,51 @@
+title: Able to switch between display in list and display in kanban
+stage: Backlog
+status: Todo
+comments:
+  - >-
+    Analysis complete. index.md was empty, so I wrote the original title as a
+    one-line summary at the top (not modifying any prior request text) and
+    appended the Analysis section covering scope, feasibility, dependencies, and
+    open questions. Key finding: this is a presentation-only change with low
+    risk; the main effort is lifting shared state (items, events subscription,
+    dialogs, self-origination tracking) out of KanbanBoard into a parent or hook
+    so a new ListView can reuse it. Six open questions for the documentation
+    stage — most importantly default view, persistence scope (global vs
+    per-workflow localStorage), and list grouping/columns.
+  - >-
+    Added ## Specification to index.md: 6 user stories, 14 numbered acceptance
+    criteria (Given/When/Then where useful), technical constraints (files to
+    touch, new useWorkflowItems hook, per-workflow localStorage key
+    nos:workflow:<id>:viewMode, reuse of existing types and UI primitives,
+    SSR/quota guards, baseline a11y), and an explicit out-of-scope list.
+    Resolved the open questions inline: default=Kanban, persistence=per-workflow
+    localStorage, list grouped by stage then sorted by updatedAt desc, columns
+    Title/Stage/Status/Agent/Updated, failed items keep destructive Badge, full
+    arrow-key nav deferred. No code written.
+updatedAt: '2026-04-19T06:25:51.688Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 9cee1045-e459-439b-acbb-df235d0ff296
+    startedAt: '2026-04-19T05:58:34.200Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 4cadf909-255a-445a-8e69-6ca96d7f9981
+    startedAt: '2026-04-19T05:59:51.282Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 288194e5-e547-424d-b2c2-d6eb3764abde
+    startedAt: '2026-04-19T06:01:16.260Z'
+    agentId: david-engineer
+  - stage: Implementation
+    adapter: claude
+    sessionId: 06782c54-8442-4414-a25d-ebc9b906672d
+    startedAt: '2026-04-19T06:01:22.569Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 796a4011-5a4e-410e-bae8-d78c79313324
+    startedAt: '2026-04-19T06:08:46.319Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 26c15f24-3ffa-4435-996e-345845a75500
+    startedAt: '2026-04-19T06:22:54.939Z'

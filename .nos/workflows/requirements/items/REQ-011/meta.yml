@@ -1,4 +1,50 @@
 title: Workflow Engine
 stage: Backlog
 status: Todo
-comments: []
+comments:
+  - >-
+    Appended ## Analysis to index.md covering scope (engine core: types,
+    file-backed store, stage pipeline, transitions, events, REST surface;
+    explicitly out: adapters, multi-user, auth, analytics), feasibility (engine
+    already partly built in lib/workflow-store.ts + lib/stage-pipeline.ts; risks
+    around auto-advance races, failed-session cleanup, SSE durability, config
+    hot-reload), dependencies (internal modules, sibling REQs
+    012/013/00014/00034/00037, filesystem + adapter subprocess), and 8 open
+    questions (transition authority, failed recovery UX, concurrency,
+    auto-advance edge cases, stage mutability, session retention, event-schema
+    stability, ID allocation) that Documentation should resolve.
+  - >-
+    Analysis is already present in
+    .nos/workflows/requirements/items/REQ-011/index.md and the item has
+    auto-advanced to Documentation. I did not change status at the end of this
+    run because the item was no longer in Analysis; forcing Done here would
+    overwrite the current Documentation-stage Todo state.
+  - >-
+    Added ## Specification to index.md with user stories, numbered acceptance
+    criteria, technical constraints, and explicit out-of-scope boundaries for
+    the workflow engine. The spec resolves the requirement as a documentation
+    source of truth for shared types, file-backed persistence, lifecycle
+    transitions, pipeline triggering, auto-advance behavior, event emission, and
+    REST integration expectations.
+updatedAt: '2026-04-19T07:00:16.319Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 5c1ceeb0-2138-492c-b172-21f2bc208cbb
+    startedAt: '2026-04-19T06:00:10.074Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 6af79eb2-85ef-4f34-ba61-c1bdaff81ad9
+    startedAt: '2026-04-19T06:00:14.981Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 54e3e794-d834-4902-9c6c-7de24cf34bde
+    startedAt: '2026-04-19T06:01:35.272Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: b3d0b92b-0810-4d2f-ae8c-984b73e95f32
+    startedAt: '2026-04-19T06:03:22.796Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: aeaa8da0-294a-431e-a674-139a30b77627
+    startedAt: '2026-04-19T06:26:23.057Z'

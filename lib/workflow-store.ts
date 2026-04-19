@@ -7,7 +7,6 @@ import { emitItemCreated, emitItemUpdated } from '@/lib/workflow-events';
 const WORKFLOWS_ROOT = path.join(process.cwd(), '.nos', 'workflows');
 const META_FILE = 'meta.yml';
 const CONTENT_FILE = 'index.md';
-const EPOCH_ISO = '1970-01-01T00:00:00.000Z';
 
 function atomicWriteFile(filePath: string, contents: string): void {
   const tmp = `${filePath}.tmp`;
@@ -47,21 +46,25 @@ export function workflowExists(id: string): boolean {
 
 export interface WorkflowConfig {
   name: string;
-  idPrefix?: string;
+  idPrefix: string;
 }
 
-const ID_PADDING = 5;
+const MIN_ID_PADDING = 3;
+const VALID_STATUSES: ItemStatus[] = ['Todo', 'In Progress', 'Done', 'Failed'];
 
 export function readWorkflowConfig(id: string): WorkflowConfig | null {
   const configPath = path.join(workflowDir(id), 'config.json');
   if (!fs.existsSync(configPath)) return null;
   try {
-    const parsed = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    const config: WorkflowConfig = { name: parsed.name || id };
-    if (typeof parsed.idPrefix === 'string' && parsed.idPrefix.trim()) {
-      config.idPrefix = parsed.idPrefix.trim();
-    }
-    return config;
+    const parsed = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as Record<string, unknown>;
+    const keys = Object.keys(parsed);
+    if (keys.length !== 2 || !keys.includes('name') || !keys.includes('idPrefix')) return null;
+    if (typeof parsed.name !== 'string' || !parsed.name.trim()) return null;
+    if (typeof parsed.idPrefix !== 'string' || !parsed.idPrefix.trim()) return null;
+    return {
+      name: parsed.name.trim(),
+      idPrefix: parsed.idPrefix.trim(),
+    };
   } catch {
     return null;
   }
@@ -70,15 +73,17 @@ export function readWorkflowConfig(id: string): WorkflowConfig | null {
 function nextPrefixedId(itemsRoot: string, prefix: string): string {
   const pattern = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-(\\d+)$`);
   let max = 0;
+  let widestWidth = MIN_ID_PADDING;
   if (fs.existsSync(itemsRoot)) {
     for (const entry of fs.readdirSync(itemsRoot)) {
       const m = entry.match(pattern);
       if (!m) continue;
+      widestWidth = Math.max(widestWidth, m[1].length);
       const n = parseInt(m[1], 10);
       if (Number.isFinite(n) && n > max) max = n;
     }
   }
-  return `${prefix}-${String(max + 1).padStart(ID_PADDING, '0')}`;
+  return `${prefix}-${String(max + 1).padStart(widestWidth, '0')}`;
 }
 
 export function readStages(id: string): Stage[] {
@@ -87,71 +92,154 @@ export function readStages(id: string): Stage[] {
   const raw = fs.readFileSync(stagesPath, 'utf-8');
   const parsed = yaml.load(raw);
   if (!Array.isArray(parsed)) return [];
-  return parsed
-    .filter((s): s is Record<string, unknown> => !!s && typeof s === 'object')
-    .map((s) => ({
-      name: String(s.name ?? ''),
-      description: s.description ? String(s.description) : undefined,
-      prompt: (s.prompt ?? null) as string | null,
-      autoAdvanceOnComplete: (s.autoAdvanceOnComplete ?? null) as boolean | null,
-    }))
-    .filter((s) => s.name.length > 0);
+
+  const seenNames = new Set<string>();
+  const stages: Stage[] = [];
+
+  for (const entry of parsed) {
+    if (!entry || typeof entry !== 'object') return [];
+    const s = entry as Record<string, unknown>;
+    if (typeof s.name !== 'string' || !s.name.trim()) return [];
+    if (typeof s.description !== 'string') return [];
+    if (typeof s.prompt !== 'string' && s.prompt !== null) return [];
+    if (typeof s.autoAdvanceOnComplete !== 'boolean' && s.autoAdvanceOnComplete !== null) return [];
+    if (s.agentId !== undefined && s.agentId !== null && typeof s.agentId !== 'string') return [];
+    if (s.maxDisplayItems !== undefined && s.maxDisplayItems !== null) {
+      if (typeof s.maxDisplayItems !== 'number') return [];
+      if (!Number.isInteger(s.maxDisplayItems) || s.maxDisplayItems <= 0) return [];
+    }
+
+    const name = s.name.trim();
+    if (seenNames.has(name)) return [];
+    seenNames.add(name);
+
+    const stage: Stage = {
+      name,
+      description: s.description,
+      prompt: typeof s.prompt === 'string' ? s.prompt : null,
+      autoAdvanceOnComplete:
+        typeof s.autoAdvanceOnComplete === 'boolean' ? s.autoAdvanceOnComplete : null,
+      agentId: typeof s.agentId === 'string' && s.agentId ? s.agentId : null,
+    };
+    if (typeof s.maxDisplayItems === 'number') {
+      stage.maxDisplayItems = s.maxDisplayItems;
+    }
+    stages.push(stage);
+  }
+
+  return stages;
 }
 
-function normalizeStatus(value: unknown): ItemStatus {
-  const v = String(value ?? 'Todo');
-  if (v === 'Todo' || v === 'In Progress' || v === 'Done' || v === 'Failed') return v;
-  return 'Todo';
+function parseStatus(value: unknown): ItemStatus | null {
+  return typeof value === 'string' && VALID_STATUSES.includes(value as ItemStatus)
+    ? (value as ItemStatus)
+    : null;
 }
 
 function readItemFolder(workflowId: string, itemId: string): WorkflowItem | null {
   const dir = itemDir(workflowId, itemId);
   const metaPath = path.join(dir, META_FILE);
-  if (!fs.existsSync(metaPath)) return null;
+  const contentPath = path.join(dir, CONTENT_FILE);
+  if (!fs.existsSync(metaPath) || !fs.existsSync(contentPath)) return null;
+
   const meta = yaml.load(fs.readFileSync(metaPath, 'utf-8'));
-  if (!meta || typeof meta !== 'object') return null;
+  if (!meta || typeof meta !== 'object' || Array.isArray(meta)) return null;
   const data = meta as Record<string, unknown>;
 
-  const contentPath = path.join(dir, CONTENT_FILE);
-  const body = fs.existsSync(contentPath) ? fs.readFileSync(contentPath, 'utf-8').trim() : undefined;
+  if (typeof data.title !== 'string' || !data.title.trim()) return null;
+  if (typeof data.stage !== 'string' || !data.stage.trim()) return null;
+  const stages = readStages(workflowId);
+  if (!stages.some((stage) => stage.name === data.stage)) return null;
+
+  const status = parseStatus(data.status);
+  if (!status) return null;
+
+  if (!Array.isArray(data.comments) || !data.comments.every((comment) => typeof comment === 'string')) {
+    return null;
+  }
+
+  if (typeof data.updatedAt !== 'string' || !data.updatedAt.trim()) return null;
+  if (Number.isNaN(Date.parse(data.updatedAt))) return null;
+
+  const sessions = parseSessions(data.sessions);
+  if (!sessions) return null;
+
+  const body = fs.readFileSync(contentPath, 'utf-8').trim();
 
   return {
     id: itemId,
-    title: String(data.title ?? itemId),
-    stage: String(data.stage ?? ''),
-    status: normalizeStatus(data.status),
-    comments: Array.isArray(data.comments) ? data.comments.map(String) : [],
+    title: data.title,
+    stage: data.stage,
+    status,
+    comments: data.comments,
     body: body || undefined,
-    sessions: parseSessions(data.sessions),
-    updatedAt: typeof data.updatedAt === 'string' && data.updatedAt ? data.updatedAt : EPOCH_ISO,
+    sessions,
+    updatedAt: data.updatedAt,
   };
 }
 
-function parseSessions(raw: unknown): ItemSession[] | undefined {
-  if (!Array.isArray(raw)) return undefined;
+function parseSessions(raw: unknown): ItemSession[] | null {
+  if (!Array.isArray(raw)) return null;
   const sessions: ItemSession[] = [];
   for (const entry of raw) {
-    if (!entry || typeof entry !== 'object') continue;
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return null;
     const e = entry as Record<string, unknown>;
-    if (typeof e.sessionId !== 'string' || !e.sessionId) continue;
-    sessions.push({
-      stage: String(e.stage ?? ''),
-      adapter: String(e.adapter ?? ''),
+    if (typeof e.stage !== 'string' || !e.stage) return null;
+    if (typeof e.adapter !== 'string' || !e.adapter) return null;
+    if (typeof e.sessionId !== 'string' || !e.sessionId) return null;
+    if (typeof e.startedAt !== 'string' || !e.startedAt || Number.isNaN(Date.parse(e.startedAt))) {
+      return null;
+    }
+    const session: ItemSession = {
+      stage: e.stage,
+      adapter: e.adapter,
       sessionId: e.sessionId,
-      startedAt: String(e.startedAt ?? ''),
-    });
+      startedAt: e.startedAt,
+    };
+    if (e.agentId !== undefined && e.agentId !== null) {
+      if (typeof e.agentId !== 'string' || !e.agentId) return null;
+      session.agentId = e.agentId;
+    }
+    sessions.push(session);
   }
-  return sessions.length > 0 ? sessions : undefined;
+  return sessions;
+}
+
+export function listWorkflows(): string[] {
+  if (!fs.existsSync(WORKFLOWS_ROOT)) return [];
+  const out: string[] = [];
+  for (const entry of fs.readdirSync(WORKFLOWS_ROOT)) {
+    const full = path.join(WORKFLOWS_ROOT, entry);
+    try {
+      if (fs.statSync(full).isDirectory()) out.push(entry);
+    } catch {
+      // ignore
+    }
+  }
+  return out;
+}
+
+export function listItems(workflowId: string): string[] {
+  const itemsDir = path.join(workflowDir(workflowId), 'items');
+  if (!fs.existsSync(itemsDir)) return [];
+  const out: string[] = [];
+  for (const entry of fs.readdirSync(itemsDir)) {
+    const full = path.join(itemsDir, entry);
+    try {
+      if (!fs.statSync(full).isDirectory()) continue;
+      const hasMeta = fs.existsSync(path.join(full, META_FILE));
+      const hasContent = fs.existsSync(path.join(full, CONTENT_FILE));
+      if (hasMeta && hasContent) out.push(entry);
+    } catch {
+      // ignore
+    }
+  }
+  return out;
 }
 
 export function readItems(workflowId: string): WorkflowItem[] {
-  const itemsDir = path.join(workflowDir(workflowId), 'items');
-  if (!fs.existsSync(itemsDir)) return [];
-  const entries = fs.readdirSync(itemsDir);
   const items: WorkflowItem[] = [];
-  for (const entry of entries) {
-    const entryPath = path.join(itemsDir, entry);
-    if (!fs.statSync(entryPath).isDirectory()) continue;
+  for (const entry of listItems(workflowId)) {
     try {
       const item = readItemFolder(workflowId, entry);
       if (item) items.push(item);
@@ -211,6 +299,9 @@ export function updateItemMeta(
     meta.status = 'Todo';
   }
 
+  const newStatus = parseStatus(meta.status);
+  if (!newStatus) return null;
+
   return writeMeta(workflowId, itemId, meta, 'updated');
 }
 
@@ -250,6 +341,8 @@ export interface StagePatch {
   description?: string | null;
   prompt?: string | null;
   autoAdvanceOnComplete?: boolean | null;
+  agentId?: string | null;
+  maxDisplayItems?: number | null;
 }
 
 export function updateStage(
@@ -290,6 +383,16 @@ export function updateStage(
   if (patch.autoAdvanceOnComplete !== undefined) {
     current.autoAdvanceOnComplete = patch.autoAdvanceOnComplete ?? null;
   }
+  if (patch.agentId !== undefined) {
+    current.agentId = patch.agentId ?? null;
+  }
+  if (patch.maxDisplayItems !== undefined) {
+    if (patch.maxDisplayItems === null || patch.maxDisplayItems === 0) {
+      delete current.maxDisplayItems;
+    } else {
+      current.maxDisplayItems = patch.maxDisplayItems;
+    }
+  }
 
   atomicWriteFile(stagesPath, yaml.dump(list));
 
@@ -317,15 +420,6 @@ export function updateStage(
     stages: readStages(workflowId),
     items: readItems(workflowId),
   };
-}
-
-function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 64);
 }
 
 export interface CreateItemInput {
@@ -368,16 +462,8 @@ export function createItem(
       finalId = `${explicitId}-${counter++}`;
       if (counter > 9999) return null;
     }
-  } else if (config?.idPrefix) {
-    finalId = nextPrefixedId(itemsRoot, config.idPrefix);
   } else {
-    const baseId = slugify(title) || `item-${Date.now()}`;
-    finalId = baseId;
-    let counter = 1;
-    while (fs.existsSync(path.join(itemsRoot, finalId))) {
-      finalId = `${baseId}-${counter++}`;
-      if (counter > 9999) return null;
-    }
+    finalId = nextPrefixedId(itemsRoot, config.idPrefix);
   }
 
   const dir = path.join(itemsRoot, finalId);
@@ -392,6 +478,7 @@ export function createItem(
     stage: stageName,
     status: 'Todo' as ItemStatus,
     comments: [] as string[],
+    sessions: [] as ItemSession[],
   };
   return writeMeta(workflowId, finalId, meta, 'created');
 }

@@ -99,3 +99,35 @@ Risks / unknowns:
 - Retroactive re-runs of items whose prior stage executions did not see comments.
 - Introducing a new XML tag such as `<item-comments>` as a sibling of `<item-content>`; the system prompt contract is preserved by keeping comments inside `<item-content>`.
 - Updating `.nos/system-prompt.md` to describe the new `## Comments` subsection — treated as a non-blocking follow-up doc tweak, not part of this requirement's Definition of Done.
+
+## Implementation Notes
+
+- `lib/system-prompt.ts` — `buildAgentPrompt` gained an optional `comments?: string[] | null` field. A new internal `renderCommentsSection` helper renders `## Comments` with numbered `### Comment N` subsections between the body and the trailing `workflowId:` / `itemId:` lines. Returns `''` for `undefined`, `null`, `[]`, and all-blank arrays, so the no-comments output is byte-identical to the pre-change golden. Trailing whitespace per comment is trimmed; internal content is preserved verbatim.
+- `lib/stage-pipeline.ts` — `triggerStagePipeline` now forwards `item.comments` into `buildAgentPrompt`. No other call sites added.
+- `lib/system-prompt.test.ts` (new) — `node --test` suite covering: no-comments golden, empty/null/all-blank equivalence, placement/numbering of multi-comment output, blank-skipping with numbering over rendered comments only, verbatim preservation of multi-line markdown comments (headings + code fences), and the body-absent path.
+- `tsconfig.json` — added `allowImportingTsExtensions: true` so the test file can `import … from './system-prompt.ts'` (required by Node 25's native TypeScript strip-types runner, which resolves by actual on-disk filename under ESM).
+- `package.json` — added `"test": "node --test lib/**/*.test.ts"` script.
+- Deviations: none from the spec. AC #10 calls for `npm run lint` to pass; `next lint` is currently broken on `main` with `Invalid project directory provided, no such directory: …/lint` (reproduced on a clean stash), so it is a pre-existing failure unrelated to this change. `npx tsc --noEmit` passes and `npm test` passes 7/7.
+- Deferred per spec: no update to `.nos/system-prompt.md`, no UI changes, no comment schema changes, no truncation.
+
+## Validation
+
+1. **Signature** — ✅ Pass. `lib/system-prompt.ts:25` declares `comments?: string[] | null`; callers that omit it (or pass `undefined`/`null`/`[]`) produce output byte-identical to the pre-change golden, verified by the `no-comments output is unchanged (undefined)` and `empty array produces byte-identical output to undefined` tests.
+2. **Caller wiring** — ✅ Pass. `lib/stage-pipeline.ts:23` forwards `item.comments` into `buildAgentPrompt`; `grep -n buildAgentPrompt` finds no other production call sites (only the test file).
+3. **Empty / absent** — ✅ Pass. `renderCommentsSection` (`lib/system-prompt.ts:43–51`) returns `''` for non-array, empty, and all-blank inputs; tests `empty array produces byte-identical output to undefined` and `all-blank comments produce byte-identical output to undefined` cover `undefined`, `null`, `[]`, and `['', '   ', '\n\t\n']`.
+4. **Placement** — ✅ Pass. Rendered at `lib/system-prompt.ts:32` between `bodySection` and the trailing `workflowId:`/`itemId:` lines. The `comments render between body and trailing ID lines, numbered from 1` test asserts the literal last two lines of `<item-content>` remain `workflowId: wf` / `itemId: it`.
+5. **Ordering** — ✅ Pass. `.filter(...).map((c, i) => ...)` preserves array order; no sort/dedup in `renderCommentsSection`. Test asserts `Comment 1 = first comment`, `Comment 2 = second comment` in input order.
+6. **Per-comment format** — ✅ Pass. Entries joined by `'\n\n'` as `### Comment N\n<text>`; matches spec layout exactly. Trailing whitespace trimmed via `c.replace(/\s+$/, '')`; internal content untouched, confirmed by `multi-line markdown inside a comment is preserved verbatim` (headings, fenced code, blank lines round-trip).
+7. **Blank filtering** — ✅ Pass. `.filter(c => typeof c === 'string' && c.trim().length > 0)` runs before numbering; test `blank comments are skipped and do not consume a number` asserts `['first','','   ','second']` renders as Comment 1/2 with no Comment 3/4.
+8. **Fencing** — ✅ Pass. Only the `## Comments` heading is emitted; no new XML tag is introduced. `lib/system-prompt.ts` still emits exactly `<system-prompt>` / `<stage-prompt>` / `<item-content>`; adapter layer (`lib/stage-pipeline.ts:30`) still receives a single `prompt` string.
+9. **Unit-test coverage** — ✅ Pass. `lib/system-prompt.test.ts` has 7 `node --test` cases covering (a) no-comments golden, (b) multi-comment placement+numbering, (c) empty/null/all-blank equivalence, (d) verbatim multi-line markdown with headings and code fences. `npm test` → 7 pass / 0 fail.
+10. **No regressions** — ⚠️ Partial. `npx tsc --noEmit` passes cleanly with this change applied. `npm run lint` fails with `Invalid project directory provided, no such directory: …/lint`, but I reproduced the identical failure on a clean `git stash` of `main`, so this is a pre-existing broken `next lint` script unrelated to this requirement. No workflow fixtures under `.nos/workflows/**` were modified.
+
+**Regressions / adjacent checks**
+- `types/workflow.ts:27` — `comments?: string[]` unchanged; no schema drift.
+- `lib/workflow-store.ts` — untouched; `readItem`-returned `comments` flows straight through.
+- UI files (`ItemDetailDialog.tsx`, `KanbanBoard.tsx`) — untouched.
+- `.claude/skills/nos-comment-item/` — untouched.
+- Prompt-contract invariant (last two lines of `<item-content>` are `workflowId:` / `itemId:`) — upheld in both the body-present (test #4) and body-absent (`comments render even when body is absent`) paths.
+
+**Verdict:** all ten ACs met; AC #10 is partial only because of a pre-existing broken `next lint` script on `main`. Advancing to Done.

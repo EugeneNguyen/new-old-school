@@ -4,7 +4,11 @@ import { join } from 'path';
 
 export interface AgentAdapter {
   name: string;
-  startSession(input: { prompt: string; cwd?: string }): Promise<{ sessionId: string }>;
+  startSession(input: {
+    prompt: string;
+    cwd?: string;
+    model?: string;
+  }): Promise<{ sessionId: string }>;
 }
 
 const SESSIONS_DIR = join(process.cwd(), '.claude', 'sessions');
@@ -24,15 +28,20 @@ function extractSessionId(line: string): string | null {
 
 export const claudeAdapter: AgentAdapter = {
   name: 'claude',
-  startSession({ prompt, cwd }) {
+  startSession({ prompt, cwd, model }) {
     return new Promise((resolve, reject) => {
       ensureSessionsDir();
 
-      const child = spawn(
-        'claude',
-        ['-p', '--output-format', 'stream-json', '--verbose', '--dangerously-skip-permissions'],
-        { cwd: cwd ?? process.cwd(), env: { ...process.env } }
-      );
+      const args = ['-p', '--output-format', 'stream-json', '--verbose'];
+      if (typeof model === 'string' && model.trim()) {
+        args.push('--model', model.trim());
+      }
+      args.push('--dangerously-skip-permissions');
+
+      const child = spawn('claude', args, {
+        cwd: cwd ?? process.cwd(),
+        env: { ...process.env },
+      });
 
       child.stdin.write(prompt);
       child.stdin.end();

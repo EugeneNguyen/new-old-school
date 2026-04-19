@@ -11,11 +11,13 @@ import { cn } from '@/lib/utils';
 import {
   commentRehypePlugins,
   commentRemarkPlugins,
-  markdownPreviewOptions,
 } from '@/lib/markdown-preview';
 import { ItemStatus, Stage, WorkflowItem } from '@/types/workflow';
 
-const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false });
+const ItemDescriptionEditor = dynamic(
+  () => import('./ItemDescriptionEditor'),
+  { ssr: false }
+);
 const MarkdownPreview = dynamic(() => import('@uiw/react-markdown-preview'), {
   ssr: false,
 });
@@ -27,6 +29,7 @@ interface Props {
   item: WorkflowItem | null;
   stages: Stage[];
   onSaved: (updated: WorkflowItem) => void;
+  onBeforeSave?: (itemId: string) => void;
 }
 
 const STATUSES: ItemStatus[] = ['Todo', 'In Progress', 'Done', 'Failed'];
@@ -44,6 +47,7 @@ export default function ItemDetailDialog({
   item,
   stages,
   onSaved,
+  onBeforeSave,
 }: Props) {
   const [title, setTitle] = useState('');
   const [stage, setStage] = useState('');
@@ -94,6 +98,8 @@ export default function ItemDetailDialog({
     try {
       const trimmedNew = newComment.trim();
       const finalComments = trimmedNew ? [...comments, trimmedNew] : comments;
+
+      onBeforeSave?.(item.id);
 
       const metaRes = await fetch(
         `/api/workflows/${encodeURIComponent(workflowId)}/items/${encodeURIComponent(item.id)}`,
@@ -168,24 +174,18 @@ export default function ItemDetailDialog({
             </label>
             <div
               id="item-detail-description"
-              data-color-mode="light"
-              className="item-detail-md-editor rounded-md border border-input bg-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring"
+              className="item-detail-md-editor-shell rounded-md border border-input bg-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring"
             >
-              <MDEditor
-                value={loadingBody ? '' : body}
-                onChange={(value) => {
+              <ItemDescriptionEditor
+                key={`${item.id}:${loadingBody ? 'loading' : 'ready'}`}
+                markdown={loadingBody ? '' : body}
+                onChange={(md) => {
                   if (loadingBody) return;
-                  setBody(value ?? '');
+                  setBody(md);
                 }}
-                height={240}
-                preview="live"
-                previewOptions={markdownPreviewOptions}
-                textareaProps={{
-                  placeholder: loadingBody ? 'Loading…' : 'Write markdown description…',
-                  disabled: loadingBody,
-                  readOnly: loadingBody,
-                  'aria-labelledby': 'item-detail-description',
-                }}
+                readOnly={loadingBody}
+                placeholder={loadingBody ? 'Loading…' : 'Write markdown description…'}
+                ariaLabelledBy="item-detail-description"
               />
             </div>
           </div>

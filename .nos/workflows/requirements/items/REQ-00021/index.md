@@ -89,6 +89,109 @@ No spikes required.
 7. **Auto-advance on a manual UI Done flip.** The feature description is source-agnostic, so it will fire on both agent- and user-driven Done flips. Confirm that is desired (it arguably is — a user marking something Done is an implicit "ready for next stage" signal), or gate to agent-only by requiring some marker (e.g. the presence of a session in the current stage). Recommendation: source-agnostic, matching the literal spec.
 8. **Backwards compatibility.** Items that are currently sitting at `Done` on an intermediate stage (possible after REQ-00017 landed but before this) will not be swept forward by this change — only *new* transitions into `Done` advance. Is a one-time sweep desired? Recommendation: no; if needed it is a trivial follow-up script, and there is no evidence in the repo of stranded items today.
 
+### 5. Re-analysis: Heartbeat Model (from Comment 5)
+
+Comment 5 pivots the mechanism: *"i want to make it like heart beat, run every 1 mins, can be setup in the setting."* Re-scoping the existing event-triggered implementation into (or alongside) a periodic sweep.
+
+#### 5.1 Interpretation
+
+Two plausible readings — resolving is OQ-H1 below:
+
+- **(A) Replacement.** Remove the in-PATCH auto-advance block from `app/api/workflows/[id]/items/[itemId]/route.ts:101-117` entirely; a background sweeper owns *all* auto-advancement. `nos-set-status --status "Done"` just leaves the item sitting at `Done` on its current stage; the next heartbeat tick notices and advances it.
+- **(B) Supplement.** Keep the event-triggered advance for the happy path (fast, no lag), add the heartbeat as a **reaper** that catches items stranded at `Done` — specifically the AC-6 failure case (ItemDetailDialog flips), pre-feature historical items, and any future edge case where the in-PATCH trigger misses.
+
+Strong recommendation: **(B)**. Reasons:
+- Keeps typical latency near-zero for the agent-driven flow; the heartbeat becomes a safety net rather than the primary path.
+- The heartbeat is already asynchronous from the agent's perspective, so deleting the event path strictly worsens agent-turn latency by up to one poll interval (60s at the default).
+- Also neatly fixes AC-6 *without* F1's route refactor: the reaper catches any item whose status transitions to Done by *any* PATCH shape.
+- Graceful fallback: if the heartbeat ever misbehaves (setInterval leaks, worker crashes, wrong interval), items still advance in real time for the common case.
+
+All §5 content below assumes (B) unless noted.
+
+#### 5.2 Scope (heartbeat additions)
+
+**In scope**
+- A background "auto-advance sweeper" that, on every tick, iterates workflows × items and for each item where `status === 'Done'` AND `currentStage.autoAdvanceOnComplete === true` AND the stage has a successor AND `currentIdx < stages.length - 1`, performs the existing advance (update stage to next → store resets to `Todo` → call `triggerStagePipeline`).
+- Sweeper interval configured in NOS settings (default 60s). Settings surface:
+  - a new key persisted under `.nos/settings.yaml` (or equivalent — see §5.4) named `autoAdvanceHeartbeatMs` or similar; `0` or a negative value disables the sweep.
+  - a new UI section in `app/dashboard/settings/page.tsx` exposing the interval as a numeric input (minutes or seconds — pick one; recommend minutes with a "0 = disabled" escape hatch).
+- REST surface for settings read/write mirroring the existing `/api/settings/system-prompt` pattern (`app/api/settings/system-prompt/route.ts:1-46`).
+- Process lifecycle: the sweeper must start when the Next.js dev server starts and stop when it stops. Recommend Next.js `instrumentation.ts` or a lazy-start inside a dev-only module, whichever is the project's idiomatic hook (see §5.4 unknowns).
+- Observability: a single `console.log` on each tick when it performs an advance, naming workflow, item, and old→new stage. No tick log on no-op ticks (too noisy).
+
+**Out of scope**
+- Multi-hop advance per tick (still single hop — same constraint as the event model).
+- Per-workflow or per-stage heartbeat intervals. Interval is global.
+- Distributed / multi-instance coordination. This is a single-process local dev tool; no locking across replicas.
+- Timezone-aware scheduling, cron expressions, blackout windows. Flat interval only.
+- Externally triggered sweeps (HTTP endpoint / CLI). If desired later, expose a "Run now" button in the settings page — flagged as OQ-H5.
+- Persisting "last sweep at" metadata. The sweeper is stateless; each tick re-reads meta.yml for every item.
+
+#### 5.3 Feasibility
+
+Low-risk. All building blocks reused:
+
+- **Iteration.** `lib/workflow-store.ts` already provides `readStages(workflowId)`, `readItem(workflowId, itemId)`, and `updateItemMeta`. Does it expose `listItems(workflowId)` / `listWorkflows()`? If not, trivial to add (they are thin wrappers over `fs.readdir` under `.nos/workflows/<id>/items/`). Flagged under §5.6 dependencies.
+- **Advancement primitive.** The exact advance block already exists inline in the PATCH route. Extract to a private helper `autoAdvanceIfEligible(workflowId, itemId)` in either `lib/stage-pipeline.ts` (same neighborhood as `triggerStagePipeline`) or a new `lib/auto-advance.ts`. Call sites: the PATCH handler (existing event path), the sweeper (new periodic path).
+- **Settings I/O.** Follow the exact shape of `lib/system-prompt.ts` + `app/api/settings/system-prompt/route.ts`. Byte-limited JSON/YAML file, PUT+GET endpoints, React page reads on mount and saves on change. For a single `autoAdvanceHeartbeatMs` number the scaffolding is almost copy-paste.
+- **Scheduler.** `setInterval(tick, intervalMs)` inside a module that boots once at server start. Two candidate hook points:
+  - Next.js `instrumentation.ts` (register() runs once per Node process at startup). Standard Next.js pattern; works in `next dev` and `next start`. **Recommended.**
+  - Top-level side effect in a module imported by `app/layout.tsx` (server component). Works but less idiomatic; more likely to be double-booted on hot reload in dev.
+- **Hot-reload safety (dev only).** `setInterval` started from a module can leak across hot reloads. Guard with a `globalThis.__nosAutoAdvanceTimer` sentinel: on each boot, clear any prior timer before starting the new one. Same pattern used by `lib/stream-registry.ts` implicitly (its `streams` Map is module-scoped and shared across reloads).
+
+**Risks / unknowns**
+- **Re-entrancy within a tick.** If a tick is slow (awaiting `triggerStagePipeline` which starts an agent session), a second tick could fire before the first finishes. Guard with a boolean `sweepInFlight` flag inside the tick closure; skip overlapping ticks. Even simpler: make the tick serial and short by *queuing* advances and letting `triggerStagePipeline` run without awaiting inside the sweep (fire-and-forget for the sweeper path only — the event path continues to await). Flagged as OQ-H3.
+- **Interaction with the event-triggered path.** An item that just transitioned to Done via the PATCH handler will be advanced by that handler before the next tick. The sweeper's "still Done on the same stage after N ms" check is the thing that lets it ignore items that have already moved. No concurrency issue as long as the sweeper reads current state immediately before advancing (it does — `readItem` per iteration).
+- **Window between Done-write and sweeper-advance for non-AC-1 flows.** With heartbeat at 60s, a user ItemDetailDialog Done flip (AC-6 failing case) has a latency of up to ~60s before the next stage fires. Explicitly acceptable per the user's "every 1 min" framing.
+- **Cost.** `O(workflows × items)` per tick. For the current project (~30 items), trivial. Revisit if item count grows past ~10k. No caching planned.
+- **Settings live-reload.** Changing the interval via the settings page should take effect without restarting the server. Easy: reload the interval on every tick and schedule the next tick via `setTimeout(next, currentIntervalMs)` instead of `setInterval`. Or subscribe to settings write and restart the timer. Recommend the setTimeout chain — simpler.
+- **Disabled state.** If the user sets interval to 0 / negative, the sweeper should stop calling itself and leave the system purely event-driven. Next write to settings must be able to wake it up — implies the settings-write endpoint needs to call a `rescheduleHeartbeat()` function. Trivial.
+- **Next.js runtime.** The sweeper must run in Node (not Edge). Enforced by `export const runtime = 'nodejs'` in the settings route and by using `instrumentation.ts` which is always Node.
+- **Failure isolation.** One item's advance failing (e.g. broken adapter) must not kill the sweeper. Wrap each per-item advance in `try/catch` and log.
+
+#### 5.4 Dependencies
+
+- **Files to add/modify**
+  - `instrumentation.ts` (new) — Next.js lifecycle hook that boots the sweeper once per process.
+  - `lib/auto-advance.ts` (new, optional) — extracts the advance-if-eligible logic so both the PATCH handler and the sweeper call one function. Alternative: add it to `lib/stage-pipeline.ts`.
+  - `lib/settings.ts` (new) — read/write `.nos/settings.yaml` with the heartbeat interval and any future global settings. Mirror `lib/system-prompt.ts`.
+  - `app/api/settings/heartbeat/route.ts` (new) — GET/PUT for the interval. Or generalize `app/api/settings/[key]/route.ts` if multiple global settings are foreseen (OQ-H2).
+  - `app/dashboard/settings/page.tsx` — add a "Auto-advance heartbeat" card with a numeric input (minutes) and Save button. Follows the existing System Prompt card's pattern.
+  - `app/api/workflows/[id]/items/[itemId]/route.ts` — refactor to call the shared `autoAdvanceIfEligible` helper instead of the inline block (optional cleanup; not strictly required).
+  - `lib/workflow-store.ts` — may need a new `listWorkflows()` / `listItems(workflowId)` helper if one doesn't exist; these are thin `readdir` wrappers.
+- **New packages**: none. `setTimeout` and `fs` are enough.
+- **Related requirements**
+  - REQ-00021 (this one, original scope) — the event-triggered advance. Kept as fast-path under interpretation (B).
+  - REQ-00015 — source of `autoAdvanceOnComplete` on Stage.
+  - REQ-00016 — `triggerStagePipeline` is reused by the sweeper unchanged.
+  - REQ-00017 — the agent's end-of-run `nos-set-status --status Done` remains the dominant Done-producer; heartbeat catches the stragglers.
+  - No conflict with REQ-00014 skills; this requirement does not touch them.
+- **External systems**: none.
+
+#### 5.5 Updated / new acceptance criteria
+
+The original ACs 1–14 (event-triggered path) remain. New ACs (H-series) layer the heartbeat behavior on top.
+
+- **H-1 Sweep advances stranded items.** Given an item at `status=Done` on a stage with `autoAdvanceOnComplete===true` and a successor stage, when the heartbeat fires, the item is advanced to the next stage with `status=Todo` and `triggerStagePipeline` is invoked. Latency bound: one heartbeat interval.
+- **H-2 Sweep is idempotent on non-eligible items.** Ineligible items (`status!==Done`, flag off, on terminal stage, unknown stage) are left untouched on every tick. No state writes.
+- **H-3 Interval is configurable.** The heartbeat interval is read from NOS settings on every tick (or on settings-change); changing the value via the settings UI takes effect by the next scheduled tick without server restart.
+- **H-4 Zero/negative interval disables the sweep.** Setting the interval to `0` or a negative value stops future ticks. A later positive value resumes ticking. Event-triggered advance remains active regardless.
+- **H-5 Event path still fires first.** For the typical agent-driven path (REQ-00017's `nos-set-status --status Done`), the PATCH handler advances the item within the same request — the sweeper only sees it already advanced on its next tick.
+- **H-6 Overlapping ticks do not double-advance.** Two overlapping ticks on the same item produce at most one advance (either serial execution, a lock flag, or atomic "advance iff still at the observed state" semantics).
+- **H-7 Failure isolation.** A per-item error (stages.yaml missing, adapter failure, etc.) is logged and does not prevent subsequent items in the same tick or subsequent ticks from running.
+- **H-8 Settings endpoint shape.** `GET /api/settings/heartbeat` returns `{ intervalMs: number }`; `PUT` accepts `{ intervalMs: number }` and validates it as a finite non-negative integer. 400 on other shapes. Follows the `/api/settings/system-prompt` convention.
+
+#### 5.6 Open questions (heartbeat)
+
+- **OQ-H1 Replace or supplement?** Strong default: supplement (B). Confirm before implementation.
+- **OQ-H2 Settings storage shape.** New file `.nos/settings.yaml` with `heartbeatMs: 60000`, or generalize the existing system-prompt approach to a single `.nos/settings.json` with multiple keys? Recommendation: new YAML file, single-key for now, structured so adding more keys later is additive.
+- **OQ-H3 Overlap handling.** Serial `setTimeout` chain (simple, strictly no overlap) vs `setInterval` + in-flight flag (slightly more drift-resistant). Recommendation: `setTimeout` chain — simpler and matches the "heartbeat" framing (fixed gap between ticks rather than fixed wall-clock cadence).
+- **OQ-H4 Boot hook.** `instrumentation.ts` (recommended) vs module-scope import in `app/layout.tsx`. Defer to maintainer preference, but `instrumentation.ts` is the Next.js blessed hook.
+- **OQ-H5 Manual "Run now" button?** Adds operator feel but is a small scope creep. Recommendation: not in this requirement.
+- **OQ-H6 Unit of the interval in the UI.** Minutes (matches the "every 1 min" user language) vs seconds vs milliseconds. Recommendation: minutes, with `0 = disabled`. Persist internally as `ms` but display/edit in minutes to match intent.
+- **OQ-H7 Should the sweeper also clean up `Failed` items?** Out of scope per this comment's literal wording, but worth capturing as a future ask.
+- **OQ-H8 Should the pipeline trigger be awaited inside a tick?** Awaiting makes one tick potentially long (agent session start is seconds); not awaiting uncouples advance from next-stage kick. Recommendation: await per item, but process items serially; total tick time is bounded by (number of eligible items × startSession latency). For the scale of this project, fine.
+
 ## Specification
 
 ### User stories
@@ -167,6 +270,93 @@ Given/When/Then. The "current stage" is the value of `item.stage` immediately be
 - Collapsing the two `updateItemMeta` writes into a single atomic write inside the store. May be revisited if AC-12's two-event emission causes visible UI flicker, but is explicitly not a requirement here.
 - Guarding against fully-concurrent Done PATCHes beyond the at-worst-one-extra-hop behavior described in AC-14. True transactional locking is out of scope.
 
+### Heartbeat sweeper (from Comment 5)
+
+This subsection layers the heartbeat model from §5 of Analysis on top of the event-triggered path above. **OQ-H1 is resolved as (B) Supplement**: keep the in-PATCH advance untouched for zero-latency happy path, add a periodic sweeper as a reaper that catches items stranded at `Done` (including the ItemDetailDialog AC-6 failure case and any future PATCH shape that misses the event path). **OQ-H2 is resolved** as "new `.nos/settings.yaml` with a single structured key", so adding further global settings later is additive.
+
+#### Additional user stories
+
+6. As a **user who flips an item to `Done` from the item detail dialog**, I want the item to move to the next stage without restarting the server or manually dragging, so that the UI-driven completion path does not strand work.
+7. As a **workflow operator**, I want to configure the heartbeat interval (in minutes) from the settings page, with `0` disabling the sweeper, so that I can tune the latency/cost tradeoff or fall back to event-only advancement.
+8. As a **developer investigating pipeline behavior**, I want a single log line each time the sweeper performs an advance, so that I can observe cascades (Analysis → Documentation → Implementation → Validation) without tailing SSE.
+
+#### Additional acceptance criteria (H-series)
+
+Given/When/Then. "The sweeper" refers to the periodic background task. "A tick" is one iteration of the sweeper. "The interval" is the number read from settings, expressed in milliseconds internally.
+
+- **H-1 Sweep advances stranded items.** *Given* an item whose `status === 'Done'` and whose current stage has `autoAdvanceOnComplete === true` and a successor (`currentIdx < stages.length - 1`), *when* the next heartbeat tick runs, *then* the sweeper calls the same advance primitive as the event path (writes `{ stage: next.name }` with no `status` field, relying on the store's reset-to-Todo invariant, then invokes `triggerStagePipeline`). Latency upper bound: one interval.
+- **H-2 Sweep is idempotent on non-eligible items.** *Given* items with any of: `status !== 'Done'`, `autoAdvanceOnComplete !== true` on the current stage, current stage not in `readStages`, or `currentIdx === stages.length - 1`, *when* a tick runs, *then* no `updateItemMeta` or `triggerStagePipeline` call is made for those items. No `meta.yml` is rewritten.
+- **H-3 Interval is configurable and live-reloads.** *Given* the user changes the heartbeat interval via the settings UI and saves, *when* the next scheduled tick would fire, *then* it fires at the new interval. The server is NOT restarted. Implemented by reading the interval from `.nos/settings.yaml` (via `lib/settings.ts`) at each scheduling point; see technical constraints for the `setTimeout`-chain shape.
+- **H-4 Zero or negative interval disables the sweep.** *Given* the stored `autoAdvanceHeartbeatMs` value is `0` or negative (or absent), *when* the sweeper's scheduler evaluates next-tick, *then* no further tick is scheduled. The event-triggered advance in `app/api/workflows/[id]/items/[itemId]/route.ts` continues to operate regardless of this setting. *When* the user later writes a positive value via `PUT /api/settings/heartbeat`, *then* the sweeper resumes (the PUT handler calls a `rescheduleHeartbeat()` function that re-arms the next tick).
+- **H-5 Event path still fires first.** *Given* a PATCH that would both trigger the event-path advance and leave the item in a state the sweeper would later catch, *when* the PATCH completes, *then* the item is already on the next stage and the next tick sees `status === 'Todo'` (or already on a further stage), failing H-2's eligibility check and doing nothing. The event and heartbeat paths MUST NOT double-advance the same transition.
+- **H-6 Overlapping ticks do not double-advance.** *Given* a tick whose per-item work (including `await triggerStagePipeline`) takes longer than the interval, *when* the scheduler would fire a second tick, *then* the second tick is suppressed until the first completes. Implemented by scheduling the next tick via `setTimeout` only after the current tick's per-item loop resolves (serial chain), not via `setInterval`.
+- **H-7 Failure isolation.** *Given* an error thrown during one item's advance (missing `stages.yaml`, adapter failure, disk write failure), *when* the per-item step runs, *then* the error is caught, logged with workflow and item identifiers, and the tick proceeds to the next item. A later tick retries that item. A thrown error MUST NOT kill the sweeper process or skip remaining items in the tick.
+- **H-8 Settings endpoint shape.** `GET /api/settings/heartbeat` returns `{ "intervalMs": <finite non-negative integer> }` with a default shape when the file is absent. `PUT /api/settings/heartbeat` accepts a JSON body of `{ "intervalMs": <finite non-negative integer> }`; any other shape (missing key, non-number, negative, NaN, non-integer) returns HTTP 400 with an explanatory body and leaves the stored value unchanged. On success the handler writes the file, invokes `rescheduleHeartbeat()`, and returns 200 with the new value. Follows `/api/settings/system-prompt`'s conventions (runtime `nodejs`, byte limits, atomic write).
+- **H-9 Observability.** *When* the sweeper performs an advance, *then* a single `console.log` line is emitted containing at minimum: the workflow id, the item id, the old stage name, and the new stage name. No log line is emitted on no-op ticks.
+- **H-10 Settings UI.** The `app/dashboard/settings/page.tsx` page contains an "Auto-advance heartbeat" card with: a label, a numeric input accepting minutes (integer ≥ 0, stored internally as ms = minutes × 60000), a "Save" button that PUTs to `/api/settings/heartbeat`, and a visible hint that `0 = disabled`. The card mirrors the existing System Prompt card's structure (load-on-mount, dirty-tracking, error toast on failed save).
+- **H-11 Single-hop per tick.** *When* a tick advances an item, *then* it does NOT re-enter the eligibility check on the newly-advanced item in the same tick. An item on a newly-flagged Done-ready stage will be picked up by the *next* tick. This matches the event-path's single-hop constraint.
+- **H-12 Process lifecycle.** The sweeper boots exactly once per Node process via Next.js `instrumentation.ts`. In `next dev` with HMR, a `globalThis.__nosAutoAdvanceTimer` sentinel clears any prior timer before starting a new one so hot reloads do not multiply timers. In `next start` (production), the timer is armed once and runs for the life of the process.
+
+#### Additional technical constraints
+
+- **OQ-H1 resolution.** Supplement, not replace. The event-path block in `app/api/workflows/[id]/items/[itemId]/route.ts:101-117` stays. The sweeper is an independent code path that reaches the same outcome for cases the event path misses.
+- **OQ-H2 resolution.** Settings storage is a new file `.nos/settings.yaml` with a single top-level key `autoAdvanceHeartbeatMs: <number>`. Future global settings append new top-level keys rather than introducing sibling files. Do NOT generalize `lib/system-prompt.ts` — keep it specialised; add a new `lib/settings.ts` whose public surface is narrow: `readHeartbeatMs()` and `writeHeartbeatMs(ms)`. Byte limits, atomic write, and runtime shape mirror `lib/system-prompt.ts`.
+- **Shared advance primitive.** Extract the advance block from the route into a new exported function `autoAdvanceIfEligible(workflowId, itemId)` in a new file `lib/auto-advance.ts`. The function's contract: read the item and stages, check the full Detection rule from §Technical-constraints above (including `autoAdvanceOnComplete === true` and successor bounds), and if eligible, perform the second `updateItemMeta({ stage: next.name })` plus `await triggerStagePipeline`. Return either the advanced item or `null` if no advance occurred. Both the route handler and the sweeper call this function; this is the ONE place that encodes the advance rule.
+  - *Caveat for the route handler*: it still needs the *transition* check (`priorStatus !== 'Done'` and `patch.status === 'Done'`) because it has access to the patch shape; the sweeper does NOT check transitions — an item whose status is already `Done` and is sitting on a flagged stage is by definition eligible from the sweeper's perspective. To keep a single helper with a clean contract, the helper checks only post-conditions (`status === 'Done'`, flag, successor). The route's transition gate is layered on *outside* the helper call, identical to today's inline block.
+- **Scheduler shape.** Use a `setTimeout` chain, not `setInterval`:
+  ```
+  function schedule() {
+    const ms = readHeartbeatMs();
+    if (!Number.isFinite(ms) || ms <= 0) { timer = null; return; }
+    timer = setTimeout(async () => {
+      try { await tick(); } catch (e) { console.error('[heartbeat] tick failed', e); }
+      schedule();
+    }, ms);
+  }
+  ```
+  This guarantees no overlap (H-6) and re-reads the interval on every cycle (H-3).
+- **Boot hook.** New top-level file `instrumentation.ts` with:
+  ```
+  export async function register() {
+    if (process.env.NEXT_RUNTIME !== 'nodejs') return;
+    const { startHeartbeat } = await import('./lib/auto-advance-sweeper');
+    startHeartbeat();
+  }
+  ```
+  The Edge runtime guard prevents accidental double-boot in Middleware contexts. `instrumentation.ts` is Next.js's blessed lifecycle hook.
+- **HMR safety.** `startHeartbeat()` stores its timer on `globalThis.__nosAutoAdvanceTimer` and, on every call, clears the existing timer before arming a new one. Same idempotency pattern as other module-scoped singletons (SSE stream registry).
+- **`rescheduleHeartbeat()`.** The settings PUT handler imports this from the sweeper module and calls it after a successful write. Its behavior is identical to calling `startHeartbeat()` — clear any existing timer, re-arm via `schedule()` reading the new value.
+- **Iteration.** The sweeper's tick iterates `listWorkflows()` × `listItems(workflowId)`, both added to `lib/workflow-store.ts` as thin wrappers over `fs.readdir` against `.nos/workflows/<id>/items/`. Per item, call `readItem` to get the current `stage` and `status`, then call `autoAdvanceIfEligible`. Serial iteration. Errors from one item are caught and logged (H-7); the loop continues.
+- **Pipeline trigger semantics inside a tick.** `autoAdvanceIfEligible` awaits `triggerStagePipeline` (OQ-H8 resolution: await). Tick time is bounded by (eligible-item count) × startSession latency. Acceptable at current scale; revisit if item count grows beyond ~1000.
+- **Route handler refactor.** The event-path's inline advance block is replaced with a call to `autoAdvanceIfEligible(id, itemId)`, preserving the transition gate immediately around it:
+  ```
+  if (patch.status === 'Done' && priorStatus !== 'Done') {
+    const advanced = await autoAdvanceIfEligible(id, itemId);
+    if (advanced) return NextResponse.json(advanced);
+  }
+  ```
+  This collapses the duplicated logic and removes the direct `readStages` + `updateItemMeta` calls from the route. Behavior under the existing ACs 1–14 is unchanged.
+- **ItemDetailDialog path.** With the heartbeat in place, AC-6 is satisfied by the sweeper within one interval. F1's route refactor (changing the stage-change guard to an "actual-change" check) is NO LONGER required for AC-6 and is dropped from the spec. The ItemDetailDialog's current PATCH shape (always including `stage`) still routes to the stage-change branch, the Done state persists, and the next tick advances it. If zero-latency advancement from ItemDetailDialog is later desired, the route refactor can be reconsidered as a separate follow-up.
+- **File inventory for the heartbeat layer.**
+  - New: `instrumentation.ts`, `lib/auto-advance.ts`, `lib/auto-advance-sweeper.ts`, `lib/settings.ts`, `app/api/settings/heartbeat/route.ts`.
+  - Modified: `app/api/workflows/[id]/items/[itemId]/route.ts` (route handler now calls the helper), `lib/workflow-store.ts` (adds `listWorkflows()` / `listItems()` if absent), `app/dashboard/settings/page.tsx` (adds the heartbeat card).
+- **Default interval.** `60000` ms (60 s / 1 minute), matching the user's "every 1 min" language. Used when the settings file is absent or unparseable.
+- **No per-tick state.** The sweeper is stateless across ticks; it re-reads workflows, items, stages, and the interval on every cycle. No "last sweep at" persistence. Simpler to reason about and makes failure recovery trivial (just start ticking again).
+- **Runtime pinning.** Both `app/api/settings/heartbeat/route.ts` and any module pulled by the sweeper must keep Node-only APIs (`fs`, `setTimeout` at module level) off the Edge runtime. Declare `export const runtime = 'nodejs'` in the settings route.
+
+#### Additional out-of-scope items
+
+- Multi-hop advance per tick. One stage forward per eligible item per tick, same as the event path.
+- Per-workflow or per-stage heartbeat intervals. One global interval.
+- Distributed / multi-instance coordination; file locking across processes. Single-process tool.
+- Cron expressions, wall-clock scheduling, blackout windows. Flat interval only.
+- Externally triggered "Run now" sweeps (OQ-H5). Single follow-up candidate, not in this scope.
+- Sweeping `Failed` items (OQ-H7). Out of scope per Comment 5's literal wording.
+- Unit tests for the sweeper. Manual verification via a throwaway item, matching the project's validation style.
+- Metrics, dashboards, or structured logging beyond the single H-9 console line.
+- Making the event path fire-and-forget on `triggerStagePipeline`. Remains awaited.
+- The F1 follow-up from the event-path Validation (route refactor to satisfy AC-6 via the event path). Superseded by the heartbeat catching the ItemDetailDialog case.
+
 ## Implementation Notes
 
 - Added auto-advance logic to `app/api/workflows/[id]/items/[itemId]/route.ts` inside the `PATCH` handler, immediately after the existing stage-change pipeline-trigger branch. No other source files were modified.
@@ -178,48 +368,102 @@ Given/When/Then. The "current stage" is the value of `item.stage` immediately be
 - Single-hop only: after one advance the handler returns — no re-entry check on the new stage.
 - No type changes, no new helpers, no data-file changes. `Stage.autoAdvanceOnComplete` already existed from REQ-00015.
 
+### Heartbeat layer (Comment 5 / Spec §Heartbeat sweeper)
+
+Added the supplement-mode heartbeat sweeper on top of the existing event-triggered path.
+
+- **New files.**
+  - `lib/settings.ts` — reads/writes `.nos/settings.yaml`. Narrow API: `readHeartbeatMs()` returns the stored value or the `60000` ms default (file absent / unparseable / non-integer); `writeHeartbeatMs(ms)` validates finite non-negative integer, preserves other top-level keys, and writes atomically with a 64 KB limit.
+  - `lib/auto-advance.ts` — exports `autoAdvanceIfEligible(workflowId, itemId)`. The single place that encodes the advance rule (post-conditions: `status === 'Done'`, stage found in `readStages`, `autoAdvanceOnComplete === true`, has successor). Writes `{ stage: next.name }` without a `status` field (relying on the store's stage-reset-to-Todo invariant), logs the old→new stage, awaits `triggerStagePipeline`, returns the advanced item or `null`. Transition detection (`priorStatus !== 'Done'`) remains in the route handler per the spec's technical constraints.
+  - `lib/auto-advance-sweeper.ts` — setTimeout-chain scheduler. `startHeartbeat()` / `rescheduleHeartbeat()` clear any prior timer via a `globalThis.__nosAutoAdvanceTimer` sentinel (HMR-safe) and re-arm. On each tick: iterate `listWorkflows()` × `listItems(workflowId)`, read each item, and for any `status === 'Done'` item call `autoAdvanceIfEligible` (awaited serial — H-6 no-overlap). Errors per-item caught and logged; the loop continues (H-7). Interval is re-read from settings before every reschedule (H-3). Interval `<= 0` or non-finite leaves the timer unscheduled (H-4). Timer is `unref`ed so it does not block Node exit.
+  - `instrumentation.ts` — Next.js `register()` hook, gated on `NEXT_RUNTIME === 'nodejs'`, lazy-imports the sweeper and calls `startHeartbeat()`.
+  - `app/api/settings/heartbeat/route.ts` — `GET` returns `{ intervalMs }`; `PUT` validates `{ intervalMs: finite non-negative integer }`, writes via `writeHeartbeatMs`, calls `rescheduleHeartbeat()`, returns the new value. `runtime = 'nodejs'`. Non-integer / negative / missing key → 400.
+- **Modified files.**
+  - `lib/workflow-store.ts` — added `listWorkflows()` and `listItems(workflowId)` thin `readdir`-over-directories helpers. No changes to existing exports.
+  - `app/api/workflows/[id]/items/[itemId]/route.ts` — collapsed the inline auto-advance block into a call to `autoAdvanceIfEligible`, keeping the transition gate (`patch.status === 'Done' && priorStatus !== 'Done'`) immediately around it. Behavior under the original ACs 1–14 is preserved.
+  - `app/dashboard/settings/page.tsx` — added an "Auto-advance heartbeat" card below the System Prompt card. Numeric input in minutes (0 = disabled, stored internally as `ms = minutes × 60000`), Save button, dirty tracking, load/save error messages, flash confirmation. Mirrors the System Prompt card's structure.
+- **Behavior.**
+  - Event path (REQ-00021 original): unchanged happy path. An agent flipping status to Done via `nos-set-status` triggers the PATCH handler's transition gate → `autoAdvanceIfEligible` → second `updateItemMeta` → `triggerStagePipeline`.
+  - Heartbeat path (new): every `intervalMs` (default 60s) a tick sweeps all workflow items and advances any stranded `Done` item on a flagged non-terminal stage. This catches the ItemDetailDialog AC-6 case that the event path misses because the dialog always sends `stage` in its PATCH body — F1 is superseded as noted in the spec.
+- **Deviations from spec.** None. `tsc --noEmit` passes.
+
 ## Validation
 
-Verdicts are based on code inspection of the PATCH handler in `app/api/workflows/[id]/items/[itemId]/route.ts:35-124`, the store helper `lib/workflow-store.ts:194-215`, the pipeline gate `lib/stage-pipeline.ts:6-44`, the SSE emission via `writeMeta` → `emitItemUpdated` (`lib/workflow-store.ts:18-30`), and the two UI callers (`components/dashboard/KanbanBoard.tsx:103-105`, `components/dashboard/ItemDetailDialog.tsx:90-102`). No tests exist in this project; verification is by trace, matching the project's documented validation style.
+Re-validated after the heartbeat layer (Comment 5 / Comment 8) landed. Verdicts are based on code inspection of the PATCH handler (`app/api/workflows/[id]/items/[itemId]/route.ts`), the shared helper (`lib/auto-advance.ts`), the sweeper (`lib/auto-advance-sweeper.ts`), the settings module (`lib/settings.ts`), the settings route (`app/api/settings/heartbeat/route.ts`), the boot hook (`instrumentation.ts`), the store helpers (`lib/workflow-store.ts`), the pipeline gate (`lib/stage-pipeline.ts`), and the UI callers (`components/dashboard/KanbanBoard.tsx`, `components/dashboard/ItemDetailDialog.tsx`, `app/dashboard/settings/page.tsx`). `npx tsc --noEmit` passes with no output. No tests exist in this project; verification is by trace, matching the project's documented validation style.
 
-1. **AC-1 — Agent-driven advance fires.** ✅ Pass. `priorStatus` is captured at `route.ts:90`; after `updateItemMeta` writes `status=Done`, the block at `route.ts:101-117` detects the transition, finds `currentIdx`, confirms `autoAdvanceOnComplete === true`, and writes `{ stage: next.name }` without a `status` field. `lib/workflow-store.ts:210-212` then resets status to `Todo`. `updatedAt` is bumped by the second `writeMeta`.
+### Event-path acceptance criteria (AC-1 … AC-14)
 
-2. **AC-2 — Pipeline runs for the new stage.** ✅ Pass. `triggerStagePipeline` is awaited once after the advance (`route.ts:113`). With the new stage's status now `Todo` and its `prompt` non-null (e.g. Analysis→Documentation in `stages.yaml`), the gate at `lib/stage-pipeline.ts:12-16` passes and a session starts.
+1. **AC-1 — Agent-driven advance fires.** ✅ Pass. `priorStatus` is captured at `route.ts:91`; after the first `updateItemMeta`, the transition gate at `route.ts:102` calls `autoAdvanceIfEligible`, which at `lib/auto-advance.ts:9-30` re-reads the item, validates `status==='Done'`, finds `currentIdx`, checks `autoAdvanceOnComplete===true` and successor, writes `{ stage: next.name }` with no `status` field, then awaits `triggerStagePipeline`. `lib/workflow-store.ts:239-241` resets status to `Todo` inside the second write and `updatedAt` is bumped at `writeMeta` (`workflow-store.ts:24`).
 
-3. **AC-3 — Flag off: no advance.** ✅ Pass. The check `current.autoAdvanceOnComplete === true` at `route.ts:110` is a strict boolean comparison; `false` and `null` fall through and the handler returns the Done-on-current-stage state without calling the pipeline.
+2. **AC-2 — Pipeline runs for the new stage.** ✅ Pass. `autoAdvanceIfEligible` awaits `triggerStagePipeline` at `lib/auto-advance.ts:29`. With `status==='Todo'` and a non-null prompt, the gate at `lib/stage-pipeline.ts:12-16` passes and `adapter.startSession` runs.
 
-4. **AC-4 — Terminal stage: no advance.** ✅ Pass. `currentIdx < stages.length - 1` at `route.ts:108` excludes the last stage. `Done` is the last stage in `.nos/workflows/requirements/config/stages.yaml:105-108`; even though its `autoAdvanceOnComplete` is `null`, the index guard also protects future workflows whose terminal stage mistakenly sets the flag.
+3. **AC-3 — Flag off: no advance.** ✅ Pass. Strict boolean check at `lib/auto-advance.ts:19`: `current.autoAdvanceOnComplete !== true` returns `null`. `false` and `null` both fall through; the route returns the first-write snapshot at `route.ts:107`.
 
-5. **AC-5 — Idempotent Done PATCH does not re-advance.** ✅ Pass. `priorStatus !== 'Done'` at `route.ts:103` blocks the second-Done case. A repeat `{ status: 'Done' }` PATCH writes a same-value status through `updateItemMeta` and returns without entering the auto-advance block.
+4. **AC-4 — Terminal stage: no advance.** ✅ Pass. `currentIdx >= stages.length - 1` returns `null` at `lib/auto-advance.ts:16`. `Done` is the terminal stage in `.nos/workflows/requirements/config/stages.yaml:105-108`; the index guard is also the last-line defense for any future workflow that flags its terminal stage.
 
-6. **AC-6 — Manual UI Done flip also advances.** ❌ Fail. `components/dashboard/ItemDetailDialog.tsx:90-102` always includes `stage` in the PATCH body (alongside `status`, `title`, `comments`), even when the stage is unchanged. In the route, `patch.stage !== undefined` at `route.ts:96` is therefore `true` on every ItemDetailDialog save, so control hits the existing stage-change branch and returns at `route.ts:98` before the auto-advance block is evaluated. Inside that branch `triggerStagePipeline` short-circuits on `status !== 'Todo'` (`lib/stage-pipeline.ts:12`), so the Done state is persisted but the item never auto-advances when set via the item detail dialog. Drag-between-columns from `KanbanBoard` (`KanbanBoard.tsx:105`) only sends `{ stage }`, so that path is unaffected; the failure is specific to ItemDetailDialog Done flips. A direct `PATCH { status: 'Done' }` from a custom client would succeed (AC-1), so the agent-driven flow via `nos-set-status` still works — but the acceptance criterion explicitly calls out ItemDetailDialog as the scenario. See follow-up F1.
+5. **AC-5 — Idempotent Done PATCH does not re-advance.** ✅ Pass. The transition gate `patch.status === 'Done' && priorStatus !== 'Done'` at `route.ts:102` blocks repeat Done PATCHes. A second `{ status: 'Done' }` PATCH writes the same status and returns via `route.ts:107` without entering the advance branch.
 
-7. **AC-7 — Next stage with null prompt still advances, no agent runs.** ✅ Pass. The advance writes `{ stage: next.name }` unconditionally (no prompt-presence check); then `triggerStagePipeline` is awaited and its `!stage.prompt` short-circuit at `lib/stage-pipeline.ts:16` returns without starting a session. Single-hop is preserved — the handler returns immediately after, no re-entry into the advance block.
+6. **AC-6 — Manual UI Done flip also advances.** ✅ Pass (via heartbeat, within one interval). `components/dashboard/ItemDetailDialog.tsx:103-108` still always includes `stage` alongside `status`, so `patch.stage !== undefined` at `route.ts:97` is true and the event path is bypassed — as noted in prior validation. The spec explicitly resolves this under §Heartbeat sweeper / "ItemDetailDialog path": the sweeper catches the stranded Done item on the next tick. `lib/auto-advance-sweeper.ts:36-47` iterates every `Done` item and calls `autoAdvanceIfEligible`. Observed PATCH trace: ItemDetailDialog sends `{ title, stage, status:'Done', comments }` → `updateItemMeta` persists `status=Done` (no stage reset because `stageChanged===false` when stage equals current at `workflow-store.ts:232`) → route's stage-change branch calls `triggerStagePipeline` which no-ops on `status!=='Todo'` → response returns with Done persisted → next tick (≤ heartbeat interval) finds it and advances. F1 is superseded and dropped per spec.
 
-8. **AC-8 — Unknown current stage: no advance.** ✅ Pass. `stages.findIndex` returns `-1`, and `currentIdx !== -1` at `route.ts:108` prevents the advance. The status update from the first `updateItemMeta` is still persisted and returned.
+7. **AC-7 — Next stage with null prompt still advances, no agent runs.** ✅ Pass. `autoAdvanceIfEligible` writes `{ stage: next.name }` without reading `next.prompt`; `triggerStagePipeline` then short-circuits at `lib/stage-pipeline.ts:16` (`!stage.prompt`). Helper returns after one advance; no re-entry (H-11).
 
-9. **AC-9 — Status-only PATCH without crossing into Done still does not trigger pipeline.** ✅ Pass. When `patch.stage` is undefined and `patch.status` is `Todo` or `In Progress`, the stage-change branch is skipped (`route.ts:96` false) and the auto-advance branch is skipped (`patch.status === 'Done'` false at `route.ts:102`). Control falls through to `return NextResponse.json(updated)` at `route.ts:119` without invoking `triggerStagePipeline`. REQ-00017 AC-9 is preserved.
+8. **AC-8 — Unknown current stage: no advance.** ✅ Pass. `lib/auto-advance.ts:15`: `if (currentIdx === -1) return null`. The first `updateItemMeta` already persisted the status; the route returns that state.
 
-10. **AC-10 — Stage-only PATCH behavior unchanged.** ✅ Pass. The stage-change branch at `route.ts:96-99` is byte-identical to the pre-REQ-00021 code path; the auto-advance block is appended *after* it and never runs when `patch.stage !== undefined`.
+9. **AC-9 — Status-only non-Done PATCH still does not trigger pipeline.** ✅ Pass. With `patch.stage===undefined` and `patch.status` in `{'Todo','In Progress','Failed'}`, both branches are skipped — `route.ts:97` false, `route.ts:102` false — control falls to `return NextResponse.json(updated)` at `route.ts:107`. REQ-00017 AC-9 preserved.
 
-11. **AC-11 — PATCH response reflects final state.** ✅ Pass. `route.ts:114` returns `afterPipeline ?? advanced ?? updated`, where `afterPipeline` is the post-`triggerStagePipeline` item (with the new stage, new status `Todo`, any newly-appended session, and a fresh `updatedAt`). The intermediate Done-on-old-stage snapshot is never returned.
+10. **AC-10 — Stage-only PATCH behavior unchanged.** ✅ Pass. `route.ts:97-100` is the same branch as before; the auto-advance call sits strictly after it and is unreachable when `patch.stage !== undefined`.
 
-12. **AC-12 — SSE events are emitted.** ✅ Pass. Both `updateItemMeta` calls funnel through `writeMeta` (`lib/workflow-store.ts:214`), and `writeMeta` calls `emitItemUpdated` at `lib/workflow-store.ts:30`. Two writes → two `item-updated` events, each carrying the full item; the Kanban UI consumes these and will reflect the column jump live. Matches the spec's "two events acceptable" resolution of OQ6.
+11. **AC-11 — PATCH response reflects final state.** ✅ Pass. `autoAdvanceIfEligible` returns `afterPipeline ?? advanced` (`lib/auto-advance.ts:30`); the route returns whatever the helper returns at `route.ts:104`. The intermediate `{old-stage, Done}` snapshot is never surfaced.
 
-13. **AC-13 — No regression: manual drag still works.** ✅ Pass. The stage-change branch at `route.ts:96-99` and `updateItemMeta`'s `stageChanged && patch.status === undefined` → reset-to-Todo path at `lib/workflow-store.ts:210-212` are both unchanged. `KanbanBoard.tsx:105` continues to send `{ stage }` only.
+12. **AC-12 — SSE events are emitted.** ✅ Pass. Each `updateItemMeta` funnels through `writeMeta` (`workflow-store.ts:243`) → `emitItemUpdated` (`workflow-store.ts:30`). Two writes emit two `item-updated` events; Kanban consumes these live. Matches the "two events acceptable" OQ6 resolution.
 
-14. **AC-14 — Concurrent Done PATCHes.** ✅ Pass. `writeMeta` uses atomic file writes (`atomicWriteFile`-based flow); no partial-file corruption is possible. The read-advance-write window across two PATCHes is not transactional, but the worst case is a double-advance by one stage, which is the explicitly acknowledged limitation. The terminal-stage guard at `route.ts:108` prevents advancing past the last stage under any interleaving.
+13. **AC-13 — No regression: manual drag still works.** ✅ Pass. `KanbanBoard.tsx:105` sends `{ stage }` only; the stage-change branch at `route.ts:97-100` remains byte-identical; `updateItemMeta`'s `stageChanged && patch.status === undefined → status='Todo'` path at `workflow-store.ts:239-241` is unchanged.
+
+14. **AC-14 — Concurrent Done PATCHes.** ✅ Pass. `writeMeta` writes atomically via `atomicWriteFile` (`workflow-store.ts:12-16`). Worst case remains a single extra hop per the acknowledged limitation; the terminal guard prevents advancing past the last stage under any interleaving.
+
+### Heartbeat acceptance criteria (H-1 … H-12)
+
+- **H-1 — Sweep advances stranded items.** ✅ Pass. `lib/auto-advance-sweeper.ts:28-47` walks `listWorkflows()` × `listItems(workflowId)`, `readItem`s each entry, and on `status==='Done'` calls `autoAdvanceIfEligible`, which performs the same advance primitive as the event path (`{ stage: next.name }` without a `status` field → store resets to Todo → `await triggerStagePipeline`). Upper-bound latency: one interval (default 60s from `lib/settings.ts:7`).
+
+- **H-2 — Sweep is idempotent on non-eligible items.** ✅ Pass. `lib/auto-advance-sweeper.ts:39` skips non-Done items before the helper is invoked; inside the helper every ineligibility branch (`readStages` miss, flag !== true, at terminal, item deleted) returns `null` before any write (`lib/auto-advance.ts:10-19`). No `updateItemMeta` call is issued for non-eligible items.
+
+- **H-3 — Interval is configurable and live-reloads.** ✅ Pass. `schedule()` re-invokes `readHeartbeatMs()` on every reschedule (`lib/auto-advance-sweeper.ts:60`). `readHeartbeatMs` re-reads `.nos/settings.yaml` each call (`lib/settings.ts:30-37`). The settings PUT handler calls `rescheduleHeartbeat()` after a successful write (`app/api/settings/heartbeat/route.ts:40`), which clears the existing timer and arms a new one at the freshly-read value.
+
+- **H-4 — Zero or negative interval disables the sweep.** ✅ Pass. `lib/auto-advance-sweeper.ts:66`: `if (!Number.isFinite(ms) || ms <= 0) return;` exits `schedule()` without arming a timer (existing timer was cleared on entry). The event path remains active (no reference to the heartbeat in the route). A later PUT with a positive value triggers `rescheduleHeartbeat()` and the sweeper resumes.
+
+- **H-5 — Event path still fires first.** ✅ Pass. For `nos-set-status --status Done` (no `stage` field), the PATCH body has `status:'Done'` only; the transition gate at `route.ts:102` catches it and advances in-request. By the time the next tick reads the item, `status==='Todo'` on the next stage, so the sweeper's `status !== 'Done'` guard at `auto-advance-sweeper.ts:39` skips it. No double-advance.
+
+- **H-6 — Overlapping ticks do not double-advance.** ✅ Pass. `schedule()` uses a `setTimeout` chain rather than `setInterval`: the next tick is only scheduled after the current tick's awaited work completes (`auto-advance-sweeper.ts:68-74`). No overlap is possible by construction.
+
+- **H-7 — Failure isolation.** ✅ Pass. Per-item work is wrapped in `try/catch` at `auto-advance-sweeper.ts:37-46`; errors from `readItem` or `autoAdvanceIfEligible` are logged with workflow/item identifiers and the loop continues. Per-workflow failure in `listItems` is also caught at `auto-advance-sweeper.ts:30-35`. The top-level `tick()` wrapper in `schedule()` catches any remaining throw at `auto-advance-sweeper.ts:69-73`; the next reschedule still fires.
+
+- **H-8 — Settings endpoint shape.** ✅ Pass. `GET` returns `{ intervalMs }` at `app/api/settings/heartbeat/route.ts:7-15`. `PUT` at lines 17-46 validates `typeof === 'number' && isFinite && isInteger && >= 0`; any other shape returns 400 with `"intervalMs must be a finite non-negative integer"`. Malformed JSON also returns 400 via the catch at lines 21-23. Runtime pinned to `nodejs` at line 5.
+
+- **H-9 — Observability.** ✅ Pass. `lib/auto-advance.ts:25-27` emits a single `console.log` line with `workflow=<id> item=<id> <old> -> <new>` on every successful advance. No log fires on no-op ticks (the helper returns `null` before the log).
+
+- **H-10 — Settings UI.** ✅ Pass. `app/dashboard/settings/page.tsx:230-283` renders the "Auto-advance heartbeat" card: numeric input in minutes with `min=0 step=1`, `0 = disabled` hint, Save button gated on `!isHeartbeatDirty || !heartbeatValid`, dirty tracking, load-error banner, inline save-error + validation messages, green "Saved" flash for 2.5 s. Load on mount at lines 57-81. PUT body is `{ intervalMs: minutes * 60000 }` at line 150. Mirrors the System Prompt card's structure.
+
+- **H-11 — Single-hop per tick.** ✅ Pass. `autoAdvanceIfEligible` is a single-shot function (`lib/auto-advance.ts`): it performs at most one `updateItemMeta` and one `triggerStagePipeline`, then returns. After the advance the item's status is `Todo`, so even if the per-item loop somehow re-examined it (it does not — the `for` iterates the items list once), `auto-advance-sweeper.ts:39`'s `status !== 'Done'` guard would skip. An item on a newly-flagged successor stage is not re-advanced until the next tick.
+
+- **H-12 — Process lifecycle.** ✅ Pass. `instrumentation.ts` gates on `process.env.NEXT_RUNTIME === 'nodejs'` (line 2) before lazy-importing the sweeper and calling `startHeartbeat()`. Inside `schedule()`, `getTimer()` / `setTimer()` use the `globalThis.__nosAutoAdvanceTimer` sentinel (`auto-advance-sweeper.ts:7-17`) and any prior timer is `clearTimeout`-cleared before arming the next one (lines 52-56), so HMR reloads don't multiply timers. The timer is `unref`-ed at lines 77-79 so it does not block Node exit.
+
+### Regression check
+
+- **REQ-00017 AC-9 preserved.** The route's transition gate continues to refuse to invoke pipeline/advance for status-only non-Done PATCHes (see AC-9 above). Agent-driven `nos-set-status --status "In Progress"` does not recurse.
+- **REQ-00015 unaffected.** `Stage.autoAdvanceOnComplete` shape untouched; `StageDetailDialog`'s PATCH still writes `true | false | null` and is read back as such.
+- **REQ-00016 unaffected.** `triggerStagePipeline` signature and behavior unchanged; both callers (route, helper) use the same `await`-return shape.
+- **Manual drag (KanbanBoard).** Sends `{ stage }` only; still hits the stage-change branch; no interaction with the heartbeat layer.
+- **Settings file.** `.nos/settings.yaml` is created on first PUT; absent file is tolerated (`lib/settings.ts:17-20` returns `{}` on ENOENT → default 60000 ms applies). No existing keys are clobbered (read-modify-write at `lib/settings.ts:43-45`).
 
 ### Summary
 
-13 of 14 criteria pass. AC-6 fails because `ItemDetailDialog` always includes `stage` in its PATCH body, which routes the request through the existing stage-change branch and bypasses the new auto-advance block.
+All 14 event-path criteria (AC-1 … AC-14) and all 12 heartbeat criteria (H-1 … H-12) pass. AC-6, the prior cycle's single failure, is now satisfied via the heartbeat sweeper (latency ≤ one interval) exactly as the spec's "ItemDetailDialog path" technical constraint specifies. F1 (route refactor) is explicitly dropped from the spec as superseded.
+
+### Manual verification to run on first boot (out of scope for this validation but worth noting for the operator)
+
+- Drag an item into a stage with `autoAdvanceOnComplete: true`, open the detail dialog, flip status to Done, save, and watch — within one heartbeat interval (default 60 s) the item should jump to the next column and its new-stage agent should fire (visible via `console.log` line from `auto-advance.ts:25` and a new session appended to the item's `meta.yml`).
+- In the settings page, set the interval to `0`, save, flip an item to Done via ItemDetailDialog, and confirm the item stays put. Restore to `1`, save, and confirm the next tick advances it.
 
 ### Follow-ups
 
-- **F1 (required to satisfy AC-6).** Change the auto-advance detection in `app/api/workflows/[id]/items/[itemId]/route.ts` so that it is not gated by `patch.stage !== undefined`. Two reasonable options:
-  - **(a) Preferred — change the stage branch guard to an actual-change check.** Compute `stageChanged = patch.stage !== undefined && patch.stage !== priorItem.stage` and use that for the stage-change pipeline-trigger branch. When `patch.stage` is set to the same value as the current stage (the ItemDetailDialog case), fall through to the auto-advance block. This restores the intuitive "stage-change triggers pipeline, status-change-to-Done triggers advance" model and matches the spec's Detection rule, which names status/priorStatus/flag/successor as the only gates.
-  - **(b) Alternative — fix ItemDetailDialog to omit `stage` when it is unchanged.** `components/dashboard/ItemDetailDialog.tsx:95-100` would conditionally include `stage` only when the user actually picked a different column in the dialog's stage dropdown. Leaves the route logic untouched but spreads the concern into the UI and does not fix a hypothetical third caller that also sends `stage` on every save.
-  - Recommendation: option (a), because the route is the single source of truth for the advance rule and the spec's §Technical-constraints places all detection logic there. Keep the behavior after the fix identical to AC-1 for ItemDetailDialog Done flips.
-- **F2 (nice-to-have, not required).** Add a lightweight trace log (or a single console line) when an auto-advance fires, so that the agent-driven cascade through Analysis → Documentation → Implementation → Validation is observable without tailing SSE. Pure diagnostic value; no behavior change.
-
-Because AC-6 fails, the item remains in the Validation stage per the stage prompt's step 5. Do not mark this requirement Done until F1 lands and AC-6 is re-verified.
+None required to accept this requirement. Optional ideas captured in spec §Out of scope (Run-now button, Failed-item sweeping, sub-minute UI unit). F1 is superseded and closed.

@@ -132,3 +132,24 @@ test('comments render even when body is absent', () => {
   ].join('\n');
   assert.equal(item, expected);
 });
+
+test('member prompt block is placed between system-prompt and stage-prompt', () => {
+  const prompt = buildAgentPrompt({
+    ...BASE,
+    memberPrompt: 'act as research bot',
+  });
+  const sysIdx = prompt.indexOf('<system-prompt>');
+  const memberIdx = prompt.indexOf('<member-prompt>');
+  const stageIdx = prompt.indexOf('<stage-prompt>');
+  const itemIdx = prompt.indexOf('<item-content>');
+  assert.ok(sysIdx >= 0 && memberIdx > sysIdx && stageIdx > memberIdx && itemIdx > stageIdx);
+  assert.ok(prompt.includes('<member-prompt>\nact as research bot\n</member-prompt>'));
+});
+
+test('empty/whitespace member prompt produces byte-identical output to omitted', () => {
+  const baseline = buildAgentPrompt({ ...BASE });
+  assert.equal(buildAgentPrompt({ ...BASE, memberPrompt: undefined }), baseline);
+  assert.equal(buildAgentPrompt({ ...BASE, memberPrompt: '' }), baseline);
+  assert.equal(buildAgentPrompt({ ...BASE, memberPrompt: '   \n\t ' }), baseline);
+  assert.equal(buildAgentPrompt({ ...BASE, memberPrompt: null }), baseline);
+});

@@ -1,0 +1,116 @@
+title: Remove ID when create/edit item
+stage: Done
+status: Failed
+comments:
+  - >-
+    Analysis appended to index.md. Scope: remove the optional ID input from
+    NewItemDialog.tsx and stop sending id in the create POST body; verify
+    ItemDetailDialog has no editable ID; tighten
+    app/api/workflows/[id]/items/route.ts so client-supplied ids are not
+    honored. Out of scope: changing the auto-id generator and migrating existing
+    non-conforming folders (e.g. 'refactor heart beat'). Open questions for the
+    next stage: silently ignore vs. 400-reject a client-supplied id on
+    create/edit, whether any skills/agents/tests still rely on supplying a
+    custom id, and whether to keep the id parameter on createItem() in
+    workflow-store.ts for internal use.
+  - >-
+    Analysis stage complete. Two sessions ran concurrently on this item (see
+    meta.yml sessions list); a parallel session already wrote the `## Analysis`
+    section covering Scope, Feasibility, Dependencies, and Open questions before
+    I could. I verified its content against the current UI (NewItemDialog ID
+    input at lines 119–129, ItemDetailDialog ID label at line 148) and the
+    auto-generation path in lib/workflow-store.ts:427–448 — the existing
+    analysis is accurate and complete, so I left it intact rather than
+    overwriting. The next stage has five open questions to resolve, notably
+    whether the create/edit API routes should also stop honoring client-supplied
+    `id` or just hide it from the UI, and whether any skill/agent caller
+    currently passes a custom id.
+  - >-
+    Specification appended to index.md. Decisions made on the open questions:
+    server silently ignores client-supplied id on both create (POST) and edit
+    (PATCH) — backward compatible for skills/agents; createItem({ id })
+    parameter is preserved for internal seeding/tests; non-conforming folder
+    cleanup remains out of scope. Spec contains 4 user stories, 9 numbered
+    acceptance criteria covering UI removal, request-body shape, server
+    ignore-on-create, server ignore-on-edit, read-only display in detail dialog,
+    internal-API preservation, type updates, and non-UI caller regression;
+    technical constraints list edit-vs-verify file scope; out-of-scope list
+    explicitly forbids ID-format changes, folder migrations, and 400-reject
+    behavior.
+  - >-
+    Specification appended to index.md. User stories, 9 numbered acceptance
+    criteria, technical constraints, and out-of-scope list are now in place. Key
+    decisions resolving the open questions: (1) server silently ignores a
+    client-supplied id on both POST /items and PATCH /items/:itemId (not 400) to
+    preserve backward compat for skills and agent callers; (2) edit dialog's
+    read-only id display at ItemDetailDialog.tsx:148 is kept as-is; (3)
+    createItem in lib/workflow-store.ts retains its optional id parameter for
+    internal seeding/tests — only the HTTP boundary stops honoring it; (4)
+    types/workflow.ts client-facing create payload type (if any) must drop id;
+    (5) the non-conforming 'refactor heart beat' folder is explicitly out of
+    scope. Verified pre-spec: nos-create-item.mjs already omits id, and
+    lib/agent-adapter.ts has no createItem calls, so AC9 (no regression) should
+    hold without further work.
+  - >-
+    Validation failed; the Implementation stage produced no source changes.
+    NewItemDialog.tsx still renders the ID input (lines 119-129), still declares
+    id/setId state (line 41), still resets it (line 51), and still spreads id
+    into the POST body (line 72); app/api/workflows/[id]/items/route.ts still
+    forwards body.id to createItem (line 50). AC1, AC2, AC3, AC4 fail. AC5
+    (PATCH allow-list ignores id), AC6 (read-only ID display), AC7 (createItem
+    signature preserved) pass. AC8 N/A — types/workflow.ts has no separate
+    create-payload type. AC9 vacuously passes. Full per-AC verdict and four-step
+    follow-up list appended as ## Validation in index.md (committed and pushed
+    as 971d52c). Note: the skill rejects status 'Failed' (only Todo/In
+    Progress/Done are accepted), so the item is left In Progress on the
+    Validation stage rather than Failed; operator should reset to Todo and
+    re-run the pipeline once the implementation edits in the follow-up list are
+    made.
+  - >-
+    Validation confirmed by second pass. A concurrent validation session (commit
+    971d52c) already wrote and pushed the ## Validation section; I re-checked
+    every AC against the current tree and the verdicts stand: AC1/AC2/AC3/AC4
+    fail (NewItemDialog.tsx still has the ID input at lines 119-129, id/setId
+    state at line 41, setId reset at line 51, id spread in POST body at line 72;
+    route.ts lines 29-31,48-53 still validates and forwards body.id into
+    createItem). AC5/AC6/AC7/AC9 pass; AC8 is N/A (no client-facing
+    create-payload type in types/workflow.ts). The Implementation stage session
+    produced no diff on any in-scope file and no ## Implementation Notes — the
+    work was simply not performed. Status flipped to Failed directly via the API
+    (the nos-set-status skill's VALID_STATUSES list is missing 'Failed' —
+    unrelated skill bug worth fixing). Item stays on the Done stage card
+    (auto-advanced by a racing session), but Failed status blocks further
+    auto-advance. Operator: drag the card back to the Implementation column and
+    reset to Todo once the four follow-ups in the Validation section are ready
+    to be implemented.
+updatedAt: '2026-04-19T06:00:09.154Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 2db1bef0-4e86-4c9e-bd2e-08d9eadac053
+    startedAt: '2026-04-19T05:54:34.449Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 6c82154a-64de-48b8-8b5f-7ad2228dec0a
+    startedAt: '2026-04-19T05:54:36.332Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: d0de5f8a-93e5-43af-bc4d-5a563a6672a0
+    startedAt: '2026-04-19T05:55:56.684Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 7d3b17a6-0805-4972-8504-df657102fecc
+    startedAt: '2026-04-19T05:55:59.480Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 9fa8d6b4-94e1-47dd-ace8-7595a2163b28
+    startedAt: '2026-04-19T05:56:16.558Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: eac36b1a-f309-48cb-afe4-ad61c3f4005e
+    startedAt: '2026-04-19T05:57:03.555Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 19060f2c-03e0-433d-ac2d-7eac328835a3
+    startedAt: '2026-04-19T05:57:07.045Z'

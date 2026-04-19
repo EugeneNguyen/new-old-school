@@ -1,6 +1,6 @@
 title: Implement autoAdvanceOnComplete
-stage: Backlog
-status: In Progress
+stage: Done
+status: Todo
 comments:
   - >-
     Analysis appended to index.md covering scope (in/out), feasibility
@@ -59,7 +59,102 @@ comments:
     advance to Done on failure' rule — status is intentionally not flipped to
     Done because Validation has autoAdvanceOnComplete=true and that would move
     the item to the Done stage before the fix lands.
-updatedAt: '2026-04-18T16:29:34.249Z'
+  - >-
+    i want to make it like heart beat, run every 1 mins, can be setup in the
+    setting.
+  - >-
+    Re-analysis added as §5 of ## Analysis in index.md, covering Comment 5's
+    heartbeat scope pivot. Key recommendation: supplement (not replace) the
+    existing event-triggered advance — keep the in-PATCH block for zero-latency
+    happy path, add a ~60s heartbeat sweeper as a reaper that catches stranded
+    Done items (incidentally fixes AC-6 without F1's route refactor). New scope:
+    setTimeout-chain sweeper booted via instrumentation.ts; iterate workflows ×
+    items, advance any Done+flagged+non-terminal item via a shared
+    autoAdvanceIfEligible helper reused by both paths; interval persisted in a
+    new .nos/settings.yaml exposed at /api/settings/heartbeat with a
+    minutes-based UI card in app/dashboard/settings/page.tsx (0 = disabled,
+    live-reload on settings write). Added 8 heartbeat ACs (H-1..H-8) and 8 open
+    questions (OQ-H1..OQ-H8). OQ-H1 (replace vs supplement) and OQ-H2 (settings
+    storage shape) should be resolved before Documentation writes the
+    Specification update. No code changes; original event-path implementation is
+    untouched pending that decision. No deviations from the stage prompt.
+  - >-
+    Extended ## Specification with a '### Heartbeat sweeper (from Comment 5)'
+    subsection covering the re-analysis layered on top of the existing
+    event-triggered spec. Resolved OQ-H1 as (B) Supplement (keep event path as
+    fast-path; heartbeat as reaper) and OQ-H2 as 'new .nos/settings.yaml with a
+    single autoAdvanceHeartbeatMs key'. Added user stories 6-8, acceptance
+    criteria H-1..H-12 (Given/When/Then), technical constraints (shared
+    autoAdvanceIfEligible helper in lib/auto-advance.ts; setTimeout-chain
+    scheduler in lib/auto-advance-sweeper.ts; instrumentation.ts boot hook;
+    rescheduleHeartbeat() called from the settings PUT; HMR-safe globalThis
+    timer sentinel; default 60000ms; Node-only runtime), file inventory (new:
+    instrumentation.ts, lib/auto-advance.ts, lib/auto-advance-sweeper.ts,
+    lib/settings.ts, app/api/settings/heartbeat/route.ts; modified: the PATCH
+    route, lib/workflow-store.ts adding list helpers,
+    app/dashboard/settings/page.tsx), and out-of-scope items (multi-hop, cron,
+    Failed-sweeping, Run-now, route refactor F1 which is superseded). Notably F1
+    from the event-path Validation is dropped: with the heartbeat in place,
+    ItemDetailDialog Done flips are caught by the sweeper within one interval,
+    so AC-6 is satisfied without changing the route's stage-change guard.
+    Original ACs 1-14 and the Implementation Notes / Validation sections from
+    the prior cycle are untouched. No code written. Next stage (Implementation)
+    should: add lib/settings.ts + lib/auto-advance.ts +
+    lib/auto-advance-sweeper.ts, create instrumentation.ts and
+    app/api/settings/heartbeat/route.ts, add list helpers to
+    lib/workflow-store.ts, refactor the PATCH route to call
+    autoAdvanceIfEligible, and add the settings card to
+    app/dashboard/settings/page.tsx — then manually verify H-1 (drag an item to
+    Done via ItemDetailDialog, wait ~1 min, confirm it advances) alongside the
+    prior event-path ACs.
+  - >-
+    Implemented the heartbeat layer per §Heartbeat sweeper of the spec. New
+    files: lib/settings.ts (readHeartbeatMs/writeHeartbeatMs backed by
+    .nos/settings.yaml, 60000ms default), lib/auto-advance.ts (shared
+    autoAdvanceIfEligible helper — post-conditions only; transition gate stays
+    in the route), lib/auto-advance-sweeper.ts (setTimeout-chain scheduler,
+    HMR-safe globalThis timer sentinel, serial per-item ticks with try/catch
+    isolation, re-reads interval each reschedule, no-op when interval <= 0,
+    unref'd timer), instrumentation.ts (Next.js register() → startHeartbeat,
+    gated on NEXT_RUNTIME==='nodejs'), app/api/settings/heartbeat/route.ts
+    (GET/PUT for intervalMs, validates finite non-negative integer, calls
+    rescheduleHeartbeat on PUT, runtime='nodejs'). Modified:
+    lib/workflow-store.ts (added listWorkflows/listItems),
+    app/api/workflows/[id]/items/[itemId]/route.ts (collapsed inline
+    auto-advance into a call to autoAdvanceIfEligible, transition gate
+    preserved), app/dashboard/settings/page.tsx (added 'Auto-advance heartbeat'
+    card — minutes input with 0=disabled, dirty/save/flash states mirroring the
+    System Prompt card). tsc --noEmit passes. No deviations from spec. Next
+    stage (Validation): exercise H-1 (drag an item to Done via ItemDetailDialog,
+    wait ~1min, confirm it advances); also re-verify original ACs 1–14 still
+    pass through the refactored autoAdvanceIfEligible path. Note: because this
+    item sits on the Implementation stage (autoAdvanceOnComplete=true), the
+    nos-set-status --status Done call at end-of-run will itself auto-advance it
+    to Validation through the event path — intended behavior.
+  - >-
+    Re-validation complete after the heartbeat layer landed: all 14 event-path
+    ACs and all 12 heartbeat ACs pass. AC-6 (ItemDetailDialog Done flip) — the
+    single failure from the prior cycle — now passes via the sweeper within one
+    heartbeat interval, exactly as the spec's §Heartbeat sweeper /
+    ItemDetailDialog-path constraint specifies; F1 is explicitly superseded and
+    dropped. Verification via code trace of
+    app/api/workflows/[id]/items/[itemId]/route.ts (collapsed to call
+    autoAdvanceIfEligible, transition gate preserved), lib/auto-advance.ts
+    (single-place advance rule, strict flag check, terminal-stage +
+    unknown-stage guards, console.log, awaited triggerStagePipeline),
+    lib/auto-advance-sweeper.ts (setTimeout chain with globalThis sentinel +
+    unref, serial per-item try/catch, re-reads interval on each reschedule,
+    no-op when <=0), lib/settings.ts (ENOENT-tolerant read with 60000ms default,
+    atomic write, read-modify-write preserves other keys),
+    app/api/settings/heartbeat/route.ts (runtime=nodejs, 400 on bad input, calls
+    rescheduleHeartbeat on PUT), instrumentation.ts (NEXT_RUNTIME gate), and
+    app/dashboard/settings/page.tsx (minutes input, 0=disabled, dirty/save/flash
+    mirroring System Prompt card). tsc --noEmit passes with no output. No
+    deviations from the stage prompt. Noted manual-verification steps for the
+    operator in the Validation section. Flipping to Done; since Validation has
+    autoAdvanceOnComplete=true, the event path will itself advance the item to
+    the terminal Done stage — which is precisely the feature being validated.
+updatedAt: '2026-04-19T03:58:16.128Z'
 sessions:
   - stage: Analysis
     adapter: claude
@@ -77,3 +172,19 @@ sessions:
     adapter: claude
     sessionId: 983592a4-dfd3-48f9-a4b3-3c15b62d7ef5
     startedAt: '2026-04-18T14:25:23.750Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 7204f977-6ef3-4175-a600-8b5fa782c87a
+    startedAt: '2026-04-19T03:40:25.683Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 56023bdb-1125-4aeb-a6df-0b38bf12c57b
+    startedAt: '2026-04-19T03:43:49.468Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: a5d8aca9-8d85-46cd-a296-14ff47c93da1
+    startedAt: '2026-04-19T03:47:04.185Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: d6e2bf8a-ab72-427e-94e6-33f67e53c63c
+    startedAt: '2026-04-19T03:54:08.439Z'

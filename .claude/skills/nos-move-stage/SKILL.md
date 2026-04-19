@@ -3,7 +3,7 @@ name: nos-move-stage
 description: >-
   Move a NOS workflow item to a different configured stage via the running
   NOS dev server. Triggers the destination stage's pipeline.
-disable-model-invocation: true
+disable-model-invocation: false
 argument-hint: "--workflow <id> --item <itemId> --stage <stageName>"
 ---
 
