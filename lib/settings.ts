@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
+import { getProjectRoot } from '@/lib/project-root';
 
-const SETTINGS_FILE = path.join(process.cwd(), '.nos', 'settings.yaml');
+const SETTINGS_FILE = path.join(getProjectRoot(), '.nos', 'settings.yaml');
 const MAX_BYTES = 65536;
 const DEFAULT_HEARTBEAT_MS = 60000;
 

@@ -3,11 +3,12 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { streamRegistry } from '@/lib/stream-registry';
 import { createErrorResponse } from '@/app/api/utils/errors';
+import { getProjectRoot } from '@/lib/project-root';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const SESSIONS_DIR = join(process.cwd(), '.claude', 'sessions');
+const SESSIONS_DIR = join(getProjectRoot(), '.claude', 'sessions');
 
 export async function GET(
   request: NextRequest,

@@ -7,9 +7,10 @@ import {
   updateItemMeta,
 } from '@/lib/workflow-store';
 import { triggerStagePipeline } from '@/lib/stage-pipeline';
+import { getProjectRoot } from '@/lib/project-root';
 import type { ItemSession, WorkflowItem } from '@/types/workflow';
 
-const SESSIONS_DIR = path.join(process.cwd(), '.claude', 'sessions');
+const SESSIONS_DIR = path.join(getProjectRoot(), '.claude', 'sessions');
 const SESSION_IDLE_MS = 30_000;
 
 export async function autoAdvanceIfEligible(

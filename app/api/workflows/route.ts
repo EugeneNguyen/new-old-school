@@ -2,10 +2,11 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { Workflow } from '@/types/workflow';
+import { getProjectRoot } from '@/lib/project-root';
 
 export async function GET() {
   try {
-    const workflowsDir = path.join(process.cwd(), '.nos', 'workflows');
+    const workflowsDir = path.join(getProjectRoot(), '.nos', 'workflows');
 
     if (!fs.existsSync(workflowsDir)) {
       return NextResponse.json([]);

@@ -3,8 +3,9 @@ import path from 'path';
 import yaml from 'js-yaml';
 import { Stage, WorkflowItem, ItemStatus, WorkflowDetail, ItemSession } from '@/types/workflow';
 import { emitItemCreated, emitItemUpdated } from '@/lib/workflow-events';
+import { getProjectRoot } from '@/lib/project-root';
 
-const WORKFLOWS_ROOT = path.join(process.cwd(), '.nos', 'workflows');
+const WORKFLOWS_ROOT = path.join(getProjectRoot(), '.nos', 'workflows');
 const META_FILE = 'meta.yml';
 const CONTENT_FILE = 'index.md';
 

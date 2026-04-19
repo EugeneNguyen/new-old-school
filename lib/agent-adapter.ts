@@ -1,6 +1,7 @@
 import { spawn } from 'child_process';
 import { createWriteStream, mkdirSync } from 'fs';
 import { join } from 'path';
+import { getProjectRoot } from '@/lib/project-root';
 
 export interface AgentAdapter {
   name: string;
@@ -11,7 +12,7 @@ export interface AgentAdapter {
   }): Promise<{ sessionId: string }>;
 }
 
-const SESSIONS_DIR = join(process.cwd(), '.claude', 'sessions');
+const SESSIONS_DIR = join(getProjectRoot(), '.claude', 'sessions');
 const SESSION_ID_TIMEOUT_MS = 10_000;
 
 function ensureSessionsDir() {
@@ -39,7 +40,7 @@ export const claudeAdapter: AgentAdapter = {
       args.push('--dangerously-skip-permissions');
 
       const child = spawn('claude', args, {
-        cwd: cwd ?? process.cwd(),
+        cwd: cwd ?? getProjectRoot(),
         env: { ...process.env },
       });
 

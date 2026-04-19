@@ -4,11 +4,12 @@ import { createWriteStream, mkdirSync } from 'fs';
 import { join } from 'path';
 import { createErrorResponse } from '@/app/api/utils/errors';
 import { streamRegistry } from '@/lib/stream-registry';
+import { getProjectRoot } from '@/lib/project-root';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const SESSIONS_DIR = join(process.cwd(), '.claude', 'sessions');
+const SESSIONS_DIR = join(getProjectRoot(), '.claude', 'sessions');
 
 function ensureSessionsDir() {
   mkdirSync(SESSIONS_DIR, { recursive: true });
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     const claude = spawn('claude', args, {
-      cwd: process.cwd(),
+      cwd: getProjectRoot(),
       env: { ...process.env },
     });
 

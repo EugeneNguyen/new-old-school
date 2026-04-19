@@ -3,8 +3,9 @@ import path from 'path';
 import yaml from 'js-yaml';
 import type { Agent } from '@/types/workflow';
 import { readStages, listWorkflows } from '@/lib/workflow-store';
+import { getProjectRoot } from '@/lib/project-root';
 
-const AGENTS_ROOT = path.join(process.cwd(), '.nos', 'agents');
+const AGENTS_ROOT = path.join(getProjectRoot(), '.nos', 'agents');
 const META_FILE = 'meta.yml';
 const CONTENT_FILE = 'index.md';
 

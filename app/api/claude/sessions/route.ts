@@ -3,12 +3,13 @@ import { readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 import { createErrorResponse } from '@/app/api/utils/errors';
 import { streamRegistry } from '@/lib/stream-registry';
+import { getProjectRoot } from '@/lib/project-root';
 import type { SessionSummary, SessionHistory, SessionHistoryMessage } from '@/types/session';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const SESSIONS_DIR = join(process.cwd(), '.claude', 'sessions');
+const SESSIONS_DIR = join(getProjectRoot(), '.claude', 'sessions');
 
 function parseLines(filePath: string): string[] {
   try {

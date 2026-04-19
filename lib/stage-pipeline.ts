@@ -7,6 +7,7 @@ import {
 import { getDefaultAdapter } from '@/lib/agent-adapter';
 import { buildAgentPrompt, loadSystemPrompt } from '@/lib/system-prompt';
 import { readAgent } from '@/lib/agents-store';
+import { getProjectRoot } from '@/lib/project-root';
 import type { ItemSession, WorkflowItem } from '@/types/workflow';
 
 export async function triggerStagePipeline(
@@ -44,7 +45,7 @@ export async function triggerStagePipeline(
   }
 
   const fullPrompt = buildAgentPrompt({
-    systemPrompt: loadSystemPrompt(process.cwd()),
+    systemPrompt: loadSystemPrompt(getProjectRoot()),
     stagePrompt: stage.prompt,
     memberPrompt: agentResolved ? memberPrompt : null,
     title: item.title,

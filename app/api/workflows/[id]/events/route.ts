@@ -9,6 +9,7 @@ import {
   workflowEvents,
   type WorkflowEvent,
 } from '@/lib/workflow-events';
+import { getProjectRoot } from '@/lib/project-root';
 import { createErrorResponse } from '@/app/api/utils/errors';
 
 export const runtime = 'nodejs';
@@ -41,7 +42,7 @@ function acquireWatcher(workflowId: string): void {
   }
 
   const glob = path.join(
-    process.cwd(),
+    getProjectRoot(),
     '.nos',
     'workflows',
     workflowId,

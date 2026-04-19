@@ -6,6 +6,31 @@
   "bin": {
     "nos": "./bin/cli.js"
   },
+  "files": [
+    "bin",
+    "templates",
+    "app",
+    "lib",
+    "components",
+    "config",
+    "hooks",
+    "public",
+    "types",
+    "instrumentation.ts",
+    "middleware.ts",
+    "next-env.d.ts",
+    "next.config.js",
+    "next.config.mjs",
+    "next.config.ts",
+    "postcss.config.js",
+    "postcss.config.mjs",
+    "tailwind.config.js",
+    "tailwind.config.ts",
+    "tsconfig.json"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "dev": "next dev -p 30128",
     "build": "next build",

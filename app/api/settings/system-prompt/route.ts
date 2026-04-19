@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { loadSystemPrompt, saveSystemPrompt } from '@/lib/system-prompt';
+import { getProjectRoot } from '@/lib/project-root';
 
 export const runtime = 'nodejs';
 
@@ -7,7 +8,7 @@ const MAX_BYTES = 65536;
 
 export async function GET() {
   try {
-    const projectRoot = process.cwd();
+    const projectRoot = getProjectRoot();
     const content = loadSystemPrompt(projectRoot);
     if (content === null) {
       return NextResponse.json({ content: '', exists: false });
@@ -37,7 +38,7 @@ export async function PUT(req: Request) {
   }
 
   try {
-    saveSystemPrompt(process.cwd(), content);
+    saveSystemPrompt(getProjectRoot(), content);
     return NextResponse.json({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
