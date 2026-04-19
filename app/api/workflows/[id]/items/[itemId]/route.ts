@@ -10,6 +10,7 @@ import { triggerStagePipeline } from '@/lib/stage-pipeline';
 import { autoAdvanceIfEligible } from '@/lib/auto-advance';
 import { ItemStatus } from '@/types/workflow';
 import { createErrorResponse } from '@/app/api/utils/errors';
+import type { ActivityActor } from '@/lib/activity-log';
 
 const VALID_STATUSES: ItemStatus[] = ['Todo', 'In Progress', 'Done', 'Failed'];
 
@@ -38,12 +39,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   try {
+    const actor = ((req.headers.get('x-nos-actor') as ActivityActor) ?? 'ui');
     const { id, itemId } = await params;
     if (!workflowExists(id)) {
       return createErrorResponse(`Workflow '${id}' not found`, 'NotFound', 404);
     }
     const body = (await req.json()) as Record<string, unknown>;
-    const patch: ItemMetaPatch = {};
+    const patch: ItemMetaPatch = { actor };
 
     if (body.title !== undefined) {
       if (typeof body.title !== 'string') {

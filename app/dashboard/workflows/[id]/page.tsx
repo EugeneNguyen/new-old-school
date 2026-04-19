@@ -2,8 +2,16 @@ import { notFound } from 'next/navigation';
 import { readWorkflowDetail } from '@/lib/workflow-store';
 import WorkflowItemsView from '@/components/dashboard/WorkflowItemsView';
 
-export default async function WorkflowPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function WorkflowPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { id } = await params;
+  const sp = await searchParams;
+  const itemParam = typeof sp.item === 'string' ? sp.item : null;
   const detail = readWorkflowDetail(id);
   if (!detail) {
     notFound();
@@ -29,6 +37,7 @@ export default async function WorkflowPage({ params }: { params: Promise<{ id: s
           workflowId={detail.id}
           stages={detail.stages}
           initialItems={detail.items}
+          initialOpenItemId={itemParam}
         />
       )}
     </div>

@@ -137,7 +137,7 @@ is self-contained:
 
 * **Default view** is **Kanban** (preserves existing behavior).
 * **Persistence scope** is **per-workflow** via `localStorage` under
-  the key `nos:workflow:<workflowId>:viewMode`, values `"kanban"` or
+  the key `nos:workflow:<<workflowworkflowId>:viewMode`, values `"kanban"` or
   `"list"`.
 * **Grouping in list mode** is **grouped by stage**, stages rendered in
   the workflow's configured order; within each stage, items are sorted
@@ -160,8 +160,8 @@ is self-contained:
 3. **Given** the user has selected "List" on workflow `W`, **when** the
    user reloads the page or navigates away and back to the same
    workflow, **then** the list view is shown on mount.
-4. **Given** the user has selected "List" on workflow `W1`, **when**
-   the user navigates to a different workflow `W2` with no stored
+4. **Given** the user has selected "List" on workflow `W1`, **when** the
+   user navigates to a different workflow `W2` with no stored
    preference, **then** `W2` still opens in Kanban (preference is
    per-workflow, not global).
 5. **Given** the list view is active, **then** for each item exactly
@@ -196,7 +196,7 @@ is self-contained:
     renders a single "No items yet" empty state (no stage groupings)
     and the new-item control remains available.
 13. **Given** the list view is active, **then** the toggle buttons are
-    real `<button>` elements with `aria-pressed` reflecting the active
+    real `<<buttonbutton>` elements with `aria-pressed` reflecting the active
     mode, and each list row is activatable with `Enter` when focused
     (click-to-open plus native button/link semantics — full arrow-key
     navigation is out of scope).
@@ -229,7 +229,7 @@ is self-contained:
   `app/api/workflows/[id]/…`, or the events stream contract. This is a
   presentation-only change.
 * **View-mode persistence** — per-workflow `localStorage` key pattern:
-  `nos:workflow:<workflowId>:viewMode`, string values `"kanban" | "list"`.
+  `nos:workflow:<<workflowworkflowId>:viewMode`, string values `"kanban" | "list"`.
   Reads must be guarded for SSR (`typeof window !== "undefined"`) and
   wrapped in `try/catch` to survive quota/private-mode failures.
 * **Shared hook (`useWorkflowItems`)** must be the *only* consumer of
@@ -288,7 +288,7 @@ is self-contained:
 10. ✅ **Pass** — Failed items render with the destructive badge variant in list mode. Evidence: `components/dashboard/ListView.tsx:9-14`, `components/dashboard/ListView.tsx:58-63`.
 11. ⚠️ **Partial** — The code appears responsive: the toggle is full-width on small screens and rows collapse to a single-column layout with title truncation. However, I did not exercise the UI in a browser at ≤640 px, so reachability and legibility were not empirically verified. Evidence: `components/dashboard/WorkflowItemsView.tsx:59-61`, `components/dashboard/ListView.tsx:45-47`, `components/dashboard/ListView.tsx:49-50`.
 12. ✅ **Pass** — With zero items, list mode renders a single “No items yet” empty state rather than stage groupings, while the add-item control remains available. Evidence: `components/dashboard/ListView.tsx:91-97`, `components/dashboard/WorkflowItemsView.tsx:86-89`.
-13. ✅ **Pass** — Toggle controls are real `<button>` elements with `aria-pressed`, and list rows are keyboard-activatable with `Enter`. Evidence: `components/dashboard/WorkflowItemsView.tsx:62-83`, `components/dashboard/ListView.tsx:35-43`.
+13. ✅ **Pass** — Toggle controls are real `<<buttonbutton>` elements with `aria-pressed`, and list rows are keyboard-activatable with `Enter`. Evidence: `components/dashboard/WorkflowItemsView.tsx:62-83`, `components/dashboard/ListView.tsx:35-43`.
 14. ✅ **Pass** — `localStorage` failures fall back to default without crashing, while in-memory state still drives the current session. Evidence: `lib/workflow-view-mode.ts:9-35`, unit coverage in `lib/workflow-view-mode.test.ts:31-58`.
 
 ### Regression / edge-case checks
@@ -297,8 +297,104 @@ is self-contained:
 * ❌ Missing requested component-level tests for `ListView` and `WorkflowItemsView`. Evidence: no matching component test files found; only `lib/use-workflow-items.test.ts` and `lib/workflow-view-mode.test.ts` exist.
 * ⚠️ Browser-level UI validation was not performed in this session, so mobile behavior and interaction polish were validated by code inspection rather than live exercise.
 
-### Follow-ups
+## Analysis
 
-* Populate the Agent column from real item/session assignment data, or revise the requirement/spec if items are not meant to expose assigned-agent information in list mode.
-* Add component tests for `components/dashboard/ListView.tsx` and `components/dashboard/WorkflowItemsView.tsx` to satisfy the testing constraint.
-* Re-run validation in a browser on a narrow viewport to confirm AC11 empirically.
+### 1. Scope
+
+**In scope**
+
+* Add a view-mode toggle (Kanban ↔ List) on the workflow detail page
+  (`app/dashboard/workflows/[id]/page.tsx`).
+* Implement a new `ListView` client component that renders the same
+  `WorkflowItem[]` currently passed to `KanbanBoard`, showing at minimum:
+  title, stage, status, assigned agent, and `updatedAt`.
+* Preserve existing item interactions in list mode: opening
+  `ItemDetailDialog`, creating new items via `NewItemDialog`, and receiving
+  live updates from the workflow events stream (the same subscription
+  `KanbanBoard` uses).
+* Persist the chosen view mode across reloads (e.g. `localStorage` key
+  scoped per-workflow, or a single global key) so the user doesn't have to
+  re-select on every navigation.
+* Keep stage grouping visible in the list (e.g. section headers or a stage
+  column) so the list remains useful when a workflow has many stages.
+
+**Explicitly out of scope**
+
+* Any change to the underlying data model or API routes — this is a pure
+  presentation-layer change.
+* Bulk-edit affordances, inline editing, column sorting, filtering, or
+  saved views. Those are natural follow-ups but belong to separate
+  requirements.
+* Drag-and-drop stage transitions from the list view. The list is
+  read/navigate-focused; stage changes continue to happen in the Kanban
+  board or the detail dialog.
+* Changing the stage-detail surface (`StageDetailDialog`) or the sidebar.
+
+### 2. Feasibility
+
+Low technical risk overall. The data the list needs is already loaded by
+`readWorkflowDetail` and already streamed into `KanbanBoard` via the
+existing events subscription, so no new server work is required.
+
+Notable considerations:
+
+* **Shared state extraction.** `KanbanBoard` currently owns item state,
+  the events subscription, self-origination tracking, the done-sound
+  hook, and the detail/new-item dialogs. To avoid duplicating that logic
+  in `ListView`, the shared concerns should be lifted into a parent
+  component (e.g. `WorkflowItemsView`) or a custom hook
+  (`useWorkflowItems`) that both views consume. This refactor is the
+  main source of effort/risk.
+* **Rendering many items.** Lists typically surface more rows at once
+  than the Kanban columns do. For workflows with hundreds of items, a
+  naive list may feel sluggish; virtualization can be deferred but we
+  should confirm current worst-case item counts before deciding.
+* **View persistence.** `localStorage` is straightforward but won't
+  survive across devices; a per-user setting on the server is
+  heavier-weight. `localStorage` is almost certainly the right trade-off
+  for now, matching the scope of the feature.
+* **Mobile layout.** The current Kanban is horizontally scrolling; a
+  list view is inherently more mobile-friendly, so this is a small UX
+  win, but the toggle control itself must remain reachable on narrow
+  screens.
+
+No spikes required.
+
+### 3. Dependencies
+
+* `components/dashboard/KanbanBoard.tsx` — primary source of logic to
+  share; will be refactored or wrapped.
+* `components/dashboard/ItemDetailDialog.tsx` and
+  `components/dashboard/NewItemDialog.tsx` — reused as-is from list view.
+* `app/dashboard/workflows/[id]/page.tsx` — host for the toggle and both
+  view components.
+* `types/workflow.ts` — existing `WorkflowItem`/`Stage` types are
+  sufficient; no new fields expected.
+* Workflow events stream (currently consumed inside `KanbanBoard`) — must
+  keep feeding whichever view is active.
+* Existing UI primitives (`Button`, `Badge`, `cn`) and the Tailwind/shadcn
+  design tokens; no new third-party dependency anticipated.
+
+No other requirement items directly block this work. REQ items that also
+modify `KanbanBoard` (if any are in flight) should be merged first or
+coordinated to avoid refactor conflicts.
+
+### 4. Open questions
+
+1. **Default view.** Should the default be Kanban (current behavior) or
+   List? Recommend Kanban to preserve continuity unless product says
+   otherwise.
+2. **Persistence scope.** Global user preference vs. per-workflow? A
+   per-workflow `localStorage` key is more flexible; a single global key
+   is simpler. Pick one before implementation.
+3. **Grouping in list mode.** Flat list sorted by `updatedAt`, grouped by
+   stage, or user-switchable? A stage-grouped list matches the mental
+   model of the Kanban and is the proposed default.
+4. **Columns/fields shown.** Confirm which fields appear as columns:
+   title, stage, status, agent, updatedAt — plus anything else
+   stakeholders expect (e.g. priority, assignee, comment count).
+5. **Empty/failed states.** Should failed items be highlighted
+   differently in the list (they already have a destructive badge in
+   Kanban)? Assume yes unless told otherwise.
+6. **Keyboard/a11y.** Is keyboard navigation through the list (arrow
+   keys, Enter to open) required for this iteration, or a follow-up?

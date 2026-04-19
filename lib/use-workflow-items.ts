@@ -36,12 +36,16 @@ interface UseWorkflowItemsOptions {
   workflowId: string;
   initialStages: Stage[];
   initialItems: WorkflowItem[];
+  initialOpenItemId?: string | null;
+  onItemNotFound?: (itemId: string) => void;
 }
 
 export function useWorkflowItems({
   workflowId,
   initialStages,
   initialItems,
+  initialOpenItemId,
+  onItemNotFound,
 }: UseWorkflowItemsOptions) {
   const [stages, setStages] = useState<Stage[]>(initialStages);
   const [items, setItems] = useState<WorkflowItem[]>(initialItems);
@@ -52,6 +56,21 @@ export function useWorkflowItems({
 
   const playDoneSound = useItemDoneSound();
   const selfOriginatedRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const onItemNotFoundRef = useRef(onItemNotFound);
+  onItemNotFoundRef.current = onItemNotFound;
+  const autoOpenHandledRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!initialOpenItemId) return;
+    if (autoOpenHandledRef.current === initialOpenItemId) return;
+    autoOpenHandledRef.current = initialOpenItemId;
+    const found = items.find((item) => item.id === initialOpenItemId);
+    if (found) {
+      setDetailItemId(initialOpenItemId);
+    } else {
+      onItemNotFoundRef.current?.(initialOpenItemId);
+    }
+  }, [initialOpenItemId, items]);
 
   useEffect(() => {
     setStages(initialStages);

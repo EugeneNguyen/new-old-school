@@ -52,6 +52,13 @@ export async function PATCH(
       patch.displayName = body.displayName;
     }
 
+    if (body.adapter !== undefined) {
+      if (typeof body.adapter !== 'string' || !body.adapter.trim()) {
+        return createErrorResponse('adapter is required', 'BadRequest', 400);
+      }
+      patch.adapter = body.adapter;
+    }
+
     if (body.model !== undefined) {
       if (body.model !== null && typeof body.model !== 'string') {
         return createErrorResponse('"model" must be a string or null', 'BadRequest', 400);

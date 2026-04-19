@@ -30,7 +30,7 @@ export async function autoAdvanceIfEligible(
   if (current.autoAdvanceOnComplete !== true) return null;
 
   const next = stages[currentIdx + 1];
-  const advanced = updateItemMeta(workflowId, itemId, { stage: next.name });
+  const advanced = updateItemMeta(workflowId, itemId, { stage: next.name, actor: 'runtime' });
   if (!advanced) return null;
 
   console.log(
@@ -173,7 +173,7 @@ export async function completeSessionIfFinished(
     '(no summary captured from session log)';
   const prefix = finished ? '' : '[runtime] session log stalled; ';
   appendItemComment(workflowId, itemId, `${prefix}${summary}`);
-  const updated = updateItemMeta(workflowId, itemId, { status: 'Done' });
+  const updated = updateItemMeta(workflowId, itemId, { status: 'Done', actor: 'runtime' });
 
   console.log(
     `[session-complete] workflow=${workflowId} item=${itemId} stage=${item.stage} session=${session.sessionId} -> Done`

@@ -1,10 +1,12 @@
 import { EventEmitter } from 'events';
 import type { WorkflowItem } from '@/types/workflow';
+import type { ActivityEntry } from '@/lib/activity-log';
 
 export type WorkflowEvent =
   | { type: 'item-updated'; workflowId: string; itemId: string; item: WorkflowItem }
   | { type: 'item-created'; workflowId: string; itemId: string; item: WorkflowItem }
-  | { type: 'item-deleted'; workflowId: string; itemId: string };
+  | { type: 'item-deleted'; workflowId: string; itemId: string }
+  | { type: 'item-activity'; entry: ActivityEntry };
 
 export const WORKFLOW_EVENT = 'workflow-event';
 

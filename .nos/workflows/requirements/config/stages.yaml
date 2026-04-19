@@ -28,6 +28,7 @@
     Append the analysis to the item's `index.md` under an `## Analysis` section.
     Do not modify the original request text. Do not start implementation.
   autoAdvanceOnComplete: true
+  agentId: null
 - name: Documentation
   description: Write detailed requirement specs, user stories, and acceptance criteria.
   prompt: >
@@ -53,6 +54,7 @@
     Keep the document the single source of truth — anything an implementer needs
     must be answerable from this section. Do not write code.
   autoAdvanceOnComplete: true
+  agentId: null
 - name: Implementation
   description: Build the feature or fix according to the documented requirements.
   prompt: >

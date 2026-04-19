@@ -58,6 +58,8 @@ function readAgentFolder(id: string): Agent | null {
   return {
     id,
     displayName: String(data.displayName ?? id),
+    adapter:
+      typeof data.adapter === 'string' && data.adapter ? data.adapter : 'claude',
     model: typeof data.model === 'string' && data.model ? data.model : null,
     prompt,
     createdAt:
@@ -114,6 +116,7 @@ function writeAgent(id: string, meta: Record<string, unknown>, prompt: string): 
 
 export interface CreateAgentInput {
   displayName: string;
+  adapter: string;
   model?: string | null;
   prompt?: string;
   id?: string;
@@ -122,6 +125,12 @@ export interface CreateAgentInput {
 export function createAgent(input: CreateAgentInput): Agent | { error: string } {
   const displayName = input.displayName.trim();
   if (!displayName) return { error: 'displayName is required' };
+
+  const adapter = (input.adapter ?? '').trim();
+  if (!adapter) return { error: 'adapter is required' };
+  if (!/^[a-z][a-z0-9_-]*$/.test(adapter)) {
+    return { error: `adapter '${adapter}' must be a lowercase slug` };
+  }
 
   let baseId: string;
   if (input.id !== undefined) {
@@ -148,6 +157,7 @@ export function createAgent(input: CreateAgentInput): Agent | { error: string } 
   const meta: Record<string, unknown> = {
     id: finalId,
     displayName,
+    adapter,
     model: typeof input.model === 'string' && input.model.trim() ? input.model.trim() : null,
     createdAt: now,
     updatedAt: now,
@@ -157,6 +167,7 @@ export function createAgent(input: CreateAgentInput): Agent | { error: string } 
 
 export interface AgentPatch {
   displayName?: string;
+  adapter?: string;
   model?: string | null;
   prompt?: string;
 }
@@ -169,6 +180,11 @@ export function updateAgent(id: string, patch: AgentPatch): Agent | null {
     const name = patch.displayName.trim();
     if (!name) return null;
     meta.displayName = name;
+  }
+  if (patch.adapter !== undefined) {
+    const adapter = patch.adapter.trim();
+    if (!adapter || !/^[a-z][a-z0-9_-]*$/.test(adapter)) return null;
+    meta.adapter = adapter;
   }
   if (patch.model !== undefined) {
     meta.model =

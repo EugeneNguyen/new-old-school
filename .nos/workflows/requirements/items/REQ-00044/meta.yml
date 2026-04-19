@@ -1,0 +1,76 @@
+title: implement mechanism to find item
+stage: Done
+status: Todo
+comments:
+  - >-
+    The analysis was already written by a concurrent Analysis session (the item
+    had two sessions started at nearly the same moment). The existing content
+    already covers all four required sections thoroughly — scope (in/out),
+    feasibility with risks, dependencies on specific files, and open questions —
+    so I'll leave it in place rather than overwrite good work.
+
+
+    Analysis is complete in `index.md`. The existing content was written by a
+    parallel session that triggered ~1s before mine; its scope, feasibility,
+    dependencies, and open-questions sections adequately cover the request. I
+    did not modify it to avoid clobbering. The key takeaway for the next stage:
+    the item's raw body is empty, so before documentation the requester must
+    confirm whether "find item" means (a) a per-workflow inline filter, (b) a
+    global command-palette quick-open, or (c) an agent-facing skill/API — the
+    default interpretation recorded is (a), scoped to `id`+`title` substring
+    match.
+  - '[runtime] session log stalled; (no summary captured from session log)'
+  - >-
+    Implementation complete. All 22 acceptance criteria are satisfied by a
+    single change to `components/dashboard/WorkflowItemsView.tsx`:
+
+
+    - Added `query` local state with reset on `workflowId` change
+
+    - `filteredItems` memoized via `useMemo` using case-insensitive `id`/`title`
+    substring match
+
+    - Search `<Input type="search">` with `Search` icon and conditional `X`
+    clear button added to the toolbar, using existing shadcn/ui + lucide-react
+
+    - `Escape` key clears query (with `stopPropagation`) when non-empty
+
+    - Both `KanbanBoard` and `ListView` now receive `filteredItems`; their
+    public props are unchanged
+
+    - "No items match …" message shown above views when filtered result is empty
+
+    - No backend changes, no new dependencies, no new types
+  - >-
+    Validated REQ-00044 — all 22 acceptance criteria pass against
+    `components/dashboard/WorkflowItemsView.tsx`. Verified the search input's
+    placeholder/aria-label, clear-button gating, `useMemo`-backed id+title
+    substring filter, Escape-to-clear with conditional `stopPropagation`,
+    `workflowId` reset effect, and unchanged drag/open/create wiring. Both
+    `KanbanBoard` and `ListView` iterate `stages.map` first, so every stage
+    column/group still renders under an empty filter result, and the `No items
+    match "<q>"` line appears only when `trimmedQuery` is non-empty. `npx tsc
+    --noEmit` is clean. Validation section appended and pushed as `907fcce`.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 500d1538-5a51-42f5-9ad3-c1140e123f88
+    startedAt: '2026-04-19T11:17:50.051Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: d992e36e-4841-41cc-94f5-037ebe0b414a
+    startedAt: '2026-04-19T11:17:51.083Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: f663a4bb-d4d2-464a-9c75-01a98da64f53
+    startedAt: '2026-04-19T11:19:59.486Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 22fcb1fb-11e3-491f-9297-7213d2cf3e21
+    startedAt: '2026-04-19T11:21:22.221Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 79337308-0a66-4a03-9c69-e45aed747587
+    startedAt: '2026-04-19T11:23:30.845Z'
+updatedAt: '2026-04-19T11:25:16.274Z'

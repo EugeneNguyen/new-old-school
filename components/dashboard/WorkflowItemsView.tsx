@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { LayoutGrid, List } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { LayoutGrid, List, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   DEFAULT_WORKFLOW_VIEW_MODE,
   readWorkflowViewMode,
@@ -21,15 +23,31 @@ interface Props {
   workflowId: string;
   stages: Stage[];
   initialItems: WorkflowItem[];
+  initialOpenItemId?: string | null;
 }
 
-export default function WorkflowItemsView({ workflowId, stages, initialItems }: Props) {
+export default function WorkflowItemsView({ workflowId, stages, initialItems, initialOpenItemId }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [viewMode, setViewMode] = useState<WorkflowViewMode>(DEFAULT_WORKFLOW_VIEW_MODE);
+  const [query, setQuery] = useState('');
+  const [missingItemId, setMissingItemId] = useState<string | null>(null);
+  const urlClearedRef = useRef<string | null>(null);
+
+  const handleItemNotFound = useCallback(
+    (itemId: string) => {
+      setMissingItemId(itemId);
+      router.replace(pathname);
+    },
+    [router, pathname]
+  );
+
   const {
     stages: currentStages,
     items,
     error,
     detailItem,
+    detailItemId,
     newItemOpen,
     editStage,
     moveItem,
@@ -43,11 +61,37 @@ export default function WorkflowItemsView({ workflowId, stages, initialItems }: 
     handleItemSaved,
     handleItemCreated,
     handleStageSaved,
-  } = useWorkflowItems({ workflowId, initialStages: stages, initialItems });
+  } = useWorkflowItems({
+    workflowId,
+    initialStages: stages,
+    initialItems,
+    initialOpenItemId,
+    onItemNotFound: handleItemNotFound,
+  });
+
+  // Clear the ?item= param once the auto-opened dialog is visible (AC-7)
+  useEffect(() => {
+    if (!initialOpenItemId) return;
+    if (urlClearedRef.current === initialOpenItemId) return;
+    if (detailItemId === initialOpenItemId) {
+      urlClearedRef.current = initialOpenItemId;
+      router.replace(pathname);
+    }
+  }, [detailItemId, initialOpenItemId, router, pathname]);
 
   useEffect(() => {
     setViewMode(readWorkflowViewMode(workflowId));
+    setQuery('');
   }, [workflowId]);
+
+  const trimmedQuery = query.trim();
+  const filteredItems = useMemo(() => {
+    if (!trimmedQuery) return items;
+    const q = trimmedQuery.toLowerCase();
+    return items.filter(
+      (item) => item.id.toLowerCase().includes(q) || item.title.toLowerCase().includes(q)
+    );
+  }, [items, trimmedQuery]);
 
   function updateViewMode(nextMode: WorkflowViewMode) {
     setViewMode(nextMode);
@@ -82,6 +126,35 @@ export default function WorkflowItemsView({ workflowId, stages, initialItems }: 
               List
             </button>
           </div>
+          <div className="relative flex items-center">
+            <Search className="pointer-events-none absolute left-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              aria-label="Find item"
+              placeholder="Find item…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape' && query !== '') {
+                  e.stopPropagation();
+                  setQuery('');
+                }
+              }}
+              className="h-8 w-48 pl-8 pr-8 text-sm"
+            />
+            {query && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Clear filter"
+                onClick={() => setQuery('')}
+                className="absolute right-0 h-8 w-8 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
         <Button size="sm" onClick={openNewItem} disabled={currentStages.length === 0}>
           Add item
@@ -94,16 +167,36 @@ export default function WorkflowItemsView({ workflowId, stages, initialItems }: 
         </div>
       )}
 
+      {missingItemId && (
+        <div className="flex items-center justify-between rounded-md border border-yellow-500/50 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-700 dark:text-yellow-400">
+          <span>Item <span className="font-mono">{missingItemId}</span> no longer exists.</span>
+          <button
+            type="button"
+            aria-label="Dismiss"
+            onClick={() => setMissingItemId(null)}
+            className="ml-4 text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-200"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {trimmedQuery && filteredItems.length === 0 && (
+        <p className="text-sm text-muted-foreground">
+          No items match &ldquo;{trimmedQuery}&rdquo;
+        </p>
+      )}
+
       {viewMode === 'kanban' ? (
         <KanbanBoard
           stages={currentStages}
-          items={items}
+          items={filteredItems}
           onOpenItem={openItem}
           onMoveItem={moveItem}
           onOpenStage={openStage}
         />
       ) : (
-        <ListView stages={currentStages} items={items} onOpenItem={openItem} />
+        <ListView stages={currentStages} items={filteredItems} onOpenItem={openItem} />
       )}
 
       <ItemDetailDialog

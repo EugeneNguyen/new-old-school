@@ -27,6 +27,10 @@ export async function POST(req: Request) {
       );
     }
 
+    if (typeof body.adapter !== 'string' || !body.adapter.trim()) {
+      return createErrorResponse('adapter is required', 'BadRequest', 400);
+    }
+
     if (
       body.model !== undefined &&
       body.model !== null &&
@@ -51,6 +55,7 @@ export async function POST(req: Request) {
 
     const result = createAgent({
       displayName: body.displayName,
+      adapter: body.adapter,
       model: (body.model as string | null | undefined) ?? null,
       prompt: (body.prompt as string | undefined) ?? '',
       id: body.id as string | undefined,

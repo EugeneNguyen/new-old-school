@@ -1,17 +1,10 @@
 'use client';
 
 import { memo, useMemo } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { getItemStatusStyle } from '@/lib/item-status-style';
 import { formatRelativeUpdatedAt } from '@/lib/workflow-view-mode';
-import { ItemStatus, Stage, WorkflowItem } from '@/types/workflow';
-
-const STATUS_VARIANT: Record<ItemStatus, 'secondary' | 'default' | 'success' | 'destructive'> = {
-  Todo: 'secondary',
-  'In Progress': 'default',
-  Done: 'success',
-  Failed: 'destructive',
-};
+import { Stage, WorkflowItem } from '@/types/workflow';
 
 interface Props {
   stages: Stage[];
@@ -31,6 +24,7 @@ const ListRow = memo(function ListRow({
   item: WorkflowItem;
   onOpenItem: (itemId: string) => void;
 }) {
+  const statusStyle = getItemStatusStyle(item.status);
   return (
     <button
       type="button"
@@ -42,8 +36,10 @@ const ListRow = memo(function ListRow({
         }
       }}
       className={cn(
-        'grid w-full grid-cols-1 gap-2 rounded-md border bg-card px-3 py-3 text-left shadow-sm transition-colors',
-        'hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-ring sm:grid-cols-[minmax(0,2.2fr)_minmax(120px,1fr)_minmax(120px,auto)_minmax(120px,1fr)_minmax(90px,auto)] sm:items-center sm:gap-3'
+        'grid w-full grid-cols-1 gap-2 rounded-md border px-3 py-3 text-left shadow-sm transition-all',
+        'hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring sm:grid-cols-[minmax(0,2.2fr)_minmax(120px,1fr)_minmax(120px,auto)_minmax(120px,1fr)_minmax(90px,auto)] sm:items-center sm:gap-3',
+        statusStyle.border,
+        statusStyle.bg
       )}
     >
       <span className="min-w-0">
@@ -59,7 +55,13 @@ const ListRow = memo(function ListRow({
         <span className="mr-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground sm:hidden">
           Status
         </span>
-        <Badge variant={STATUS_VARIANT[item.status]}>{item.status}</Badge>
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            className={cn('h-2 w-2 rounded-full shrink-0', statusStyle.dot)}
+            aria-hidden="true"
+          />
+          <span className={cn('text-xs font-medium', statusStyle.label)}>{item.status}</span>
+        </span>
       </span>
       <span className="text-sm text-muted-foreground">
         <span className="mr-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground sm:hidden">

@@ -158,3 +158,17 @@ Acceptance criteria verdicts:
 7. Add an `## Implementation Notes` section to this `index.md` describing the changes made, then re-run validate.
 
 Because the validation failed, this item remains in the Validate stage. No code changes were committed by this validation run (there is nothing to commit).
+
+## Implementation Notes
+
+All 15 acceptance criteria are addressed by changes to four files:
+
+- **`app/dashboard/activity/page.tsx`**: The `{entry.itemId}` span is now a `<Link>` pointing to `/dashboard/workflows/<workflowId>?item=<itemId>` with `aria-label="Open item <itemId>"`. The existing workflow ID `<Link>` gains `aria-label="Open workflow <workflowId>"`. The row `<div>` is unchanged (no click handler, not a button).
+
+- **`lib/use-workflow-items.ts`**: Added `initialOpenItemId?: string | null` and `onItemNotFound?: (itemId: string) => void` to `UseWorkflowItemsOptions`. A `useEffect` fires once per distinct `initialOpenItemId` value (guarded by `autoOpenHandledRef`): if the item is in the list it calls `setDetailItemId`; otherwise it calls `onItemNotFound`.
+
+- **`components/dashboard/WorkflowItemsView.tsx`**: Accepts `initialOpenItemId` prop. Passes it and an `handleItemNotFound` callback to `useWorkflowItems`. A separate effect clears the `?item=` param via `router.replace(pathname)` once `detailItemId` matches (guarded by `urlClearedRef`). `handleItemNotFound` clears the URL param and sets `missingItemId` state, which renders an inline dismissible banner: "Item `<id>` no longer exists."
+
+- **`app/dashboard/workflows/[id]/page.tsx`**: Now receives `searchParams` (Next.js App Router async prop) and passes `itemParam` as `initialOpenItemId` to `WorkflowItemsView`. No Suspense boundary is needed because the value is read in the server component and passed as a plain prop.
+
+Deviations from spec: none. No toast library was introduced; the inline banner satisfies the fallback permitted by the technical constraints.

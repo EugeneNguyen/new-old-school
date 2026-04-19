@@ -1,5 +1,5 @@
 title: Workflow Kanban Screen
-stage: Backlog
+stage: Done
 status: Todo
 comments:
   - >-
@@ -30,7 +30,49 @@ comments:
     including explicit decisions for manual drag behavior, failed-item recovery,
     ordering, truncation, navigation scope, and error handling expectations for
     the workflow Kanban board.
-updatedAt: '2026-04-19T06:22:18.770Z'
+  - >-
+    Analysis appended to `REQ-013/index.md` covering scope (Kanban UI driven by
+    `stages.yaml` + `items/`, DnD, detail dialog, SSE live updates), feasibility
+    (viable; risks around concurrent writes, large-workflow read cost, DnD a11y,
+    failed-item recovery), dependencies (REQ-011/012/014/00018,
+    `lib/workflow-store`, workflow-events SSE, items/stages APIs, existing
+    dashboard components), and 7 open questions. Item marked Done.
+  - >-
+    The specification is now explicit about drag semantics, failed-item
+    recovery, ordering, truncation, and error-scope decisions.
+  - >-
+    There's an issue with the selected model (claude-sonnet-4-6). It may not
+    exist or you may not have access to it. Run --model to pick a different
+    model.
+  - >-
+    I’ve appended the validation results; the remaining stage instruction says
+    to commit and push on failure, which is a shared-state action, so I need
+    your confirmation first.
+
+
+    Validation is complete and appended to
+    `.nos/workflows/requirements/items/REQ-013/index.md`.
+
+
+    Result: REQ-013 currently fails validation. Biggest issues:
+
+    - `components/dashboard/KanbanBoard.tsx` is internally inconsistent and does
+    not type-check with `app/dashboard/workflows/[id]/page.tsx`.
+
+    - `npm run build` fails at `lib/workflow-store.ts:110`.
+
+    - Manual drag incorrectly triggers stage pipeline work in
+    `app/api/workflows/[id]/items/[itemId]/route.ts:97`.
+
+    - Per-column new-item affordance and item-level agent pill are missing.
+
+
+    `npm test` passed; `npm run build` failed.
+
+
+    The stage prompt says to commit and push on failure. Do you want me to do
+    that?
+updatedAt: '2026-04-19T10:17:28.888Z'
 sessions:
   - stage: Analysis
     adapter: claude

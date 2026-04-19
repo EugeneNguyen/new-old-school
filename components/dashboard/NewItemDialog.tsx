@@ -6,9 +6,9 @@ import { X } from 'lucide-react';
 import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { ItemStatus, Stage, WorkflowItem } from '@/types/workflow';
+import { getItemStatusStyle } from '@/lib/item-status-style';
+import { Stage, WorkflowItem } from '@/types/workflow';
 
 const ItemDescriptionEditor = dynamic(() => import('./ItemDescriptionEditor'), {
   ssr: false,
@@ -22,13 +22,6 @@ interface Props {
   onCreated: (item: WorkflowItem) => void;
 }
 
-const STATUS_VARIANT: Record<ItemStatus, 'secondary' | 'default' | 'success' | 'destructive'> = {
-  Todo: 'secondary',
-  'In Progress': 'default',
-  Done: 'success',
-  Failed: 'destructive',
-};
-
 export default function NewItemDialog({
   open,
   onOpenChange,
@@ -37,8 +30,8 @@ export default function NewItemDialog({
   onCreated,
 }: Props) {
   const defaultStage = stages[0]?.name ?? '';
+  const todoStyle = getItemStatusStyle('Todo');
   const [title, setTitle] = useState('');
-  const [id, setId] = useState('');
   const [body, setBody] = useState('');
   const [stage, setStage] = useState(defaultStage);
   const [submitting, setSubmitting] = useState(false);
@@ -48,7 +41,6 @@ export default function NewItemDialog({
   useEffect(() => {
     if (!open) return;
     setTitle('');
-    setId('');
     setBody('');
     setStage(stages[0]?.name ?? '');
     setError(null);
@@ -69,7 +61,6 @@ export default function NewItemDialog({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: title.trim(),
-          ...(id.trim() ? { id: id.trim() } : {}),
           ...(body ? { body } : {}),
           ...(stage ? { stage } : {}),
         }),
@@ -116,18 +107,6 @@ export default function NewItemDialog({
 
         <div className="grid flex-1 grid-cols-1 gap-0 overflow-hidden md:grid-cols-[1fr_220px]">
           <div className="flex max-h-[70vh] flex-col gap-4 overflow-auto p-4">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="new-item-id" className="text-xs font-medium text-muted-foreground">
-                ID <span className="text-muted-foreground/70">(optional, auto-generated)</span>
-              </label>
-              <Input
-                id="new-item-id"
-                value={id}
-                onChange={(e) => setId(e.target.value)}
-                placeholder="e.g. REQ-00015"
-              />
-            </div>
-
             <div className="flex flex-col gap-1.5">
               <label
                 id="new-item-description-label"
@@ -177,9 +156,12 @@ export default function NewItemDialog({
                 Status
               </p>
               <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between rounded-md border border-primary bg-primary/10 px-3 py-1.5 text-sm font-medium">
-                  <span>Todo</span>
-                  <Badge variant={STATUS_VARIANT.Todo}>Todo</Badge>
+                <div className="flex items-center gap-2 rounded-md border border-primary bg-primary/10 px-3 py-1.5 text-sm font-medium">
+                  <span
+                    className={cn('h-2 w-2 rounded-full shrink-0', todoStyle.dot)}
+                    aria-hidden="true"
+                  />
+                  <span className={todoStyle.label}>Todo</span>
                 </div>
               </div>
             </div>

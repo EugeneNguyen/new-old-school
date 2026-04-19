@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,35 +14,25 @@ const ItemDescriptionEditor = dynamic(
   { ssr: false }
 );
 
-const CURATED_MODELS = [
-  { value: '', label: 'Adapter default' },
-  { value: 'claude-opus-4-7', label: 'claude-opus-4-7 (Opus)' },
-  { value: 'claude-sonnet-4-6', label: 'claude-sonnet-4-6 (Sonnet)' },
-  { value: 'claude-haiku-4-5-20251001', label: 'claude-haiku-4-5 (Haiku)' },
-];
+const OTHER_MODEL_SENTINEL = '__other__';
+const DEFAULT_ADAPTER = 'claude';
+const MODELS_FETCH_TIMEOUT_MS = 5000;
 
-type ModelChoice = 'default' | 'claude-opus-4-7' | 'claude-sonnet-4-6' | 'claude-haiku-4-5-20251001' | 'other';
-
-function modelToChoice(model: string | null | undefined): { choice: ModelChoice; custom: string } {
-  if (!model) return { choice: 'default', custom: '' };
-  const match = CURATED_MODELS.find((m) => m.value && m.value === model);
-  if (match) return { choice: match.value as ModelChoice, custom: '' };
-  return { choice: 'other', custom: model };
+interface AdapterOption {
+  name: string;
+  label: string;
 }
 
-function resolveModel(choice: ModelChoice, custom: string): string | null {
-  if (choice === 'default') return null;
-  if (choice === 'other') {
-    const trimmed = custom.trim();
-    return trimmed || null;
-  }
-  return choice;
+interface ModelOption {
+  id: string;
+  label: string;
 }
 
 interface EditorState {
   id: string | null;
   displayName: string;
-  choice: ModelChoice;
+  adapter: string;
+  choice: string; // '' = default, model id, or OTHER_MODEL_SENTINEL
   customModel: string;
   prompt: string;
 }
@@ -50,7 +40,8 @@ interface EditorState {
 const BLANK_EDITOR: EditorState = {
   id: null,
   displayName: '',
-  choice: 'default',
+  adapter: DEFAULT_ADAPTER,
+  choice: '',
   customModel: '',
   prompt: '',
 };
@@ -58,6 +49,23 @@ const BLANK_EDITOR: EditorState = {
 interface ConflictInfo {
   references: { workflowId: string; stageName: string }[];
   agentId: string;
+}
+
+function deriveChoice(model: string | null | undefined): {
+  choice: string;
+  customModel: string;
+} {
+  if (!model) return { choice: '', customModel: '' };
+  return { choice: model, customModel: '' };
+}
+
+function resolveModel(choice: string, customModel: string): string | null {
+  if (choice === '') return null;
+  if (choice === OTHER_MODEL_SENTINEL) {
+    const trimmed = customModel.trim();
+    return trimmed || null;
+  }
+  return choice;
 }
 
 export default function MembersPage() {
@@ -69,6 +77,14 @@ export default function MembersPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [conflict, setConflict] = useState<ConflictInfo | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+  const [adapters, setAdapters] = useState<AdapterOption[]>([]);
+  const [adaptersError, setAdaptersError] = useState<string | null>(null);
+
+  const [models, setModels] = useState<ModelOption[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [modelsError, setModelsError] = useState<string | null>(null);
+  const modelsFetchId = useRef(0);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -89,21 +105,77 @@ export default function MembersPage() {
     void reload();
   }, [reload]);
 
-  function startCreate() {
-    setEditor({ ...BLANK_EDITOR });
+  const loadAdapters = useCallback(async () => {
+    try {
+      const res = await fetch('/api/adapters', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`Failed to load adapters (${res.status})`);
+      const data = (await res.json()) as { adapters?: AdapterOption[] };
+      const list = Array.isArray(data.adapters) ? data.adapters : [];
+      setAdapters(list);
+      setAdaptersError(null);
+    } catch (err) {
+      setAdapters([{ name: DEFAULT_ADAPTER, label: 'Claude CLI' }]);
+      setAdaptersError(err instanceof Error ? err.message : String(err));
+    }
+  }, []);
+
+  const loadModels = useCallback(async (adapter: string) => {
+    const requestId = ++modelsFetchId.current;
+    setModelsLoading(true);
+    setModelsError(null);
+    setModels([]);
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), MODELS_FETCH_TIMEOUT_MS);
+
+    try {
+      const res = await fetch(`/api/adapters/${encodeURIComponent(adapter)}/models`, {
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const data = (await res.json()) as { models?: ModelOption[] };
+      if (requestId !== modelsFetchId.current) return;
+      setModels(Array.isArray(data.models) ? data.models : []);
+      setModelsError(null);
+    } catch {
+      if (requestId !== modelsFetchId.current) return;
+      setModels([{ id: OTHER_MODEL_SENTINEL, label: 'Other (custom model id)' }]);
+      setModelsError('Could not load model list');
+    } finally {
+      if (requestId === modelsFetchId.current) {
+        clearTimeout(timer);
+        setModelsLoading(false);
+      }
+    }
+  }, []);
+
+  function openEditor(next: EditorState) {
+    setEditor(next);
     setSaveError(null);
+    void loadAdapters();
+    void loadModels(next.adapter);
+  }
+
+  function startCreate() {
+    openEditor({ ...BLANK_EDITOR });
   }
 
   function startEdit(agent: Agent) {
-    const { choice, custom } = modelToChoice(agent.model);
-    setEditor({
+    const { choice, customModel } = deriveChoice(agent.model);
+    openEditor({
       id: agent.id,
       displayName: agent.displayName,
+      adapter: agent.adapter ?? DEFAULT_ADAPTER,
       choice,
-      customModel: custom,
+      customModel,
       prompt: agent.prompt,
     });
-    setSaveError(null);
+  }
+
+  function changeAdapter(nextAdapter: string) {
+    setEditor((curr) => (curr ? { ...curr, adapter: nextAdapter } : curr));
+    void loadModels(nextAdapter);
   }
 
   async function handleSave() {
@@ -111,6 +183,11 @@ export default function MembersPage() {
     const name = editor.displayName.trim();
     if (!name) {
       setSaveError('Name is required');
+      return;
+    }
+    const adapter = editor.adapter.trim();
+    if (!adapter) {
+      setSaveError('Adapter is required');
       return;
     }
     setSaving(true);
@@ -121,7 +198,7 @@ export default function MembersPage() {
         const res = await fetch('/api/agents', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ displayName: name, model, prompt: editor.prompt }),
+          body: JSON.stringify({ displayName: name, adapter, model, prompt: editor.prompt }),
         });
         if (!res.ok) {
           const msg = await res.text();
@@ -131,7 +208,7 @@ export default function MembersPage() {
         const res = await fetch(`/api/agents/${encodeURIComponent(editor.id)}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ displayName: name, model, prompt: editor.prompt }),
+          body: JSON.stringify({ displayName: name, adapter, model, prompt: editor.prompt }),
         });
         if (!res.ok) {
           const msg = await res.text();
@@ -170,6 +247,14 @@ export default function MembersPage() {
       setPendingDeleteId(null);
     }
   }
+
+  const currentChoice = editor?.choice ?? '';
+  const storedChoiceIsUnknown =
+    !!editor &&
+    !modelsLoading &&
+    currentChoice !== '' &&
+    currentChoice !== OTHER_MODEL_SENTINEL &&
+    !models.some((m) => m.id === currentChoice);
 
   return (
     <div className="p-8 space-y-6">
@@ -219,6 +304,8 @@ export default function MembersPage() {
                     <p className="font-mono text-xs text-muted-foreground">
                       {agent.id}
                       {' · '}
+                      {agent.adapter ?? DEFAULT_ADAPTER}
+                      {' · '}
                       {agent.model ?? 'adapter default'}
                       {' · updated '}
                       {new Date(agent.updatedAt).toLocaleString()}
@@ -253,7 +340,7 @@ export default function MembersPage() {
             <CardDescription>
               {editor.id === null
                 ? 'The id is derived from the name and becomes immutable once saved.'
-                : 'Name, model, and prompt can be edited. The id is immutable.'}
+                : 'Name, adapter, model, and prompt can be edited. The id is immutable.'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -269,27 +356,68 @@ export default function MembersPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Model</label>
+              <label className="text-xs font-medium text-muted-foreground">Adapter</label>
               <select
-                value={editor.choice}
-                onChange={(e) =>
-                  setEditor((curr) =>
-                    curr ? { ...curr, choice: e.target.value as ModelChoice } : curr
-                  )
-                }
+                value={editor.adapter}
+                onChange={(e) => changeAdapter(e.target.value)}
                 className={cn(
                   'h-9 w-full rounded-md border border-input bg-background px-2 text-sm',
                   'focus:outline-none focus:ring-2 focus:ring-ring'
                 )}
               >
-                {CURATED_MODELS.map((m) => (
-                  <option key={m.value || 'default'} value={m.value || 'default'}>
-                    {m.label}
+                {adapters.length === 0 && (
+                  <option value={editor.adapter}>{editor.adapter}</option>
+                )}
+                {adapters.map((a) => (
+                  <option key={a.name} value={a.name}>
+                    {a.label}
                   </option>
                 ))}
-                <option value="other">Other…</option>
+                {adapters.length > 0 &&
+                  !adapters.some((a) => a.name === editor.adapter) && (
+                    <option value={editor.adapter}>{editor.adapter}</option>
+                  )}
               </select>
-              {editor.choice === 'other' && (
+              {adaptersError && (
+                <p className="text-xs text-destructive">Could not load adapter list</p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Model</label>
+              <select
+                value={editor.choice}
+                onChange={(e) =>
+                  setEditor((curr) =>
+                    curr ? { ...curr, choice: e.target.value } : curr
+                  )
+                }
+                disabled={modelsLoading}
+                className={cn(
+                  'h-9 w-full rounded-md border border-input bg-background px-2 text-sm',
+                  'focus:outline-none focus:ring-2 focus:ring-ring',
+                  'disabled:opacity-60'
+                )}
+              >
+                {modelsLoading ? (
+                  <option value={editor.choice}>Loading models…</option>
+                ) : (
+                  <>
+                    {storedChoiceIsUnknown && (
+                      <option value={editor.choice}>{editor.choice}</option>
+                    )}
+                    {models.map((m) => (
+                      <option key={m.id || 'default'} value={m.id}>
+                        {m.label}
+                      </option>
+                    ))}
+                    {!models.some((m) => m.id === '') && (
+                      <option value="">Adapter default</option>
+                    )}
+                  </>
+                )}
+              </select>
+              {editor.choice === OTHER_MODEL_SENTINEL && (
                 <Input
                   value={editor.customModel}
                   onChange={(e) =>
@@ -299,6 +427,14 @@ export default function MembersPage() {
                   }
                   placeholder="custom-model-id"
                 />
+              )}
+              {modelsError && (
+                <p className="text-xs text-destructive">{modelsError}</p>
+              )}
+              {storedChoiceIsUnknown && (
+                <p className="text-xs text-amber-600">
+                  {`Model ${editor.choice} is not offered by adapter ${editor.adapter}; it will be used as-is`}
+                </p>
               )}
             </div>
 

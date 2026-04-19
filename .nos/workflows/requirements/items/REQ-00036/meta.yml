@@ -1,5 +1,5 @@
 title: Able to switch between display in list and display in kanban
-stage: Backlog
+stage: Done
 status: Todo
 comments:
   - >-
@@ -22,7 +22,38 @@ comments:
     localStorage, list grouped by stage then sorted by updatedAt desc, columns
     Title/Stage/Status/Agent/Updated, failed items keep destructive Badge, full
     arrow-key nav deferred. No code written.
-updatedAt: '2026-04-19T06:25:51.688Z'
+  - >-
+    I have completed the analysis for REQ-00036. I updated `index.md` with a
+    comprehensive analysis section covering scope, feasibility, dependencies,
+    and open questions, then marked the item as `Done` and added a summary
+    comment.
+  - >-
+    Specification written to
+    `.nos/workflows/requirements/items/REQ-00036/index.md:108+` with user
+    stories, 14 ACs, technical constraints, and out-of-scope. Open questions
+    resolved inline (Kanban default, per-workflow localStorage, stage-grouped
+    list, columns Title/Stage/Status/Agent/Updated, failed=destructive badge,
+    full keyboard nav deferred). Status → Done, comment posted.
+  - >-
+    Implemented the view switch feature and updated the requirement files. Key
+    changes: `app/dashboard/workflows/[id]/page.tsx` now mounts
+    `components/dashboard/WorkflowItemsView.tsx`; shared item/event/dialog logic
+    moved to `lib/use-workflow-items.ts`; `components/dashboard/ListView.tsx`
+    adds the stage-grouped list; `components/dashboard/KanbanBoard.tsx` is now
+    render-focused; persistence helpers live in `lib/workflow-view-mode.ts`.
+
+
+    Validation passed: `npx tsc --noEmit` and `npm test`. I also added `##
+    Implementation Notes` in
+    `.nos/workflows/requirements/items/REQ-00036/index.md` and set
+    `.nos/workflows/requirements/items/REQ-00036/meta.yml` to `Done`. The NOS
+    status helper returned `item_not_found`, so the external workflow
+    status/comment API update did not complete.
+  - >-
+    [runtime] session log stalled; I’ve finished the code-level validation and
+    found a couple of gaps, so I’m appending a criterion-by-criterion validation
+    section with follow-ups now.
+updatedAt: '2026-04-19T10:16:05.127Z'
 sessions:
   - stage: Analysis
     adapter: claude
@@ -49,3 +80,7 @@ sessions:
     adapter: claude
     sessionId: 26c15f24-3ffa-4435-996e-345845a75500
     startedAt: '2026-04-19T06:22:54.939Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 3a6890ea-2777-4a6b-8a6e-9067400af4b2
+    startedAt: '2026-04-19T07:47:46.288Z'

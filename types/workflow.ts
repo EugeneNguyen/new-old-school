@@ -45,6 +45,7 @@ export interface WorkflowDetail {
 export interface Agent {
   id: string;
   displayName: string;
+  adapter: string | null;
   model: string | null;
   prompt: string;
   createdAt: string;

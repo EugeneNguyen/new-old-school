@@ -1,0 +1,115 @@
+title: >-
+  in the stage header, i can see the stage name, ai icon, auto icon and member
+  agent make layout break
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analyzed REQ-00041: the stage header in
+    `components/dashboard/KanbanBoard.tsx` (lines 93–139) groups stage name, AI
+    badge, Auto badge, and the agent pill on a single flex row, which overflows
+    the 320px column when the agent displayName is long. Scope is a single-file
+    presentational change to move the agent pill (including the missing-agent
+    fallback) to a new row below, with `truncate` to prevent second-line
+    overflow. No backend or cross-surface impact; open questions flagged with
+    default assumptions (always-wrap, left-aligned, apply to fallback pill,
+    small `mt-1` gap).
+  - >-
+    Wrote the `## Specification` section to REQ-00041's `index.md` with four
+    user stories, 8 numbered acceptance criteria (Given/When/Then, covering
+    resolved/missing/absent agent states, truncation, description ordering,
+    tooltips, and non-interference with existing controls), technical
+    constraints pinning the edit to `components/dashboard/KanbanBoard.tsx` lines
+    ~93–139 with explicit row-split, spacing (`mt-1`), and
+    `truncate`/`max-w-full` rules, and explicit out-of-scope items (other
+    surfaces, chrome, backend, responsive changes, overflow-driven wrapping).
+    Open questions from the Analysis section were resolved into hard rules
+    (always-wrap, left-aligned, applies to fallback, small gap) to keep the spec
+    the single source of truth for the implementer.
+  - >-
+    There's an issue with the selected model (claude-sonnet-4-6). It may not
+    exist or you may not have access to it. Run --model to pick a different
+    model.
+  - >-
+    Analyzed REQ-00041: the stage header in
+    `components/dashboard/KanbanBoard.tsx` (lines 93–139) groups stage name, AI
+    badge, Auto badge, and the agent pill on a single flex row, which overflows
+    the 320px column when the agent displayName is long. Scope is a single-file
+    presentational change to move the agent pill (including the missing-agent
+    fallback) to a new row below, with `truncate` to prevent second-line
+    overflow. No backend or cross-surface impact; open questions flagged with
+    default assumptions (always-wrap, left-aligned, apply to fallback pill,
+    small `mt-1` gap).
+  - >-
+    Wrote the `## Specification` section to REQ-00041's `index.md` with four
+    user stories, 8 numbered acceptance criteria (Given/When/Then, covering
+    resolved/missing/absent agent states, truncation, description ordering,
+    tooltips, and non-interference with existing controls), technical
+    constraints pinning the edit to `components/dashboard/KanbanBoard.tsx` lines
+    ~93–139 with explicit row-split, spacing (`mt-1`), and
+    `truncate`/`max-w-full` rules, and explicit out-of-scope items (other
+    surfaces, chrome, backend, responsive changes, overflow-driven wrapping).
+    Open questions from the Analysis section were resolved into hard rules
+    (always-wrap, left-aligned, applies to fallback, small gap) to keep the spec
+    the single source of truth for the implementer.
+  - >-
+    There's an issue with the selected model (claude-sonnet-4-6). It may not
+    exist or you may not have access to it. Run --model to pick a different
+    model.
+  - >-
+    Analyzed REQ-00041: the stage header in
+    `components/dashboard/KanbanBoard.tsx` (lines 93–139) groups stage name, AI
+    badge, Auto badge, and the agent pill on a single flex row, which overflows
+    the 320px column when the agent displayName is long. Scope is a single-file
+    presentational change to move the agent pill (including the missing-agent
+    fallback) to a new row below, with `truncate` to prevent second-line
+    overflow. No backend or cross-surface impact; open questions flagged with
+    default assumptions (always-wrap, left-aligned, apply to fallback pill,
+    small `mt-1` gap).
+  - >-
+    Wrote the `## Specification` section to REQ-00041's `index.md` with four
+    user stories, 8 numbered acceptance criteria (Given/When/Then, covering
+    resolved/missing/absent agent states, truncation, description ordering,
+    tooltips, and non-interference with existing controls), technical
+    constraints pinning the edit to `components/dashboard/KanbanBoard.tsx` lines
+    ~93–139 with explicit row-split, spacing (`mt-1`), and
+    `truncate`/`max-w-full` rules, and explicit out-of-scope items (other
+    surfaces, chrome, backend, responsive changes, overflow-driven wrapping).
+    Open questions from the Analysis section were resolved into hard rules
+    (always-wrap, left-aligned, applies to fallback, small gap) to keep the spec
+    the single source of truth for the implementer.
+  - >-
+    There's an issue with the selected model (claude-sonnet-4-6). It may not
+    exist or you may not have access to it. Run --model to pick a different
+    model.
+  - >-
+    FAILED: Validation cannot pass because the Implementation stage never ran
+    successfully — its session errored on model access (`claude-sonnet-4-6`) and
+    no code change was made. `components/dashboard/KanbanBoard.tsx:93-139` still
+    has `stage.name`, AI badge, Auto badge, and the agent pill on a single flex
+    row, with no `truncate` on `displayName`. AC1–AC5 fail (layout not split, no
+    truncation, no second row ordering); AC6 is unverifiable against the
+    required new layout; AC7–AC8 pass only vacuously because nothing changed.
+    Appended a `## Validation` section to `index.md` with per-AC verdicts and
+    concrete follow-ups, committed as `9386080`, and pushed. Item left in the
+    Validation stage — do not advance to Done until the Implementation stage is
+    re-run with a working model.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: be7f05c4-f72f-4fab-aedc-7de00f77e9a3
+    startedAt: '2026-04-19T10:41:39.743Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 91f7a61c-492c-4008-97a9-544fac7b48f3
+    startedAt: '2026-04-19T10:43:19.676Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 9e17f747-fce5-454e-ae0a-643a543b8121
+    startedAt: '2026-04-19T10:44:57.338Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: af3a3578-eb44-4358-a675-b11a8531159f
+    startedAt: '2026-04-19T10:45:34.895Z'
+updatedAt: '2026-04-19T10:55:52.567Z'

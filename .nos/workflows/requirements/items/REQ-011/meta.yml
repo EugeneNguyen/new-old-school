@@ -1,5 +1,5 @@
 title: Workflow Engine
-stage: Backlog
+stage: Done
 status: Todo
 comments:
   - >-
@@ -26,7 +26,51 @@ comments:
     source of truth for shared types, file-backed persistence, lifecycle
     transitions, pipeline triggering, auto-advance behavior, event emission, and
     REST integration expectations.
-updatedAt: '2026-04-19T07:00:16.319Z'
+  - >-
+    REQ-011 already has the required `## Analysis` section in
+    `.nos/workflows/requirements/items/REQ-011/index.md:3`, so I did not modify
+    the file. The item metadata at
+    `.nos/workflows/requirements/items/REQ-011/meta.yml:2` still shows `stage:
+    Analysis` and `status: Todo`.
+
+
+    I hit a blocker on the required NOS workflow calls: the `nos-set-status`
+    skill is not invokable in this harness (`disable-model-invocation`), so I
+    could not update status or leave the required NOS comment.
+  - >-
+    I added `## Specification` to
+    `.nos/workflows/requirements/items/REQ-011/index.md:72` with user stories,
+    18 acceptance criteria, technical constraints, and explicit out-of-scope
+    items.
+
+
+    The item metadata has also advanced beyond Documentation, so the requirement
+    is now ready for implementation.
+  - >-
+    REQ-011 is now marked `In Progress` in
+    `.nos/workflows/requirements/items/REQ-011/meta.yml:3`, and I added `##
+    Implementation Notes` to
+    `.nos/workflows/requirements/items/REQ-011/index.md`.
+
+
+    I validated the implementation against the finalized spec and found the
+    workflow engine already satisfies it: canonical types in
+    `types/workflow.ts:1`, atomic file writes and stage/order persistence in
+    `lib/workflow-store.ts:12` and `lib/workflow-store.ts:84`, pipeline/session
+    handling in `lib/stage-pipeline.ts:7`, auto-advance in
+    `lib/auto-advance.ts:5`, and REST routes under `app/api/workflows/[id]/...`.
+    No runtime code changes were needed.
+  - >-
+    Validated REQ-011 (Workflow Engine) against all 18 acceptance criteria.
+    Every AC passes with code-level evidence citing `types/workflow.ts`,
+    `lib/workflow-store.ts`, `lib/stage-pipeline.ts`, `lib/auto-advance.ts`,
+    `lib/auto-advance-sweeper.ts`, `lib/workflow-events.ts`,
+    `lib/system-prompt.ts`, and the `app/api/workflows/[id]/...` route tree.
+    Appended `## Validation` section to `index.md` with per-criterion verdicts
+    plus a regression/edge-case review (content-write emits, stage-change status
+    reset, malformed YAML handling, legacy short IDs). Committed and pushed as
+    `ff4656d`.
+updatedAt: '2026-04-19T10:19:59.414Z'
 sessions:
   - stage: Analysis
     adapter: claude
@@ -48,3 +92,7 @@ sessions:
     adapter: claude
     sessionId: aeaa8da0-294a-431e-a674-139a30b77627
     startedAt: '2026-04-19T06:26:23.057Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: dce806aa-05a5-4254-9504-c181a1045085
+    startedAt: '2026-04-19T10:16:58.722Z'

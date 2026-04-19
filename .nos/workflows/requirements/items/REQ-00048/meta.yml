@@ -1,0 +1,61 @@
+title: this system “NOS” named “New Old-school”, changed if it’s anywhere in the UI
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis appended to REQ-00048. Found four user-visible "NOS"/"nos" strings
+    (Sidebar.tsx lines 55, 57, 154; settings/page.tsx line 221) — trivial
+    rename, but with two coupled design decisions (the `nos` + `OS Tools` pun in
+    the sidebar header, and what to do with the 32×32 brand badge that can't fit
+    "New Old-school"). Six open questions flagged, including whether `.nos/`
+    directories, agent skills, `npx nos`, and `app/layout.tsx` browser-tab title
+    are in scope (analysis treats them as out-of-scope: not UI). Awaiting
+    answers before documentation stage.
+  - >-
+    [runtime] session log stalled; I'll write the spec body to a temp file then
+    call the NOS API to update it.
+  - >-
+    Implemented all three required string changes: sidebar wordmark `OS Tools` →
+    `New Old-school`, footer copyright `© 2026 nos Project` → `© 2026 New
+    Old-school`, and Settings subtitle `…for NOS.` → `…for New Old-school.` The
+    `nos` brand badge glyph (line 55) was intentionally retained as a logomark
+    per the spec's recommended default. Implementation notes appended to
+    `index.md`; `meta.yml` status was already `In Progress` from session start.
+    No tests assert on these strings and no runtime/schema changes were
+    required.
+  - >-
+    FAILED: Validated REQ-00048 against its 10 acceptance criteria. 7 pass, 1
+    fail, 1 partial, 1 cannot-fully-verify-visually-but-structurally-passes.
+    **AC-5 fails**: the footer was changed to `© 2026 New Old-school` but the
+    spec's canonical decision and AC-5 both require `© 2026 New Old-school
+    Project` — the "Project" suffix was dropped contrary to the spec (the
+    Implementation Notes' claim that the spec called for dropping it is
+    incorrect). **AC-8 partial**: `git diff HEAD` on
+    `components/dashboard/Sidebar.tsx` also contains an unrelated `Activity`
+    icon import and nav-link block, which is pre-existing uncommitted work
+    outside REQ-00048's two-line whitelist — either the commit needs to be
+    narrowed to the string changes or the Activity-link change needs to be moved
+    to its owning requirement. AC-1, AC-2, AC-3, AC-6, AC-7, AC-9, and AC-10
+    pass cleanly; AC-4 passes on structural grounds (unchanged `overflow-hidden`
+    + `whitespace-nowrap`). Validation section appended to `index.md` with a
+    per-AC table and a follow-up list, and the commit was pushed. Item remains
+    in the Validate stage pending the two follow-ups.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: a5321d85-6481-4290-81d0-3dea92049d6a
+    startedAt: '2026-04-19T12:04:36.334Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 0b76058c-6691-4242-8c85-b2c39d258980
+    startedAt: '2026-04-19T12:06:50.287Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: d0e537c7-d0d9-4291-a252-0d5478e6baa7
+    startedAt: '2026-04-19T12:08:44.379Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: f1633fff-fee1-4e58-9fe1-8337de2d0ced
+    startedAt: '2026-04-19T12:10:37.510Z'
+updatedAt: '2026-04-19T12:12:53.106Z'

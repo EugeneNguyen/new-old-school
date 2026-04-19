@@ -4,6 +4,7 @@ import yaml from 'js-yaml';
 import { Stage, WorkflowItem, ItemStatus, WorkflowDetail, ItemSession } from '@/types/workflow';
 import { emitItemCreated, emitItemUpdated } from '@/lib/workflow-events';
 import { getProjectRoot } from '@/lib/project-root';
+import { appendActivity, hashBody, type ActivityActor } from '@/lib/activity-log';
 
 const WORKFLOWS_ROOT = path.join(getProjectRoot(), '.nos', 'workflows');
 const META_FILE = 'meta.yml';
@@ -268,6 +269,7 @@ export interface ItemMetaPatch {
   stage?: string;
   status?: ItemStatus;
   comments?: string[];
+  actor?: ActivityActor;
 }
 
 export function itemExists(workflowId: string, itemId: string): boolean {
@@ -289,6 +291,11 @@ export function updateItemMeta(
   if (!fs.existsSync(metaPath)) return null;
   const meta = (yaml.load(fs.readFileSync(metaPath, 'utf-8')) as Record<string, unknown>) ?? {};
 
+  const actor: ActivityActor = patch.actor ?? 'unknown';
+  const oldTitle = String(meta.title ?? '');
+  const oldStage = String(meta.stage ?? '');
+  const oldStatus = String(meta.status ?? '');
+
   const stageChanged = patch.stage !== undefined && patch.stage !== meta.stage;
 
   if (patch.title !== undefined) meta.title = patch.title;
@@ -303,7 +310,45 @@ export function updateItemMeta(
   const newStatus = parseStatus(meta.status);
   if (!newStatus) return null;
 
-  return writeMeta(workflowId, itemId, meta, 'updated');
+  const result = writeMeta(workflowId, itemId, meta, 'updated');
+
+  const ts = new Date().toISOString();
+
+  if (patch.title !== undefined && patch.title !== oldTitle) {
+    void appendActivity({
+      ts,
+      workflowId,
+      itemId,
+      type: 'title-changed',
+      actor,
+      data: { kind: 'title-changed', before: oldTitle, after: patch.title },
+    });
+  }
+
+  if (patch.stage !== undefined && patch.stage !== oldStage) {
+    void appendActivity({
+      ts,
+      workflowId,
+      itemId,
+      type: 'stage-changed',
+      actor,
+      data: { kind: 'stage-changed', before: oldStage, after: patch.stage },
+    });
+  }
+
+  const newStatusStr = String(meta.status);
+  if (newStatusStr !== oldStatus) {
+    void appendActivity({
+      ts,
+      workflowId,
+      itemId,
+      type: 'status-changed',
+      actor,
+      data: { kind: 'status-changed', before: oldStatus, after: newStatusStr },
+    });
+  }
+
+  return result;
 }
 
 export function appendItemSession(
@@ -337,17 +382,39 @@ export function appendItemComment(
     : [];
   meta.comments = [...existing, text];
 
+  // NOTE: comment additions intentionally do not produce an activity entry (AC-34).
   return writeMeta(workflowId, itemId, meta, 'updated');
 }
 
 export function writeItemContent(
   workflowId: string,
   itemId: string,
-  body: string
+  body: string,
+  actor?: ActivityActor
 ): WorkflowItem | null {
   if (!itemExists(workflowId, itemId)) return null;
   const contentPath = path.join(itemDir(workflowId, itemId), CONTENT_FILE);
-  atomicWriteFile(contentPath, body.endsWith('\n') ? body : `${body}\n`);
+
+  const existingBody = fs.existsSync(contentPath) ? fs.readFileSync(contentPath, 'utf-8') : '';
+  const newBody = body.endsWith('\n') ? body : `${body}\n`;
+  atomicWriteFile(contentPath, newBody);
+
+  if (newBody !== existingBody) {
+    void appendActivity({
+      ts: new Date().toISOString(),
+      workflowId,
+      itemId,
+      type: 'body-changed',
+      actor: actor ?? 'unknown',
+      data: {
+        kind: 'body-changed',
+        beforeHash: hashBody(existingBody),
+        afterHash: hashBody(newBody),
+        beforeLength: existingBody.length,
+        afterLength: newBody.length,
+      },
+    });
+  }
 
   // Bump updatedAt and emit so realtime consumers see content-writes too.
   const metaPath = path.join(itemDir(workflowId, itemId), META_FILE);
@@ -447,6 +514,7 @@ export interface CreateItemInput {
   id?: string;
   body?: string;
   stage?: string;
+  actor?: ActivityActor;
 }
 
 export function createItem(
@@ -500,5 +568,18 @@ export function createItem(
     comments: [] as string[],
     sessions: [] as ItemSession[],
   };
-  return writeMeta(workflowId, finalId, meta, 'created');
+  const item = writeMeta(workflowId, finalId, meta, 'created');
+
+  if (item) {
+    void appendActivity({
+      ts: new Date().toISOString(),
+      workflowId,
+      itemId: finalId,
+      type: 'item-created',
+      actor: input.actor ?? 'unknown',
+      data: { kind: 'item-created', title, stageId: stageName, status: 'Todo' },
+    });
+  }
+
+  return item;
 }

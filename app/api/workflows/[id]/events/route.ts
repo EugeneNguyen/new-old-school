@@ -144,7 +144,9 @@ export async function GET(
       };
 
       listener = (evt: WorkflowEvent) => {
-        if (evt.workflowId !== id) return;
+        const evtWorkflowId =
+          evt.type === 'item-activity' ? evt.entry.workflowId : evt.workflowId;
+        if (evtWorkflowId !== id) return;
         safeEnqueue(encoder.encode(`data: ${JSON.stringify(evt)}\n\n`));
       };
       workflowEvents.on(WORKFLOW_EVENT, listener);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { X } from 'lucide-react';
 import { Dialog } from '@/components/ui/dialog';
@@ -13,6 +13,7 @@ import {
   commentRemarkPlugins,
 } from '@/lib/markdown-preview';
 import { ItemStatus, Stage, WorkflowItem } from '@/types/workflow';
+import type { ActivityEntry } from '@/lib/activity-log';
 
 const ItemDescriptionEditor = dynamic(
   () => import('./ItemDescriptionEditor'),
@@ -40,6 +41,39 @@ const STATUS_VARIANT: Record<ItemStatus, 'secondary' | 'default' | 'success' | '
   Failed: 'destructive',
 };
 
+function formatRelativeTs(ts: string): string {
+  const diff = Date.now() - new Date(ts).getTime();
+  if (diff < 60_000) return 'just now';
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
+  return `${Math.floor(diff / 86_400_000)}d ago`;
+}
+
+function formatSummary(entry: ActivityEntry): string {
+  const d = entry.data;
+  switch (d.kind) {
+    case 'item-created':
+      return `Created in stage ${d.stageId}`;
+    case 'title-changed':
+      return `Title changed: "${d.before}" \u2192 "${d.after}"`;
+    case 'stage-changed':
+      return `Stage changed: ${d.before} \u2192 ${d.after}`;
+    case 'status-changed':
+      return `Status changed: ${d.before} \u2192 ${d.after}`;
+    case 'body-changed':
+      return `Description updated (~${d.beforeLength} \u2192 ~${d.afterLength} chars)`;
+    default:
+      return entry.type;
+  }
+}
+
+function formatActor(actor: string): string {
+  if (actor === 'ui') return 'UI';
+  if (actor === 'runtime') return 'Runtime';
+  if (actor.startsWith('agent:')) return `Agent: ${actor.slice(6)}`;
+  return actor;
+}
+
 export default function ItemDetailDialog({
   open,
   onOpenChange,
@@ -58,8 +92,12 @@ export default function ItemDetailDialog({
   const [loadingBody, setLoadingBody] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activity, setActivity] = useState<ActivityEntry[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
 
   const itemId = item?.id;
+  const activityItemIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!open || !item) return;
     setTitle(item.title);
@@ -77,8 +115,7 @@ export default function ItemDetailDialog({
       .then((data: { body?: string }) => setBody(data.body ?? ''))
       .catch((e) => console.error('Failed to load body:', e))
       .finally(() => setLoadingBody(false));
-    // Only reset on open or when a different item is shown — body/title/comments
-    // must not be clobbered when the parent re-renders with a live status update.
+    // Only reset on open or when a different item is shown.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, itemId, workflowId]);
 
@@ -88,6 +125,50 @@ export default function ItemDetailDialog({
     setStatus(item.status);
     setStage(item.stage);
   }, [open, item?.status, item?.stage, item?.updatedAt, item]);
+
+  // Fetch activity log on open
+  useEffect(() => {
+    if (!open || !item) {
+      setActivity([]);
+      return;
+    }
+    setActivityLoading(true);
+    fetch(
+      `/api/workflows/${encodeURIComponent(workflowId)}/items/${encodeURIComponent(item.id)}/activity`
+    )
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+      .then((data: { entries?: ActivityEntry[] }) => setActivity(data.entries ?? []))
+      .catch((e) => console.error('Failed to load activity:', e))
+      .finally(() => setActivityLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, itemId, workflowId]);
+
+  // Subscribe to SSE for real-time activity prepend
+  useEffect(() => {
+    if (!open || !item) return;
+    activityItemIdRef.current = item.id;
+    const source = new EventSource(`/api/workflows/${encodeURIComponent(workflowId)}/events`);
+    const onMessage = (evt: MessageEvent) => {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(evt.data as string);
+      } catch {
+        return;
+      }
+      if (!parsed || typeof parsed !== 'object') return;
+      const payload = parsed as { type?: string; entry?: ActivityEntry };
+      if (payload.type !== 'item-activity' || !payload.entry) return;
+      if (payload.entry.itemId !== activityItemIdRef.current) return;
+      setActivity((prev) => [payload.entry!, ...prev]);
+    };
+    source.addEventListener('message', onMessage);
+    return () => {
+      source.removeEventListener('message', onMessage);
+      source.close();
+      activityItemIdRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, itemId, workflowId]);
 
   if (!item) return null;
 
@@ -184,7 +265,7 @@ export default function ItemDetailDialog({
                   setBody(md);
                 }}
                 readOnly={loadingBody}
-                placeholder={loadingBody ? 'Loading…' : 'Write markdown description…'}
+                placeholder={loadingBody ? 'Loading\u2026' : 'Write markdown description\u2026'}
                 ariaLabelledBy="item-detail-description"
               />
             </div>
@@ -218,9 +299,38 @@ export default function ItemDetailDialog({
             <textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Add a comment…"
+              placeholder="Add a comment\u2026"
               className="min-h-[60px] w-full rounded-md border border-input bg-background p-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-medium text-muted-foreground">Activity</label>
+            {activityLoading ? (
+              <p className="text-xs text-muted-foreground">Loading\u2026</p>
+            ) : activity.length === 0 ? (
+              <p className="text-xs italic text-muted-foreground">No activity recorded yet.</p>
+            ) : (
+              <div className="flex flex-col gap-0.5">
+                {activity.map((entry, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-start gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-secondary/40"
+                  >
+                    <span
+                      title={entry.ts}
+                      className="mt-0.5 w-16 shrink-0 text-muted-foreground"
+                    >
+                      {formatRelativeTs(entry.ts)}
+                    </span>
+                    <span className="flex-1 text-foreground">{formatSummary(entry)}</span>
+                    <span className="shrink-0 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                      {formatActor(entry.actor)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -289,7 +399,7 @@ export default function ItemDetailDialog({
           Close
         </Button>
         <Button onClick={handleSave} disabled={saving || loadingBody}>
-          {saving ? 'Saving…' : 'Save'}
+          {saving ? 'Saving\u2026' : 'Save'}
         </Button>
       </div>
     </Dialog>

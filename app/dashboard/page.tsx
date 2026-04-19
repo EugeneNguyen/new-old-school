@@ -1,16 +1,39 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { ActivityEntry } from '@/lib/activity-log';
+
+function formatRelativeTs(ts: string): string {
+  const diff = Date.now() - new Date(ts).getTime();
+  if (diff < 60_000) return 'just now';
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
+  return `${Math.floor(diff / 86_400_000)}d ago`;
+}
+
+function formatSummary(entry: ActivityEntry): string {
+  const d = entry.data;
+  switch (d.kind) {
+    case 'item-created': return `Created in stage ${d.stageId}`;
+    case 'title-changed': return `Title \u2192 "${d.after}"`;
+    case 'stage-changed': return `Stage ${d.before} \u2192 ${d.after}`;
+    case 'status-changed': return `Status ${d.before} \u2192 ${d.after}`;
+    case 'body-changed': return `Description updated`;
+    default: return entry.type;
+  }
+}
 
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [recentActivity, setRecentActivity] = useState<ActivityEntry[]>([]);
 
   const fetchStatus = async () => {
     setIsLoading(true);
@@ -29,6 +52,13 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchStatus();
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/activity?limit=10')
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((d: { entries?: ActivityEntry[] }) => setRecentActivity(d.entries ?? []))
+      .catch(() => {});
   }, []);
 
   return (
@@ -95,6 +125,35 @@ export default function DashboardPage() {
           {error}
         </div>
       )}
+
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold">Recent Activity</h2>
+          <Link href="/dashboard/activity" className="text-sm text-muted-foreground hover:text-foreground">
+            View all \u2192
+          </Link>
+        </div>
+        {recentActivity.length === 0 ? (
+          <p className="text-sm italic text-muted-foreground">No activity recorded yet.</p>
+        ) : (
+          <div className="rounded-md border divide-y">
+            {recentActivity.map((entry, idx) => (
+              <div key={idx} className="flex items-start gap-3 px-4 py-2 text-xs">
+                <span title={entry.ts} className="mt-0.5 w-14 shrink-0 text-muted-foreground">
+                  {formatRelativeTs(entry.ts)}
+                </span>
+                <span className="w-24 shrink-0 truncate font-mono text-muted-foreground">
+                  {entry.workflowId}
+                </span>
+                <span className="flex-1 text-foreground">
+                  <span className="font-mono text-muted-foreground">{entry.itemId}</span>{' '}
+                  {formatSummary(entry)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

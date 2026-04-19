@@ -1,0 +1,69 @@
+title: Using other indicator for item’s status
+stage: Done
+status: Todo
+comments:
+  - >-
+    The Analysis section was already written by a concurrent session (two
+    sessions started ~3s apart per `meta.yml`). The existing analysis covers
+    Scope, Feasibility, Dependencies, and Open questions well — it identifies
+    the three render sites (`KanbanBoard`, `ListView`, `ItemDetailDialog`), the
+    shared `STATUS_VARIANT` duplication, the accessibility risk of color-only
+    cues, and four concrete open questions on visual treatment. I will not
+    duplicate or rewrite it.
+
+
+    A prior concurrent Analysis session already appended a complete `##
+    Analysis` section to `index.md` covering scope (replace/augment the status
+    `Badge` in `KanbanBoard.tsx`, `ListView.tsx`, `ItemDetailDialog.tsx`),
+    feasibility (low-risk Tailwind change, recommends consolidating the
+    duplicated `STATUS_VARIANT` into a shared helper, flags color-only a11y
+    risk), dependencies (`ItemStatus`, `Badge` variants, `NewItemDialog.tsx`),
+    and four open questions (visual treatment choice, fate of the text badge,
+    animated cue for `In Progress`, whether stage-header counts should also
+    adopt the indicator). I re-read the file before writing and found the
+    section already present, so I made no changes to avoid overwriting that
+    work.
+  - >-
+    Appended a `## Specification` section to REQ-00046's `index.md` with 5 user
+    stories, 21 numbered acceptance criteria (grouped AC1–AC7 across helper
+    module, Kanban cards, List view, Detail dialog, NewItemDialog,
+    accessibility, and regression guards), technical constraints (new
+    `lib/item-status-style.ts`, reuse of existing `Badge` variant tokens,
+    Tailwind-only styling, `animate-pulse` dot for In Progress), and explicit
+    out-of-scope items. The spec locks in the "left border stripe + muted
+    background tint + colored dot with label" treatment and resolves the four
+    open questions from Analysis.
+  - >-
+    [runtime] session log stalled; Now I have a clear picture. Let me implement
+    all the changes.
+  - >-
+    Validation of REQ-00046 is complete and pushed. The implementation stage
+    never ran — `lib/item-status-style.ts` doesn't exist and all four target
+    components (`KanbanBoard.tsx`, `ListView.tsx`, `ItemDetailDialog.tsx`,
+    `NewItemDialog.tsx`) still use their original local `STATUS_VARIANT` maps
+    and prominent `<Badge>`. All 21 functional ACs fail; AC7.19 passes vacuously
+    because nothing changed. The item stays in the validation stage with a
+    7-point follow-up list for a re-run of the implementation stage.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 9508f408-dbf1-4e59-80c4-54368f2fd36e
+    startedAt: '2026-04-19T11:37:01.193Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 4b5b9370-3291-4727-b628-cfe7d3382b81
+    startedAt: '2026-04-19T11:37:04.570Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: a101ac83-68d5-4374-911f-4711c7cc6a97
+    startedAt: '2026-04-19T11:39:04.740Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 9a383ccb-9d76-4b10-9ea4-32e0558c971a
+    startedAt: '2026-04-19T11:40:42.461Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: a5054841-f77a-4f49-9c5e-2ed2409b9ed7
+    startedAt: '2026-04-19T11:43:05.950Z'
+updatedAt: '2026-04-19T11:45:06.658Z'

@@ -10,7 +10,10 @@ export interface AgentAdapter {
     cwd?: string;
     model?: string;
   }): Promise<{ sessionId: string }>;
+  listModels(): Promise<Array<{ id: string; label: string }>>;
 }
+
+export const OTHER_MODEL_SENTINEL = '__other__';
 
 const SESSIONS_DIR = join(getProjectRoot(), '.claude', 'sessions');
 const SESSION_ID_TIMEOUT_MS = 10_000;
@@ -27,8 +30,21 @@ function extractSessionId(line: string): string | null {
   return null;
 }
 
+const CLAUDE_CURATED_MODELS: Array<{ id: string; label: string }> = [
+  { id: '', label: 'Adapter default' },
+  { id: 'claude-opus-4-7', label: 'claude-opus-4-7 (Opus)' },
+  { id: 'claude-sonnet-4-6', label: 'claude-sonnet-4-6 (Sonnet)' },
+  { id: 'claude-haiku-4-5-20251001', label: 'claude-haiku-4-5 (Haiku)' },
+];
+
 export const claudeAdapter: AgentAdapter = {
   name: 'claude',
+  async listModels() {
+    return [
+      ...CLAUDE_CURATED_MODELS,
+      { id: OTHER_MODEL_SENTINEL, label: 'Other (custom model id)' },
+    ];
+  },
   startSession({ prompt, cwd, model }) {
     return new Promise((resolve, reject) => {
       ensureSessionsDir();
@@ -126,6 +142,24 @@ export const claudeAdapter: AgentAdapter = {
   },
 };
 
+const ADAPTER_REGISTRY: Record<string, AgentAdapter> = {
+  [claudeAdapter.name]: claudeAdapter,
+};
+
+export function getAdapter(name: string): AgentAdapter {
+  const adapter = ADAPTER_REGISTRY[name];
+  if (!adapter) throw new Error(`unknown adapter: ${name}`);
+  return adapter;
+}
+
+export function listAdapters(): Array<{ name: string; label: string }> {
+  return [{ name: 'claude', label: 'Claude CLI' }];
+}
+
+export function hasAdapter(name: string): boolean {
+  return Object.prototype.hasOwnProperty.call(ADAPTER_REGISTRY, name);
+}
+
 export function getDefaultAdapter(): AgentAdapter {
-  return claudeAdapter;
+  return getAdapter('claude');
 }

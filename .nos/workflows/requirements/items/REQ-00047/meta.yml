@@ -1,0 +1,62 @@
+title: in activity view, able to click to view the item
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analyzed REQ-00047 and appended a Scope / Feasibility / Dependencies / Open
+    questions section to `.nos/workflows/requirements/items/REQ-00047/index.md`.
+    Key finding: the Activity page (`app/dashboard/activity/page.tsx`) currently
+    renders item IDs as plain text; the quickest wiring is to deep-link each row
+    to `/dashboard/workflows/<id>?item=<itemId>` and have
+    `WorkflowItemsView`/`useWorkflowItems` auto-open `ItemDetailDialog` from the
+    query param. Left five open questions (in-place dialog vs deep link, click
+    granularity, missing-item handling, URL shape, per-workflow activity scope)
+    for the documentation stage to resolve.
+  - >-
+    Appended the `## Specification` section to REQ-00047. It locks in Option 1
+    (deep link via `?item=<id>` on `/dashboard/workflows/<id>`), item-ID token
+    as the only click target, toast + URL cleanup for missing items, and global
+    Activity page only. Includes 5 user stories, 15 numbered acceptance criteria
+    covering markup, a11y, auto-open semantics, URL cleanup, deletion handling,
+    SSE parity, and pagination parity, plus technical constraints naming the
+    exact files/APIs to touch and an explicit out-of-scope list.
+  - >-
+    [runtime] session log stalled; No toast library. Per spec, I'll use an
+    inline banner. Let me check the workflow page.
+  - >-
+    FAILED: Validation of REQ-00047 found that the click-to-open-item feature
+    was never implemented. `index.md` has no `## Implementation Notes` section,
+    `app/dashboard/activity/page.tsx:139` still renders `entry.itemId` as a
+    plain `<span>` (not a `<Link>`), `WorkflowItemsView.tsx` has no
+    `useSearchParams`/`useRouter`/`item` param handling, and
+    `lib/use-workflow-items.ts` has no `initialOpenItemId` option — none of the
+    three files named in the spec's Technical Constraints carry the required
+    changes. Verdicts: 2 pass (AC-5, AC-15 — both only because nothing changed),
+    2 partial (AC-11, AC-12 — trivially preserved), 11 fail (AC-1 through AC-4,
+    AC-6 through AC-10, AC-13, AC-14). I appended a `## Validation` section to
+    `index.md` with a per-AC verdict table, the code evidence I surveyed, and a
+    7-point follow-up list; committed as `85ffe41` and pushed to `main`. The
+    item remains in the Validate stage pending the listed follow-ups.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 2f1c74bb-d403-42f5-8fcd-7b9c76761ebe
+    startedAt: '2026-04-19T11:52:28.504Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 630e6a60-de2e-4c0f-9a78-3697b889101a
+    startedAt: '2026-04-19T11:52:31.373Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 267c1ff6-6da6-45bc-ba59-f6516538c6a9
+    startedAt: '2026-04-19T11:54:39.692Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 7d498524-3e91-47bd-92ec-ca64a899185f
+    startedAt: '2026-04-19T11:56:48.017Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 4773b7f1-1f44-4f73-8245-60be2c9ba486
+    startedAt: '2026-04-19T11:58:40.863Z'
+updatedAt: '2026-04-19T12:00:41.417Z'

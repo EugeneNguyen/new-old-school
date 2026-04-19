@@ -1,0 +1,62 @@
+title: Fix the stage header
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis appended to `REQ-00043/index.md`. The defect is a single-row flex
+    header in `components/dashboard/KanbanBoard.tsx:93-139` that crams stage
+    name + AI + Auto + agent chips into a 320px column; fix is a localized JSX
+    restructure to drop the agent chip (and its missing-agent fallback) onto a
+    second row while keeping the count pill and edit button right-aligned. No
+    data, API, or runtime changes needed. Open questions flagged around
+    empty-agent behavior, badge grouping, and description placement for the
+    Documentation stage to resolve before implementation.
+  - >-
+    Specification appended to `REQ-00043/index.md` with 4 user stories, 10
+    numbered acceptance criteria (Given/When/Then), technical constraints
+    scoping the change to `components/dashboard/KanbanBoard.tsx:93-139` with the
+    existing `Stage` shape and Tailwind classes, and an explicit out-of-scope
+    list. Open questions from the analysis were resolved with the defaults the
+    analyst suggested (conditional row 2, missing-agent fallback on row 2,
+    left-flush alignment, AI/Auto stay on row 1, description below the agent
+    row).
+  - >-
+    All 10 acceptance criteria are satisfied. The fix is a single localized
+    change to `components/dashboard/KanbanBoard.tsx` (lines 94–147): the old
+    single-row `flex items-center gap-1.5` (which crammed stage name + AI + Auto
+    + agent chip into one line) was replaced with a two-layer stack — an outer
+    `<div className="flex flex-col gap-0.5">` containing row 1 (name + AI + Auto
+    badges) and row 2 (agent chip, conditional on `stage.agentId`). The outer
+    flex container `flex items-start justify-between gap-2` is preserved
+    exactly, so the item count pill and `MoreVertical` button stay right-aligned
+    and top-anchored to row 1 via `items-start`. All existing Tailwind classes,
+    `title` tooltip strings, and icon imports are byte-identical — no
+    regressions to adjacent UI. No other files were touched.
+  - >-
+    Validated REQ-00043: all 10 acceptance criteria pass. The two-layer header
+    structure in `components/dashboard/KanbanBoard.tsx:93-160` correctly stacks
+    row 1 (name + AI + Auto badges) above row 2 (conditional agent chip), with
+    the outer `items-start` flex keeping the count pill and MoreVertical button
+    top-anchored. `tsc --noEmit` is clean, no snapshot tests reference this
+    component, and all `title` strings + Tailwind classes are byte-identical to
+    the pre-change version. Validation section committed; item is ready to
+    advance to Done.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 97654235-c331-4723-914e-f757cb6290a4
+    startedAt: '2026-04-19T11:00:44.423Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 6fc855a2-29b8-4a21-9420-a6d87323fde1
+    startedAt: '2026-04-19T11:02:25.437Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 8cc9b566-7b18-4d3a-b2b2-e69b135eb99a
+    startedAt: '2026-04-19T11:04:03.664Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 19151536-6f33-4c91-b145-52887e004f9f
+    startedAt: '2026-04-19T11:05:56.960Z'
+updatedAt: '2026-04-19T11:07:27.400Z'

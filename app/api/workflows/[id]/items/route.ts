@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server';
 import { createItem, readStages, workflowExists } from '@/lib/workflow-store';
 import { triggerStagePipeline } from '@/lib/stage-pipeline';
 import { createErrorResponse } from '@/app/api/utils/errors';
+import type { ActivityActor } from '@/lib/activity-log';
 
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const actor = ((req.headers.get('x-nos-actor') as ActivityActor) ?? 'ui');
     const { id } = await params;
     if (!workflowExists(id)) {
       return createErrorResponse(`Workflow '${id}' not found`, 'NotFound', 404);
@@ -50,6 +52,7 @@ export async function POST(
       id: typeof body.id === 'string' ? body.id : undefined,
       body: typeof body.body === 'string' ? body.body : undefined,
       stage: typeof body.stage === 'string' ? body.stage : undefined,
+      actor,
     });
     if (!created) {
       return createErrorResponse('Failed to create item', 'BadRequest', 400);

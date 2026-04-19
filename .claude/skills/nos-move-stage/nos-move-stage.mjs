@@ -24,13 +24,17 @@ function parseArgs(argv) {
 }
 
 const baseUrl = (process.env.NOS_BASE_URL ?? 'http://localhost:30128').replace(/\/+$/, '');
+const nosActor = process.env.NOS_ACTOR ?? 'agent:claude';
 
 async function httpJson(method, path, body) {
   let res;
   try {
+    const headers = {};
+    if (body !== undefined) headers['content-type'] = 'application/json';
+    if (method !== 'GET') headers['x-nos-actor'] = nosActor;
     res = await fetch(`${baseUrl}${path}`, {
       method,
-      headers: body !== undefined ? { 'content-type': 'application/json' } : undefined,
+      headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch (err) {

@@ -1,0 +1,95 @@
+title: update member edit
+stage: Done
+status: Todo
+comments:
+  - >-
+    Appended the `## Analysis` section to `REQ-00042/index.md` covering scope
+    (in/out), feasibility (incl. the key unknown around how
+    `claudeAdapter.listModels()` would actually enumerate models — three
+    strategies ranked), dependencies (the agent edit form,
+    `lib/agent-adapter.ts`, `lib/agents-store.ts`, `lib/stage-pipeline.ts`, plus
+    a new `/api/adapters` route), and 5 open questions for the documentation
+    stage to resolve. Original request text untouched. The biggest risk to flag
+    for the next stage: the Claude CLI does not appear to expose a stable
+    model-enumeration subcommand in current usage, so a hard-coded per-adapter
+    list (matching today's curated models) is the lowest-risk path.
+  - >-
+    Appended `## Specification` to `REQ-00042/index.md` with 5 user stories, 20
+    numbered acceptance criteria (grouped: UI form, new `/api/adapters` routes,
+    agent persistence, runtime session-start), technical constraints (file
+    targets, frozen `AgentAdapter` shape, `__other__` sentinel, 5s fetch
+    timeout, adapter-name slug format), and an explicit out-of-scope list.
+    Resolved the 5 open questions from Analysis §4 as follows: (1) Strategy 2 —
+    hard-coded list in `claudeAdapter.listModels()`; (2) selector always enabled
+    even with one entry; (3) keep stored model with inline warning when not in
+    list; (4) retain "Other" free-text escape hatch with sentinel id
+    `__other__`; (5) read-time default only, no silent migration on load.
+  - >-
+    Implemented REQ-00042 per spec:
+
+
+    - **Types & store**: `Agent.adapter` added; `agents-store` reads with
+    `'claude'` normalization for legacy records (no on-disk mutation), writes
+    accept `adapter` with `^[a-z][a-z0-9_-]*$` validation.
+
+    - **Adapter layer**: `AgentAdapter` now has `listModels()`;
+    `claudeAdapter.listModels()` returns the prior curated models + `__other__`
+    sentinel; new `getAdapter`, `listAdapters`, `hasAdapter`;
+    `getDefaultAdapter` preserved.
+
+    - **API**: `POST/PATCH /api/agents` accept/require `adapter`; new `GET
+    /api/adapters` and `GET /api/adapters/[name]/models` (404 `{error:'unknown
+    adapter'}`).
+
+    - **Runtime**: `stage-pipeline` resolves adapter via
+    `getAdapter(agent.adapter ?? 'claude')`; `startSession` signature untouched.
+
+    - **UI**: Adapter `<select>` (always enabled) above Model; model list
+    fetched per adapter with 5s `AbortController` timeout, loading state, error
+    fallback, stored-model warning, free-text input on `__other__`.
+
+
+    Typecheck passes (`tsc --noEmit` exit 0). Implementation Notes appended to
+    `REQ-00042/index.md`.
+
+
+    Implemented all 20 acceptance criteria for REQ-00042 with no deviations.
+    Added an Adapter selector above the Model control on the agent edit form,
+    exposed new `/api/adapters` and `/api/adapters/:name/models` routes,
+    extended the `AgentAdapter` interface with `listModels()` and a registry
+    (`getAdapter`/`listAdapters`), persisted `adapter` on `Agent` with read-time
+    normalization to `"claude"` for legacy records, and wired
+    `lib/stage-pipeline.ts` to resolve the adapter from the agent's stored field
+    while keeping `startSession({prompt,model})` byte-for-byte compatible. `tsc
+    --noEmit` passes clean. Implementation Notes appended to
+    `REQ-00042/index.md`.
+  - >-
+    Validated REQ-00042 against its 20 acceptance criteria. Evidence gathered by
+    reading the modified source, running `npx tsc --noEmit` (exit 0), curl-ing
+    the live dev server on `:30128` (verified `/api/adapters` returns `[{claude,
+    Claude CLI}]`, `/api/adapters/claude/models` returns the curated list with
+    trailing `__other__` sentinel, `/api/adapters/nope/models` returns 404
+    `{error:"unknown adapter"}`, and `POST /api/agents` with missing/empty
+    `adapter` returns 400 `adapter is required`), and simulating a legacy agent
+    record (no `adapter` key on disk) to confirm read-time normalization to
+    `"claude"` with the on-disk file left untouched. All 20 ACs pass with no
+    deviations and no regressions; `## Validation` section appended to
+    `REQ-00042/index.md` and committed.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: c39fd27f-9775-41a3-9608-dabb0700930b
+    startedAt: '2026-04-19T10:45:06.078Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: ed24bbd2-1029-478c-8b26-45e6709543e9
+    startedAt: '2026-04-19T10:48:12.757Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: d1e1babc-ffc5-4094-bb9c-4eee9ac85b24
+    startedAt: '2026-04-19T10:50:21.130Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 276ee40b-eee9-45b2-9a21-efc12ea47379
+    startedAt: '2026-04-19T10:57:01.105Z'
+updatedAt: '2026-04-19T11:00:32.128Z'

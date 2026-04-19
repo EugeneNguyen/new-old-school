@@ -1,5 +1,6 @@
 id: david-engineer
 displayName: David [Engineer]
-model: claude-sonnet-4-6
+model: sonnet-replacement
 createdAt: '2026-04-19T05:53:55.086Z'
-updatedAt: '2026-04-19T05:53:55.086Z'
+updatedAt: '2026-04-19T10:58:38.333Z'
+adapter: claude

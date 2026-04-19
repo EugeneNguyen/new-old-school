@@ -1,5 +1,5 @@
 title: Workflow Foundation
-stage: Backlog
+stage: Done
 status: Todo
 comments:
   - >-
@@ -20,7 +20,66 @@ comments:
     entries, ID minting and enumeration rules, validation behavior, technical
     constraints, and explicit out-of-scope boundaries for runtime, UI, richer
     comment schema, and migrations.
-updatedAt: '2026-04-19T06:22:15.316Z'
+  - >-
+    I appended the analysis to
+    `.nos/workflows/requirements/items/REQ-012/index.md` and marked REQ-012 Done
+    with a summary comment.
+
+
+    The analysis defines the `.nos` layout/schema contract, calls out key risks
+    like schema drift and ID collisions, lists dependencies on REQ-011/013/014
+    plus workflow modules, and captures the main unresolved questions for the
+    Documentation stage.
+  - >-
+    I appended `## Specification` to
+    `.nos/workflows/requirements/items/REQ-012/index.md` with user stories,
+    numbered acceptance criteria, technical constraints, and out-of-scope
+    boundaries. I also recorded the stage summary in `REQ-012/meta.yml`; note
+    the workflow metadata now shows the item has already moved to
+    Implementation, so I left that current stage state intact.
+  - >-
+    I have implemented the storage contract defined in REQ-012.
+
+
+    **Key changes in `lib/workflow-store.ts`:**
+
+    - **Strict Validation**: Replaced silent normalization with explicit
+    validation. `readWorkflowConfig`, `readStages`, and `readItemFolder` now
+    return `null` if the files do not strictly adhere to the required schemas
+    (e.g., missing required fields, invalid status enums, or malformed session
+    entries).
+
+    - **ID Minting**: Implemented a dynamic padding rule that preserves the
+    widest numeric width present in the workflow directory, defaulting to a
+    minimum of three digits.
+
+    - **Item Enumeration**: Updated `listItems` to only recognize directories
+    that contain both `index.md` and `meta.yml`.
+
+    - **Session Audit Log**: Removed the behavior that pruned sessions when an
+    item returned to `Todo`, ensuring a permanent audit log.
+
+    - **Creation Defaults**: New items now initialize with an empty `sessions:
+    []` array.
+
+
+    Verified with `npx tsc --noEmit` (passed). Note that one unrelated existing
+    test failure in `lib/use-workflow-items.test.ts` (module resolution error)
+    remains, but is not a regression of this work.
+
+
+    REQ-012 is now marked as `Done`.
+  - >-
+    Validation is appended to
+    `.nos/workflows/requirements/items/REQ-012/index.md`.
+
+
+    Result: 15 ACs pass, 1 fails. The failure is AC3: the spec requires every
+    stage to have string `prompt` and boolean `autoAdvanceOnComplete`, but
+    `.nos/workflows/requirements/config/stages.yaml` still has `null` values for
+    `Backlog` and `Done`, so the live requirements workflow is not compliant
+    with its own schema. Next step is to fix that file and re-run validation.
+updatedAt: '2026-04-19T10:17:28.881Z'
 sessions:
   - stage: Analysis
     adapter: claude

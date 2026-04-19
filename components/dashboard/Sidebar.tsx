@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { PanelLeftClose, PanelLeftOpen, Folder, ChevronDown, ChevronRight } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Folder, ChevronDown, ChevronRight, Activity } from 'lucide-react';
 import { ToolRegistry } from '@/lib/tool-registry';
 import { cn } from '@/lib/utils';
 import { useSidebar } from './SidebarContext';
@@ -54,7 +54,7 @@ export default function Sidebar() {
         <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground shrink-0 text-xs">
           nos
         </div>
-        {!collapsed && <span className="tracking-tight whitespace-nowrap">OS Tools</span>}
+        {!collapsed && <span className="tracking-tight whitespace-nowrap">New Old-school</span>}
       </div>
 
       <nav className="flex-1 px-2 py-4 space-y-1">
@@ -81,7 +81,31 @@ export default function Sidebar() {
           );
         })}
 
-        <div className="pt-4 space-y-1">
+        <div className="pt-2 space-y-1">
+          {(() => {
+            const href = '/dashboard/activity';
+            const active = isActive(href, pathname);
+            return (
+              <Link
+                href={href}
+                title="Activity"
+                aria-current={active ? 'page' : undefined}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium',
+                  'hover:bg-accent hover:text-accent-foreground',
+                  'text-muted-foreground',
+                  collapsed && 'justify-center px-0',
+                  active && 'bg-accent text-accent-foreground'
+                )}
+              >
+                <Activity className="w-4 h-4 shrink-0" />
+                {!collapsed && <span className="whitespace-nowrap overflow-hidden">Activity</span>}
+              </Link>
+            );
+          })()}
+        </div>
+
+        <div className="pt-2 space-y-1">
           <button
             onClick={() => setWorkflowsExpanded(!workflowsExpanded)}
             className={cn(
@@ -127,7 +151,7 @@ export default function Sidebar() {
 
       <div className="p-4 border-t border-border flex items-center justify-between">
         {!collapsed && (
-          <span className="text-xs text-muted-foreground whitespace-nowrap">&copy; 2026 nos Project</span>
+          <span className="text-xs text-muted-foreground whitespace-nowrap">&copy; 2026 New Old-school</span>
         )}
         <button
           onClick={toggleSidebar}

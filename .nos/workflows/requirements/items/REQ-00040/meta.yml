@@ -1,6 +1,6 @@
 title: now i want use npx nos in other project folder
-stage: Validation
-status: In Progress
+stage: Done
+status: Todo
 comments:
   - >-
     Appended an `## Analysis` section to `REQ-00040/index.md` covering scope
@@ -44,6 +44,15 @@ comments:
     and SIGINT propagation preserved. Updated `package.json` with a `files`
     allowlist (including `bin` and `templates`) and `engines.node: ">=18"`.
     Added `## Implementation Notes` to `REQ-00040/index.md`.
+  - >-
+    Validated REQ-00040 — all 18 acceptance criteria pass. Verified end-to-end
+    by running `bin/cli.js` in a fresh temp dir (correct scaffold +
+    `Initializing .nos/ in <path>` log) and in a pre-populated dir (existing
+    `.nos/` untouched + `Using existing .nos/ at <path>` log). Checked
+    byte-identical template files with `diff -q`, confirmed `npm pack --dry-run`
+    ships `bin/` + `templates/.nos/**` + Next app, and `npx tsc --noEmit` is
+    clean. Appended `## Validation` section to `REQ-00040/index.md`, committed
+    (`5681d54`), and pushed to origin/main.
 sessions:
   - stage: Analysis
     adapter: claude
@@ -61,4 +70,4 @@ sessions:
     adapter: claude
     sessionId: 4450a205-8c8d-45f3-acaa-78e6eba6815b
     startedAt: '2026-04-19T10:36:56.026Z'
-updatedAt: '2026-04-19T10:36:56.039Z'
+updatedAt: '2026-04-19T10:40:26.862Z'

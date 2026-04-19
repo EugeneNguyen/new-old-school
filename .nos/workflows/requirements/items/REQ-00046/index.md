@@ -161,3 +161,14 @@ The item must be re-run through the implementation stage before it can reach Don
 6. Update the `NewItemDialog.tsx` default-status preview to use the same helper so it matches the real card render.
 7. Verify AA contrast for stripe and dot+label in both light and dark themes; confirm the auto-advance sweeper still flips the indicator live without reload.
 
+## Implementation Notes
+
+Created `lib/item-status-style.ts` with a `getItemStatusStyle(status: ItemStatus)` pure function returning `{ border, bg, ring, dot, label }` Tailwind class bundles. Static object lookup (no per-call allocation). Color mapping follows existing `Badge` variant semantics: `Todo` → muted, `In Progress` → primary, `Done` → green-500/green-400 (with dark-mode variants), `Failed` → destructive.
+
+All four consumer files updated:
+- **KanbanBoard.tsx**: Card now has `border-l-[3px]` accent stripe + muted bg tint; prominent `Badge` removed; `animate-pulse` dot + status label added at card bottom; `title` and `aria-label` provide accessibility cues. Hover changed from `hover:border-primary/50` to `hover:shadow-md` to preserve left-border status color.
+- **ListView.tsx**: `ListRow` button gains `statusStyle.border` and `statusStyle.bg`; `Badge` replaced with inline dot + label. Hover likewise changed to `hover:shadow-md`.
+- **ItemDetailDialog.tsx**: Status selector buttons replaced `Badge` with dot + label via the helper; `STATUS_VARIANT` constant removed.
+- **NewItemDialog.tsx**: Static Todo preview replaced `Badge` with dot + label via helper; `STATUS_VARIANT` constant removed.
+
+No deviations from the spec. Pre-existing TypeScript error in `app/api/workflows/[id]/events/route.ts` (unrelated to this change) was left untouched.

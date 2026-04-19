@@ -4,7 +4,7 @@ import {
   readStages,
   updateItemMeta,
 } from '@/lib/workflow-store';
-import { getDefaultAdapter } from '@/lib/agent-adapter';
+import { getAdapter, getDefaultAdapter } from '@/lib/agent-adapter';
 import { buildAgentPrompt, loadSystemPrompt } from '@/lib/system-prompt';
 import { readAgent } from '@/lib/agents-store';
 import { getProjectRoot } from '@/lib/project-root';
@@ -29,6 +29,7 @@ export async function triggerStagePipeline(
   let model: string | undefined;
   let resolvedAgentId: string | null = null;
   let agentResolved = false;
+  let adapterName: string | null = null;
 
   if (stage.agentId) {
     resolvedAgentId = stage.agentId;
@@ -37,6 +38,7 @@ export async function triggerStagePipeline(
       agentResolved = true;
       memberPrompt = agent.prompt;
       if (agent.model) model = agent.model;
+      adapterName = agent.adapter ?? 'claude';
     } else {
       console.warn(
         `Stage '${stage.name}' in workflow '${workflowId}' references missing agent '${stage.agentId}'. Running without member prompt/model.`
@@ -56,7 +58,7 @@ export async function triggerStagePipeline(
   });
 
   try {
-    const adapter = getDefaultAdapter();
+    const adapter = adapterName ? getAdapter(adapterName) : getDefaultAdapter();
     const { sessionId } = await adapter.startSession({ prompt: fullPrompt, model });
     const entry: ItemSession = {
       stage: stage.name,

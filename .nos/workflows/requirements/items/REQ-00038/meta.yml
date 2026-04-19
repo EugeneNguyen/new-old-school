@@ -1,5 +1,5 @@
 title: Remove ID when Add item
-stage: Documentation
+stage: Done
 status: Todo
 comments:
   - >-
@@ -34,7 +34,77 @@ comments:
     dependencies, and open questions, so no content changes were needed. I left
     the original request text untouched as required; next stages can rely on the
     existing analysis and specification already captured on the item.
-updatedAt: '2026-04-19T07:07:05.479Z'
+  - >-
+    Verified that .nos/workflows/requirements/items/REQ-00038/index.md already
+    contains a complete ## Analysis section covering scope, feasibility,
+    dependencies, and open questions, so no further edits were needed. I left
+    the original request text untouched as required; the item is ready for the
+    next stage using the existing analysis and specification.
+  - >-
+    Verified .nos/workflows/requirements/items/REQ-00038/index.md already
+    contains a complete ## Analysis section (scope, feasibility, dependencies,
+    open questions) matching the stage prompt. Original request text is
+    untouched. No edits required; item is ready for the next stage.
+  - >-
+    Verified REQ-00038 index.md already contains a complete ## Specification
+    section: 3 user stories, 9 numbered Given/When/Then acceptance criteria,
+    technical constraints (file to change, request shape, framework, styling,
+    a11y, types, perf, validation), and an explicit out-of-scope list that
+    codifies prior open questions as non-goals. No content changes required;
+    item is ready for implementation.
+  - >-
+    Verified that REQ-00038 index.md already contains a complete ##
+    Specification section: 3 user stories, 9 numbered Given/When/Then acceptance
+    criteria, technical constraints (file to change, request shape, framework,
+    styling, a11y, types, perf, validation), and an explicit out-of-scope list
+    that codifies prior open questions as non-goals. No content changes
+    required; item is ready for implementation.
+  - >-
+    Verified the existing ## Specification section in
+    .nos/workflows/requirements/items/REQ-00038/index.md is complete and
+    satisfies the stage prompt: 3 user stories (user creating items, auto-ID
+    assignment, power-user API compatibility), 9 Given/When/Then acceptance
+    criteria covering UI removal, state cleanup, request-body shape, preserved
+    error/reset behavior, and the unchanged POST route, plus technical
+    constraints pinning the single file to change
+    (components/dashboard/NewItemDialog.tsx), the post-change request shape,
+    framework/runtime/styling/a11y/validation notes, and an explicit
+    out-of-scope list that codifies the three Analysis open questions as
+    non-goals. No edits were needed; the specification is ready for the
+    implementation stage.
+  - >-
+    Verified index.md already contains a complete ## Specification section
+    covering all four required subsections: 3 user stories (user creating items,
+    auto-ID assignment, power-user API compatibility), 9 Given/When/Then
+    acceptance criteria (UI removal, state cleanup, exact post-change request
+    body shape, auto-generated ID appearing on the new card, preserved
+    title-validation/error/reset behavior, unchanged POST route contract, no
+    residual references), technical constraints pinning the single file to edit
+    (components/dashboard/NewItemDialog.tsx) plus
+    runtime/styling/a11y/types/perf/validation notes, and an explicit
+    out-of-scope list that codifies the three Analysis open questions as
+    non-goals. No edits required; the spec is the single source of truth and
+    ready for implementation.
+  - >-
+    Implementation complete. Edited components/dashboard/NewItemDialog.tsx only:
+    removed the id/setId useState, the setId('') reset, the id spread in the
+    POST body, and the ID label+Input block. Request now sends { title, body?,
+    stage? }. Server route unchanged (still accepts optional id). tsc --noEmit
+    passes; grep for new-item-id/setId in the file returns no results. All 9 ACs
+    satisfied; no deviations.
+  - >-
+    Validated REQ-00038 against the post-change `NewItemDialog.tsx`, the API
+    route, and `createItem`. All 9 acceptance criteria pass with evidence cited
+    (state/label/spread removed, POST body is `{ title, body?, stage? }`, server
+    still accepts optional `id`, title/error/reset behavior preserved, auto-ID
+    flows through `nextPrefixedId`); `npx tsc --noEmit` is clean and a repo-wide
+    grep for `new-item-id` and `setId` in the dialog returns no source hits.
+    Appended a `## Validation` section to
+    `.nos/workflows/requirements/items/REQ-00038/index.md` with per-AC verdicts
+    and evidence. No regressions observed in adjacent Description/Stage/Status
+    controls. Item is ready to advance; no commit/push performed since
+    validation passed.
+updatedAt: '2026-04-19T10:15:04.864Z'
 sessions:
   - stage: Analysis
     adapter: claude
@@ -65,3 +135,66 @@ sessions:
     adapter: claude
     sessionId: 81d932fb-6ccc-4d5d-9b60-6e0ad21cc046
     startedAt: '2026-04-19T07:07:05.478Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 9f0a06a2-2464-4f54-b2cb-fb4547ccfea7
+    startedAt: '2026-04-19T07:15:38.376Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: ff67dfa4-5306-474c-90b0-062e90c424ff
+    startedAt: '2026-04-19T07:16:54.368Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: bbdb395b-3295-43b8-af9a-3d597bf799ba
+    startedAt: '2026-04-19T07:26:49.536Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: bf2baa7f-7e8f-4a62-9d1c-78fd0a77fd73
+    startedAt: '2026-04-19T07:34:57.642Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 24699eb3-aab7-4a69-956d-53c9910a574a
+    startedAt: '2026-04-19T09:07:13.177Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 9206a4e7-f16d-42ac-b5de-8e17f7cfd64b
+    startedAt: '2026-04-19T09:07:35.298Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: e9b87a41-80b6-4409-9865-d1fc3192eb95
+    startedAt: '2026-04-19T09:08:08.790Z'
+    agentId: david-engineer
+  - stage: Documentation
+    adapter: claude
+    sessionId: 638ed68f-a7c5-4286-81e1-38ccc8e542c4
+    startedAt: '2026-04-19T09:09:25.956Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: e022b0d8-bc09-4093-9b5d-781009f651cf
+    startedAt: '2026-04-19T09:10:04.646Z'
+    agentId: david-engineer
+  - stage: Documentation
+    adapter: claude
+    sessionId: f76f722b-3ba6-4314-a988-840cabcf66fc
+    startedAt: '2026-04-19T09:12:02.594Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: e81c9551-957a-4d8b-a080-0b852304e8a9
+    startedAt: '2026-04-19T09:12:41.609Z'
+    agentId: david-engineer
+  - stage: Documentation
+    adapter: claude
+    sessionId: 2f823ce8-a25a-4a13-9eff-94d45d00e452
+    startedAt: '2026-04-19T09:13:35.600Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: fd3ea418-3e48-4770-8e86-50a756fe48b5
+    startedAt: '2026-04-19T09:14:12.695Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 433b3f94-6f6b-4230-b321-92df81244e84
+    startedAt: '2026-04-19T09:15:36.767Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 59ed389a-794c-4033-b25c-23d9d85b4c85
+    startedAt: '2026-04-19T09:15:38.889Z'
