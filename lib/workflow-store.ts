@@ -46,6 +46,34 @@ export function workflowExists(id: string): boolean {
   return fs.existsSync(dir) && fs.statSync(dir).isDirectory();
 }
 
+export function createWorkflow(id: string, config: WorkflowConfig): boolean {
+  if (workflowExists(id)) return false;
+  try {
+    const dir = workflowDir(id);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.mkdirSync(path.join(dir, 'config'), { recursive: true });
+    const configJson = JSON.stringify({ name: config.name.trim(), idPrefix: config.idPrefix.trim() });
+    atomicWriteFile(path.join(dir, 'config.json'), configJson);
+    atomicWriteFile(path.join(dir, 'config', 'stages.yaml'), '[]\n');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function deleteWorkflow(id: string): boolean {
+  const target = path.join(WORKFLOWS_ROOT, id);
+  const resolved = path.resolve(target);
+  if (!resolved.startsWith(path.resolve(WORKFLOWS_ROOT))) return false;
+  if (!workflowExists(id)) return false;
+  try {
+    fs.rmSync(resolved, { recursive: true, force: true });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export interface WorkflowConfig {
   name: string;
   idPrefix: string;
@@ -507,6 +535,82 @@ export function updateStage(
     stages: readStages(workflowId),
     items: readItems(workflowId),
   };
+}
+
+const STAGE_NAME_REGEX = /^[A-Za-z0-9 _-]+$/;
+const STAGE_NAME_MAX_LENGTH = 64;
+
+export class StageError extends Error {
+  constructor(
+    public readonly code: 'DUPLICATE' | 'NOT_FOUND' | 'HAS_ITEMS' | 'LAST_STAGE' | 'INVALID_NAME',
+    message: string,
+    public readonly itemCount?: number
+  ) {
+    super(message);
+    this.name = 'StageError';
+  }
+}
+
+export function addStage(workflowId: string, stage: Omit<Stage, 'name'> & { name: string }): Stage[] {
+  const trimmedName = stage.name.trim();
+  if (!trimmedName) throw new StageError('INVALID_NAME', 'Stage name is required');
+  if (trimmedName.length > STAGE_NAME_MAX_LENGTH) throw new StageError('INVALID_NAME', 'Stage name is too long');
+  if (!STAGE_NAME_REGEX.test(trimmedName)) throw new StageError('INVALID_NAME', 'Stage name contains invalid characters');
+
+  const stagesPath = path.join(workflowDir(workflowId), 'config', 'stages.yaml');
+  let list: Array<Record<string, unknown>> = [];
+  if (fs.existsSync(stagesPath)) {
+    const parsed = yaml.load(fs.readFileSync(stagesPath, 'utf-8'));
+    if (Array.isArray(parsed)) list = parsed as Array<Record<string, unknown>>;
+  }
+
+  const duplicate = list.some(
+    (s) => s && String(s.name ?? '').toLowerCase() === trimmedName.toLowerCase()
+  );
+  if (duplicate) throw new StageError('DUPLICATE', `Stage '${trimmedName}' already exists`);
+
+  const newEntry: Record<string, unknown> = {
+    name: trimmedName,
+    description: typeof stage.description === 'string' ? stage.description : '',
+    prompt: typeof stage.prompt === 'string' && stage.prompt ? stage.prompt : null,
+    autoAdvanceOnComplete: stage.autoAdvanceOnComplete === true ? true : null,
+  };
+  if (stage.agentId) newEntry.agentId = stage.agentId;
+  if (typeof stage.maxDisplayItems === 'number' && stage.maxDisplayItems > 0) {
+    newEntry.maxDisplayItems = stage.maxDisplayItems;
+  }
+
+  list.push(newEntry);
+  fs.mkdirSync(path.dirname(stagesPath), { recursive: true });
+  atomicWriteFile(stagesPath, yaml.dump(list));
+
+  return readStages(workflowId);
+}
+
+export function deleteStage(workflowId: string, stageName: string): Stage[] {
+  const stagesPath = path.join(workflowDir(workflowId), 'config', 'stages.yaml');
+  if (!fs.existsSync(stagesPath)) throw new StageError('NOT_FOUND', `Stage '${stageName}' not found`);
+
+  const raw = fs.readFileSync(stagesPath, 'utf-8');
+  const parsed = yaml.load(raw);
+  if (!Array.isArray(parsed)) throw new StageError('NOT_FOUND', `Stage '${stageName}' not found`);
+
+  const list = parsed as Array<Record<string, unknown>>;
+  const idx = list.findIndex((s) => s && String(s.name ?? '') === stageName);
+  if (idx === -1) throw new StageError('NOT_FOUND', `Stage '${stageName}' not found`);
+
+  if (list.length <= 1) throw new StageError('LAST_STAGE', 'Cannot delete the last remaining stage');
+
+  const allItems = readItems(workflowId);
+  const itemsOnStage = allItems.filter((item) => item.stage === stageName);
+  if (itemsOnStage.length > 0) {
+    throw new StageError('HAS_ITEMS', `Cannot delete stage with items`, itemsOnStage.length);
+  }
+
+  list.splice(idx, 1);
+  atomicWriteFile(stagesPath, yaml.dump(list));
+
+  return readStages(workflowId);
 }
 
 export interface CreateItemInput {

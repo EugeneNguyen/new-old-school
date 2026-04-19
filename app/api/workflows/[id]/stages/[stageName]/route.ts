@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { updateStage, workflowExists, type StagePatch } from '@/lib/workflow-store';
+import { updateStage, deleteStage, workflowExists, StageError, type StagePatch } from '@/lib/workflow-store';
 import { agentExists } from '@/lib/agents-store';
 import { createErrorResponse } from '@/app/api/utils/errors';
 

@@ -1,0 +1,118 @@
+title: Add mechanism to add/remove workflow in frontend
+stage: Validation
+status: In Progress
+comments:
+  - >-
+    The analysis for REQ-00054 is complete. Here's what I found:
+
+
+    **Summary**
+
+
+    Analyzed REQ-00054 ("Add mechanism to add/remove workflow in frontend"). Key
+    findings:
+
+
+    - **Scope**: A new workflows list page at `/dashboard/workflows`, create
+    dialog with name/idPrefix fields, delete with confirmation, plus backend
+    POST/DELETE API routes.
+
+    - **Feasibility**: High — `workflow-store.ts` already provides file-based
+    persistence, just needs create/delete helpers.
+
+    - **Dependencies**: New page, POST/DELETE routes in existing API files,
+    potential new store helpers.
+
+    - **Open questions**:
+      1. Initial `stages.yaml` content (empty array vs. none)
+      2. Delete confirmation UX (type ID vs. simple dialog)
+      3. Activity logging for workflow create/delete (optional)
+
+    The analysis is appended to the item's `index.md`. No implementation was
+    attempted per stage instructions.
+  - >-
+    Wrote the `## Specification` section to
+    `.nos/workflows/requirements/items/REQ-00054/index.md`. It covers 5 user
+    stories, 23 numbered acceptance criteria (list page, create dialog + `POST
+    /api/workflows`, delete + `DELETE /api/workflows/[id]`, navigation),
+    technical constraints (file paths, regex-precise validation for
+    `id`/`idPrefix`/`name`, exact `config.json`/`stages.yaml` shapes matching
+    `readWorkflowConfig`, error codes, path-traversal guard for
+    `deleteWorkflow`), and explicit out-of-scope items (stage editing, rename,
+    soft-delete, activity logging, auth). Open questions from the analysis were
+    resolved in the spec: initial `stages.yaml` is `[]`, delete confirmation
+    uses the simple Cancel/Delete pattern from
+    `app/dashboard/agents/page.tsx:79`, and workflow-level activity logging is
+    deferred. No code written, per stage instructions.
+  - >-
+    Implementation complete. Files changed: lib/workflow-store.ts
+    (+createWorkflow/+deleteWorkflow), app/api/workflows/route.ts (+POST),
+    app/api/workflows/[id]/route.ts (+DELETE), new
+    app/dashboard/workflows/page.tsx (workflows list + create form + delete
+    confirmation). Also fixed a pre-existing duplicate DELETE in
+    app/api/workflows/[id]/stages/[stageName]/route.ts. All 23 ACs addressed.
+    TypeScript compiles cleanly for the new/modified files.
+  - >-
+    Implementation complete. Files changed: lib/workflow-store.ts
+    (+createWorkflow/+deleteWorkflow), app/api/workflows/route.ts (+POST),
+    app/api/workflows/[id]/route.ts (+DELETE), new
+    app/dashboard/workflows/page.tsx (workflows list + create form + delete
+    confirmation). Also fixed a pre-existing duplicate DELETE in
+    app/api/workflows/[id]/stages/[stageName]/route.ts. All 23 ACs addressed.
+    TypeScript compiles cleanly for the new/modified files.
+  - >-
+    All 23 acceptance criteria for REQ-00054 have been implemented:
+
+
+    **Files changed:**
+
+
+    - **`lib/workflow-store.ts`** — Added `createWorkflow(id, config)` and
+    `deleteWorkflow(id)` exports near `workflowExists` (line 44).
+    `createWorkflow` uses `atomicWriteFile` for `config.json` (exact two-key
+    shape) and `stages.yaml` (`[]\n`). `deleteWorkflow` validates path traversal
+    guard before `fs.rmSync`.
+
+
+    - **`app/api/workflows/route.ts`** — Added `POST` handler with server-side
+    validation matching spec regexes (`id`, `idPrefix`, `name`), 409 on
+    collision, 201 with `{ id, name }` on success.
+
+
+    - **`app/api/workflows/[id]/route.ts`** — Added `DELETE` handler: 404 if not
+    found, `204 No Content` on success via `deleteWorkflow`.
+
+
+    - **`app/dashboard/workflows/page.tsx`** (new) — Workflows list at
+    `/dashboard/workflows` with "New workflow" button, inline create form
+    (id/name/idPrefix with client-side validation mirroring server), and delete
+    confirmation dialog using the `pendingDeleteId` pattern from the agents
+    page.
+
+
+    - **`app/api/workflows/[id]/stages/[stageName]/route.ts`** — Fixed a
+    pre-existing duplicate `DELETE` function.
+
+
+    No TypeScript errors in any new or modified files. `meta.yml` status is
+    already `In Progress`, and `index.md` now has the `## Implementation Notes`
+    section.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 7c69fbb3-4895-4363-8502-cfa8a90cb282
+    startedAt: '2026-04-19T13:27:26.745Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 20ddf8af-80b1-47c6-9e35-130192d59d10
+    startedAt: '2026-04-19T15:17:37.400Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 589f4c5c-9fc5-48ad-ab72-267053d7ee00
+    startedAt: '2026-04-19T15:19:53.326Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: c3fd2400-c154-4cb2-968f-0df7da3df63f
+    startedAt: '2026-04-19T15:27:07.092Z'
+updatedAt: '2026-04-19T15:27:07.095Z'
