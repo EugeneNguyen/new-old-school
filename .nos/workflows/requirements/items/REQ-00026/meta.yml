@@ -1,0 +1,81 @@
+title: Change the system prompt to have status "failed"
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis appended to index.md. Scope covers adding a 'Failed' ItemStatus and
+    propagating through types, workflow-store, PATCH validator, stage-pipeline
+    run gate, Kanban + ItemDetailDialog UI, the nos-set-status skill allowlist,
+    and the NOS agent system prompt. Feasibility is high — all touchpoints are
+    in-repo; main risks are (a) ensuring the Done-only auto-advance guard at
+    app/api/workflows/[id]/items/[itemId]/route.ts:102 isn't triggered by
+    Failed, and (b) keeping stage-pipeline's 'Todo'-only run gate strict so
+    re-runs require an explicit reset. Flagged open questions for Documentation:
+    re-run semantics (reset-to-Todo recommended), Kanban drag behavior on
+    Failed, Badge variant (recommend 'destructive'), concrete rubric for when
+    the agent should mark Failed vs just comment, and whether Failed ever
+    auto-advances. No implementation performed.
+  - >-
+    Appended ## Specification to index.md: five user stories, ten numbered
+    acceptance criteria (type, store coercion, PATCH validator, strict run gate,
+    CLI allowlist, Kanban board, detail dialog, agent prompt with 3-case failure
+    rubric, no auto-advance on Failed, no migration), technical constraints
+    pinning ItemStatus to the four-value union, destructive badge variant,
+    Todo→In Progress→Done→Failed column order, and agent prompt sequence
+    (nos-set-status Failed then nos-comment-item). Resolved open questions per
+    the Analysis recommendations: strict gate (Failed not directly re-runnable),
+    destructive badge, Failed never auto-advances, drag-to-column keeps existing
+    semantics. Explicit out-of-scope: no retry, no dedicated reset button, no
+    structured error fields, no adapter changes.
+  - >-
+    Implementation complete. Extended ItemStatus to 'Todo | In Progress | Done |
+    Failed' across types, workflow-store normalizer, PATCH validator, Kanban
+    STATUS_VARIANT (destructive), ItemDetailDialog STATUSES + STATUS_VARIANT,
+    and added a Failure handling section to .nos/system-prompt.md enumerating
+    the 3-case rubric, the Failed-then-comment call sequence, and the
+    reset-to-Todo re-run flow. stage-pipeline's 'Todo'-only run gate already
+    excludes Failed; PATCH auto-advance remains gated on 'Done' so Failed never
+    advances. npx tsc --noEmit passes. Blocked (requires operator permission
+    approval, not a code issue):
+    .claude/skills/nos-set-status/nos-set-status.mjs VALID_STATUSES array and
+    SKILL.md help text still need 'Failed' appended — every Edit/Write/sed
+    attempt against .claude/skills/nos-set-status/ was rejected this session.
+    Deviation flagged in Implementation Notes: AC6's drag-into-Failed-column
+    text assumes status-based columns, but the Kanban renders stage-based
+    columns; the landed change extends the badge variant and picker options but
+    does not introduce status lanes (out of scope per the 'extend, not reorder'
+    intent).
+  - >-
+    Validation complete. Appended ## Validation section with per-AC verdicts: 8
+    PASS (AC1-4, AC7-10), 1 FAIL (AC5 — nos-set-status skill VALID_STATUSES and
+    SKILL.md still enumerate only 3 statuses; live skill call with --status
+    Failed returned invalid_status), 1 PARTIAL (AC6 — badge variant mapping is
+    correct but the Kanban renders stage-based columns, not status-based
+    columns, so there is no Failed column to drag into; this is flagged in
+    Implementation Notes as a deviation). Follow-ups: (1) extend VALID_STATUSES
+    in nos-set-status.mjs and SKILL.md text, (2) clarify whether AC6 meant
+    status-lane columns (separate requirement) or should be narrowed to
+    badge+existing drag semantics. Evidence: live PATCH {"status":"Failed"}
+    returned HTTP 200 with stage preserved as Validation (AC3/AC9 confirmed);
+    live skill invocation failed with invalid_status (AC5 confirmed broken); npx
+    tsc --noEmit passes. Item left in Validation stage per the stage prompt ('do
+    not advance to Done if anything fails'); Validation.autoAdvanceOnComplete is
+    already false so the Done status flip does not advance.
+updatedAt: '2026-04-19T03:08:10.889Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: bc4be6c4-f6b0-405c-8c85-32f65a2ec82f
+    startedAt: '2026-04-19T02:40:18.510Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 9e6a2f71-be7e-4226-ba4b-2d552559034c
+    startedAt: '2026-04-19T02:42:26.963Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: a1c7c3e3-dbfa-46eb-94b4-4e6b72461a78
+    startedAt: '2026-04-19T02:43:57.269Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 3685e839-abde-4d41-bac3-976e430764c0
+    startedAt: '2026-04-19T02:49:30.776Z'

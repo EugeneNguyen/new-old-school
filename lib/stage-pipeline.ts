@@ -1,5 +1,6 @@
 import { appendItemSession, readItem, readStages } from '@/lib/workflow-store';
 import { getDefaultAdapter } from '@/lib/agent-adapter';
+import { buildAgentPrompt, loadSystemPrompt } from '@/lib/system-prompt';
 import type { WorkflowItem } from '@/types/workflow';
 
 export async function triggerStagePipeline(
@@ -14,7 +15,15 @@ export async function triggerStagePipeline(
   const stage = stages.find((s) => s.name === item.stage);
   if (!stage || !stage.prompt) return item;
 
-  const fullPrompt = `${stage.prompt}\n\n# ${item.title}\n\n${item.body ?? ''}`.trim();
+  const fullPrompt = buildAgentPrompt({
+    systemPrompt: loadSystemPrompt(process.cwd()),
+    stagePrompt: stage.prompt,
+    title: item.title,
+    body: item.body,
+    comments: item.comments,
+    workflowId,
+    itemId,
+  });
 
   try {
     const adapter = getDefaultAdapter();

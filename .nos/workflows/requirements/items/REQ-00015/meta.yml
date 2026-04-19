@@ -1,0 +1,21 @@
+title: 'Fix issue: Claude Terminal Screen have double scroll'
+stage: Done
+status: Todo
+comments: []
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 7dfa5416-cd97-48b5-952e-7dc1aed9facb
+    startedAt: '2026-04-18T11:48:36.408Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 97b0cc9a-8964-4853-8ed0-b49c089afc09
+    startedAt: '2026-04-18T12:57:54.158Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: a49aac61-91ca-4c32-a036-68256dceb224
+    startedAt: '2026-04-18T13:06:12.914Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 30684007-c418-4bec-bc26-2f0a08dc9c60
+    startedAt: '2026-04-18T13:11:42.790Z'

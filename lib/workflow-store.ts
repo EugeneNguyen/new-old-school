@@ -2,10 +2,35 @@ import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
 import { Stage, WorkflowItem, ItemStatus, WorkflowDetail, ItemSession } from '@/types/workflow';
+import { emitItemCreated, emitItemUpdated } from '@/lib/workflow-events';
 
 const WORKFLOWS_ROOT = path.join(process.cwd(), '.nos', 'workflows');
 const META_FILE = 'meta.yml';
 const CONTENT_FILE = 'index.md';
+const EPOCH_ISO = '1970-01-01T00:00:00.000Z';
+
+function atomicWriteFile(filePath: string, contents: string): void {
+  const tmp = `${filePath}.tmp`;
+  fs.writeFileSync(tmp, contents, 'utf-8');
+  fs.renameSync(tmp, filePath);
+}
+
+function writeMeta(
+  workflowId: string,
+  itemId: string,
+  meta: Record<string, unknown>,
+  kind: 'created' | 'updated'
+): WorkflowItem | null {
+  meta.updatedAt = new Date().toISOString();
+  const metaPath = path.join(itemDir(workflowId, itemId), META_FILE);
+  atomicWriteFile(metaPath, yaml.dump(meta));
+  const item = readItemFolder(workflowId, itemId);
+  if (item) {
+    if (kind === 'created') emitItemCreated(workflowId, item);
+    else emitItemUpdated(workflowId, item);
+  }
+  return item;
+}
 
 function workflowDir(id: string) {
   return path.join(WORKFLOWS_ROOT, id);
@@ -75,7 +100,7 @@ export function readStages(id: string): Stage[] {
 
 function normalizeStatus(value: unknown): ItemStatus {
   const v = String(value ?? 'Todo');
-  if (v === 'Todo' || v === 'In Progress' || v === 'Done') return v;
+  if (v === 'Todo' || v === 'In Progress' || v === 'Done' || v === 'Failed') return v;
   return 'Todo';
 }
 
@@ -98,6 +123,7 @@ function readItemFolder(workflowId: string, itemId: string): WorkflowItem | null
     comments: Array.isArray(data.comments) ? data.comments.map(String) : [],
     body: body || undefined,
     sessions: parseSessions(data.sessions),
+    updatedAt: typeof data.updatedAt === 'string' && data.updatedAt ? data.updatedAt : EPOCH_ISO,
   };
 }
 
@@ -185,8 +211,7 @@ export function updateItemMeta(
     meta.status = 'Todo';
   }
 
-  fs.writeFileSync(metaPath, yaml.dump(meta), 'utf-8');
-  return readItemFolder(workflowId, itemId);
+  return writeMeta(workflowId, itemId, meta, 'updated');
 }
 
 export function appendItemSession(
@@ -201,8 +226,7 @@ export function appendItemSession(
   const existing = Array.isArray(meta.sessions) ? (meta.sessions as unknown[]) : [];
   meta.sessions = [...existing, entry];
 
-  fs.writeFileSync(metaPath, yaml.dump(meta), 'utf-8');
-  return readItemFolder(workflowId, itemId);
+  return writeMeta(workflowId, itemId, meta, 'updated');
 }
 
 export function writeItemContent(
@@ -212,8 +236,13 @@ export function writeItemContent(
 ): WorkflowItem | null {
   if (!itemExists(workflowId, itemId)) return null;
   const contentPath = path.join(itemDir(workflowId, itemId), CONTENT_FILE);
-  fs.writeFileSync(contentPath, body.endsWith('\n') ? body : `${body}\n`, 'utf-8');
-  return readItemFolder(workflowId, itemId);
+  atomicWriteFile(contentPath, body.endsWith('\n') ? body : `${body}\n`);
+
+  // Bump updatedAt and emit so realtime consumers see content-writes too.
+  const metaPath = path.join(itemDir(workflowId, itemId), META_FILE);
+  if (!fs.existsSync(metaPath)) return readItemFolder(workflowId, itemId);
+  const meta = (yaml.load(fs.readFileSync(metaPath, 'utf-8')) as Record<string, unknown>) ?? {};
+  return writeMeta(workflowId, itemId, meta, 'updated');
 }
 
 export interface StagePatch {
@@ -262,7 +291,7 @@ export function updateStage(
     current.autoAdvanceOnComplete = patch.autoAdvanceOnComplete ?? null;
   }
 
-  fs.writeFileSync(stagesPath, yaml.dump(list), 'utf-8');
+  atomicWriteFile(stagesPath, yaml.dump(list));
 
   if (patch.name !== undefined && newName !== stageName) {
     const itemsRoot = path.join(workflowDir(workflowId), 'items');
@@ -275,7 +304,7 @@ export function updateStage(
             (yaml.load(fs.readFileSync(metaPath, 'utf-8')) as Record<string, unknown>) ?? {};
           if (String(meta.stage ?? '') === stageName) {
             meta.stage = newName;
-            fs.writeFileSync(metaPath, yaml.dump(meta), 'utf-8');
+            writeMeta(workflowId, entry, meta, 'updated');
           }
         } catch (err) {
           console.error(`Failed to rename stage on item ${entry}:`, err);
@@ -354,16 +383,15 @@ export function createItem(
   const dir = path.join(itemsRoot, finalId);
   fs.mkdirSync(dir, { recursive: true });
 
-  const meta = {
+  const initialBody = input.body ?? '';
+  const bodyToWrite = initialBody && !initialBody.endsWith('\n') ? `${initialBody}\n` : initialBody;
+  atomicWriteFile(path.join(dir, CONTENT_FILE), bodyToWrite);
+
+  const meta: Record<string, unknown> = {
     title,
     stage: stageName,
     status: 'Todo' as ItemStatus,
     comments: [] as string[],
   };
-  fs.writeFileSync(path.join(dir, META_FILE), yaml.dump(meta), 'utf-8');
-  const initialBody = input.body ?? '';
-  const bodyToWrite = initialBody && !initialBody.endsWith('\n') ? `${initialBody}\n` : initialBody;
-  fs.writeFileSync(path.join(dir, CONTENT_FILE), bodyToWrite, 'utf-8');
-
-  return readItemFolder(workflowId, finalId);
+  return writeMeta(workflowId, finalId, meta, 'created');
 }

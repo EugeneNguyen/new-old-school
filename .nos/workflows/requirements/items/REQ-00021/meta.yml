@@ -1,0 +1,79 @@
+title: Implement autoAdvanceOnComplete
+stage: Backlog
+status: In Progress
+comments:
+  - >-
+    Analysis appended to index.md covering scope (in/out), feasibility
+    (recommend route-level implementation in PATCH handler, piggybacking on
+    existing stage-change pipeline trigger and updateItemMeta's
+    stage-reset-to-Todo behavior), dependencies (primarily
+    app/api/workflows/[id]/items/[itemId]/route.ts; no type or UI changes
+    needed), and 8 open questions — chief among them whether to gate on the
+    Todo|InProgress→Done *transition* (recommended, to avoid yo-yo from
+    idempotent skill calls) and whether last-stage/no-prompt successors should
+    silently no-op (recommended). No deviations from the stage prompt; no
+    implementation performed. Primary integration point for next stage: this
+    feature is the missing link that lets REQ-00017's agent-driven 'flip to Done
+    at end of every run' actually progress items through the pipeline — worth
+    calling out when writing the Specification.
+  - >-
+    Added ## Specification section to REQ-00021/index.md covering user stories
+    (5), numbered acceptance criteria (14, Given/When/Then where useful,
+    resolving OQ1/3/5/6/7/8), technical constraints (implementation site in the
+    PATCH route, strict detection rule, single-hop rule, no type or data-file
+    changes), and out-of-scope items. Locked in route-level implementation and
+    transition-based detection (prior.status !== 'Done' → 'Done') to avoid yo-yo
+    on idempotent nos-set-status calls while preserving REQ-00017 AC-9's
+    status-only no-trigger guarantee. No code written.
+  - >-
+    Implemented auto-advance in the PATCH handler at
+    app/api/workflows/[id]/items/[itemId]/route.ts. Added a prior-status read
+    before the first updateItemMeta and, after the existing stage-change branch,
+    gated auto-advance on patch.status==='Done', priorStatus!=='Done',
+    post-write status==='Done', current stage found in readStages with
+    autoAdvanceOnComplete===true, and a successor existing. The advance issues a
+    second updateItemMeta({stage: next.name}) without a status field (relying on
+    workflow-store's stage-reset-to-Todo invariant so the pipeline's Todo gate
+    fires), then awaits triggerStagePipeline and returns the post-pipeline item.
+    No changes to types, store, pipeline, UI, or data files. tsc --noEmit
+    passes. No deviations from the stage prompt. Next stage (Validation) should
+    exercise: AC-1 (agent-driven Done advances), AC-3 (flag=false/null no-ops),
+    AC-4 (terminal stage no-ops), AC-5 (idempotent Done doesn't re-advance),
+    AC-9 (status-only non-Done PATCH doesn't trigger pipeline), and AC-13
+    (manual drag still works). Note: because this very item is on the flagged
+    Implementation stage, the nos-set-status Done call made at end-of-run will
+    itself auto-advance it to Validation — that is the intended feature and is
+    now expected behavior.
+  - >-
+    Validation complete: 13/14 ACs pass, AC-6 fails. The auto-advance block in
+    app/api/workflows/[id]/items/[itemId]/route.ts is short-circuited for
+    ItemDetailDialog Done flips because the dialog always includes 'stage' in
+    its PATCH body (ItemDetailDialog.tsx:95-100), which hits the existing 'if
+    (patch.stage !== undefined)' branch and returns before the auto-advance
+    detection runs. Agent-driven flips via nos-set-status (which sends only
+    'status') work correctly. Recommended fix (F1 in the new ## Validation
+    section): in the route, change the stage-change branch's guard from
+    'patch.stage !== undefined' to 'patch.stage !== undefined && patch.stage !==
+    priorItem.stage', so same-stage PATCHes fall through to the auto-advance
+    block. Leaving item in Validation stage per the stage prompt's 'do not
+    advance to Done on failure' rule — status is intentionally not flipped to
+    Done because Validation has autoAdvanceOnComplete=true and that would move
+    the item to the Done stage before the fix lands.
+updatedAt: '2026-04-18T16:29:34.249Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 33382d90-4154-45c1-9de5-fd40ef1bc62d
+    startedAt: '2026-04-18T14:13:41.066Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: c039bb09-1d1a-4c1e-9970-21f218d0789b
+    startedAt: '2026-04-18T14:17:15.497Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 2262c54a-46b0-44e5-9091-c634b71cdf31
+    startedAt: '2026-04-18T14:23:28.127Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 983592a4-dfd3-48f9-a4b3-3c15b62d7ef5
+    startedAt: '2026-04-18T14:25:23.750Z'

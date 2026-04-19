@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 import { createErrorResponse } from '@/app/api/utils/errors';
+import { streamRegistry } from '@/lib/stream-registry';
 import type { SessionSummary, SessionHistory, SessionHistoryMessage } from '@/types/session';
 
 export const runtime = 'nodejs';
@@ -55,6 +56,7 @@ function parseSessionSummary(filePath: string, fileName: string): SessionSummary
     preview: preview || '(No response)',
     turnCount,
     model,
+    isRunning: streamRegistry.getStatus(id) === 'streaming',
   };
 }
 

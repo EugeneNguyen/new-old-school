@@ -1,0 +1,73 @@
+title: Add ability to edit system prompt in setting
+stage: Done
+status: Done
+comments:
+  - >-
+    Analysis added to index.md. Original request body was empty, so scope was
+    inferred from the title and the existing .nos/system-prompt.md +
+    lib/system-prompt.ts reader. Covered scope (dashboard settings page +
+    GET/PUT API wrapping a new saveSystemPrompt helper), feasibility (low —
+    symmetric fs write to the existing path), dependencies
+    (.nos/system-prompt.md, loadSystemPrompt, stage-pipeline consumer, net-new
+    /dashboard/settings route), and 7 open questions for the next stage
+    (placement, editor choice, autosave vs explicit save, missing-file seeding,
+    size/validation, auth, whether to scaffold a broader settings surface). No
+    implementation started.
+  - >-
+    Appended a ## Specification section to index.md covering user stories, 13
+    numbered acceptance criteria (Given/When/Then for load, save, round-trip,
+    and dirty-state guard), technical constraints (new files
+    app/dashboard/settings/page.tsx + app/api/settings/system-prompt/route.ts, a
+    saveSystemPrompt helper in lib/system-prompt.ts, GET/PUT contract with
+    200/400/413/500 responses and a 64 KB cap), and an explicit out-of-scope
+    list. Resolved the analysis open questions in the spec: plain textarea MVP
+    (no markdown preview), empty editor when the file is absent (no seeding),
+    explicit Save button with dirty-state guard, no content validation beyond
+    type/size, no auth gating beyond the dashboard itself, last-write-wins on
+    concurrent edits. No code written.
+  - >-
+    Validation ❌ failed: REQ-00023 has no Implementation Notes section and no
+    code has been written. Verified absence of app/dashboard/settings/,
+    app/api/settings/, saveSystemPrompt in lib/system-prompt.ts, and any
+    Settings nav entry. All 13 acceptance criteria fail (criterion 12 partially
+    works only because buildAgentPrompt already wraps loadSystemPrompt output in
+    <system-prompt> tags, but no UI save path exists). Appended a ## Validation
+    section to index.md with a per-criterion verdict table and a 5-step
+    follow-up list. Left item in Validation stage per stage prompt; status kept
+    at In Progress — do not advance to the next stage until the implementation
+    lands and this validation is re-run.
+  - >-
+    Implementation landed. Added saveSystemPrompt to lib/system-prompt.ts
+    (mkdirSync + writeFileSync verbatim, utf-8). Created
+    app/api/settings/system-prompt/route.ts with GET + PUT handlers,
+    runtime='nodejs', 64 KB UTF-8 byte-length cap → 413, and the spec's exact {
+    content, exists } / { ok: true } / { error } response shapes (deliberately
+    bypassing createErrorResponse to match the contract verbatim — note this for
+    the next stage). Created app/dashboard/settings/page.tsx as a client
+    component with plain <textarea>, explicit Save, dirty-state indicator with
+    byte counter, transient 'Saved' flash, error retention on failure, and a
+    dirty-state guard via beforeunload plus a capture-phase click interceptor
+    for in-app nav. No Sidebar edits were required — the Settings entry already
+    exists in config/tools.json pointing at /dashboard/settings, which
+    contradicts the prior Validation stage's 'no nav entry' finding. Typecheck
+    clean; one TS advisory about event.returnValue deprecation left in place
+    (still the canonical cross-browser unsaved-changes trigger). Added ##
+    Implementation Notes section to index.md.
+updatedAt: '2026-04-18T15:18:35.638Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 28b60bda-30b1-4310-a64c-52b1fd8ccdc1
+    startedAt: '2026-04-18T14:28:24.916Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 21d4234a-aaf6-4fb8-8bd1-c35ea9094bd3
+    startedAt: '2026-04-18T14:29:38.848Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: f3faab2e-a4ff-4f08-8b14-d40dd0dc496f
+    startedAt: '2026-04-18T14:51:42.343Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 65d948ef-1456-4750-8075-191a96c2f17e
+    startedAt: '2026-04-18T14:57:28.326Z'

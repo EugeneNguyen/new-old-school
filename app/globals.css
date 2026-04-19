@@ -1,3 +1,6 @@
+@import "@uiw/react-md-editor/markdown-editor.css";
+@import "@uiw/react-markdown-preview/markdown.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -32,4 +35,27 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Scoped overrides for rendered Markdown inside comment bubbles. Keeps
+   `.wmde-markdown` defaults from leaking the library background / outer
+   margins through the bubble and aligns typography with the dialog. */
+.comment-markdown .wmde-markdown {
+  background: transparent;
+  color: inherit;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+.comment-markdown .wmde-markdown > :first-child {
+  margin-top: 0;
+}
+.comment-markdown .wmde-markdown > :last-child {
+  margin-bottom: 0;
+}
+.comment-markdown .wmde-markdown code:not(pre code) {
+  background-color: hsl(var(--muted));
+  color: inherit;
+}
+.comment-markdown .wmde-markdown a {
+  color: hsl(var(--primary));
 }

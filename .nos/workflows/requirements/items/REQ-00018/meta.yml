@@ -1,0 +1,150 @@
+title: Fix issue
+stage: Analysis
+status: In Progress
+comments:
+  - >-
+    Analysis appended to index.md. Root-cause hypothesis: React 19 warns on the
+    lowercase <iso> token that @uiw/react-md-editor parses as raw HTML from the
+    stacktrace text in the body. Covered scope, feasibility (three fix options —
+    rehype-sanitize, disable allowDangerousHtml, or pre-escape), dependencies
+    (MDEditor + React 19/Next 16 canary + other markdown render sites to audit:
+    KanbanBoard card, terminal SessionPanel), and open questions for the next
+    stage — notably whether raw HTML in bodies is allowed at all and whether
+    other render sites share the bug. No implementation attempted, per stage
+    prompt.
+  - >-
+    Added ## Specification to REQ-00018/index.md. Resolved the five Analysis
+    open questions: no raw HTML in item bodies, fix applied to every
+    markdown-rendering surface (ItemDetailDialog, KanbanBoard card,
+    SessionPanel), XSS hardening bundled, must work on Next.js 16 stable, no
+    ingestion-time rewrites. Spec mandates rehype-sanitize with a custom
+    allowlist (keep code className, heading ids, GFM tables, task-list
+    checkboxes, img src/alt/title), exposed from a shared
+    lib/markdown-preview.ts module and consumed by every site. Acceptance
+    criteria cover the original <iso> stacktrace, generic-type snippets like
+    List<string>, highlighting preservation, script stripping, img/table
+    allowance, write-path byte-identity, and dev+prod parity. Explicit
+    non-goals: no library swap, no editor redesign, no on-disk body changes, no
+    ingestion normalization, no broader security review. Implementer should
+    confirm whether KanbanBoard currently renders markdown or plain text before
+    wiring the shared config there.
+  - >-
+    Implemented the render-time sanitization fix. Added rehype-sanitize@6.0.0 as
+    a direct dep; created lib/markdown-preview.ts exporting
+    markdownSanitizeSchema (extended from rehype-sanitize's defaultSchema to
+    keep Prism/HLJS classNames on code/pre/span, alt/title on img, and data: in
+    the src protocol allowlist) plus markdownPreviewOptions (allowDangerousHtml
+    → rehype-raw → rehype-sanitize pipeline). Wired via previewOptions on the
+    single MDEditor instance in components/dashboard/ItemDetailDialog.tsx;
+    write-path is unchanged (onChange stores the raw string). Confirmed
+    KanbanBoard cards and SessionPanel render plain text only and need no config
+    — documented in Implementation Notes rather than forced to import the shared
+    module. tsc --noEmit is clean; next build compiles successfully (a
+    pre-existing /_global-error prerender error reproduces on main and is
+    unrelated). Acceptance-criteria mapping recorded in index.md.
+  - >-
+    Validation failed AC1 and AC2. The sanitize pipeline correctly eliminates
+    the React unknown-tag console warning (the original defect) and passes
+    AC3–AC7 cleanly (code-highlight classes, script strip, img/table render,
+    single-surface policy, write-path invariance all verified by re-running the
+    exact unified pipeline the MDEditor preview uses). However, the spec
+    requires unknown-tag tokens like <iso>, <anonymous>, and <string> to be
+    *visible verbatim* as literal text; rehype-sanitize drops them and keeps
+    only their text children, so 'at iso (<anonymous>:null:null)' renders as 'at
+    iso (:null:null)' and 'List<string>' renders as 'List'. The item is left in
+    the current stage with a ## Validation section listing per-AC verdicts and a
+    follow-up section proposing an escape-then-allowlist rehype step (or
+    disabling raw HTML entirely if AC5 is renegotiated). AC8/AC9 are marked
+    Partial — structurally sound but not browser-verified against a production
+    build. npx tsc --noEmit is clean. No status flip to Done.
+  - >-
+    Analysis stage: no edits made. The item's index.md already contains a
+    complete ## Analysis section (Root cause, Scope, Feasibility, Dependencies,
+    Open questions) and has progressed through Specification, Implementation
+    Notes, and Validation. Re-generating analysis would either duplicate the
+    section or risk stomping downstream work, so I left the file byte-identical.
+    Heads-up for the next stage owner: the existing Validation section flags
+    AC1/AC2 as failing — the current rehype-sanitize config strips unknown tags
+    (<iso>, <anonymous>, <string>) along with their text, but the spec requires
+    them visible verbatim. Recommended fix documented there
+    (escape-then-allowlist custom rehype plugin, or disable allowDangerousHtml
+    and renegotiate AC5 for raw <img>).
+  - >-
+    Rewrote ## Specification to resolve the AC1/AC2-vs-sanitize contradiction
+    that validation flagged. The prior spec said 'Any element not in the
+    allowlist must be dropped' while AC1/AC2 demanded verbatim visibility of
+    <iso>/<anonymous>/<string>; those rules collided and the impl chose the
+    strip path, silently deleting user text. New policy: allowlisted tags (img,
+    GFM tables, task-list inputs, code/pre/span with highlighting classes,
+    heading ids) render as HTML; everything else falls through to a literal-text
+    fallback where the <,> characters and serialized source appear verbatim;
+    <script>/<style> are the single exception — element+children removed
+    entirely. Pipeline constraint explicitly rejects the rehype-sanitize-only
+    strip approach and requires a pre-sanitize serialization pass (custom rehype
+    plugin) for disallowed elements. Added user story #4 for content-author HTML
+    usage, tightened AC1/AC2 to assert visible-text equality character-count,
+    tightened AC4 so <script> and its children are both absent, and clarified
+    AC6 so non-markdown surfaces are exempt-with-documentation. Shared
+    lib/markdown-preview.ts is still the single configuration point. Write-path
+    invariance and Next.js dev/prod parity unchanged. Implementer should update
+    the existing lib/markdown-preview.ts to add the serialize-disallowed-to-text
+    rehype step and re-run the AC1/AC2 smoke tests.
+  - >-
+    Implementation: fixed the AC1/AC2 regression by adding an
+    escape-then-allowlist remark plugin (escapeDisallowedHtml) at the front of
+    lib/markdown-preview.ts. It walks mdast and rewrites html nodes whose
+    leading tag is neither in defaultSchema.tagNames nor in the script/style
+    strip set into plain text nodes carrying the original source — so <iso>,
+    <anonymous>, List<string> and other unknown tags now render verbatim instead
+    of being silently dropped by rehype-sanitize. Allowlisted tags (img, GFM
+    tables, code highlighting) and script/style continue down the existing
+    allowDangerousHtml → rehype-raw → rehype-sanitize path. Same plugin wired
+    into commentRemarkPlugins for parity. Re-ran the exact unified pipeline
+    against AC inputs: AC1, AC2, AC3, AC4, AC5 (img + table) all pass; npx tsc
+    --noEmit clean. AC8/AC9 still ⚠️ Partial since live next build + browser
+    sweep was not performed in this session — flagged in the
+    Validation/Follow-ups section. ItemDetailDialog wiring untouched; no changes
+    to KanbanBoard or SessionPanel (still plain-text).
+  - >-
+    Independent validation re-run. AC1/AC2/AC3/AC5/AC6/AC7 pass; AC4 is a
+    partial fail — <script> is stripped correctly but <style> leaks its CSS text
+    into the rendered DOM (e.g. <style>body{color:red}</style> → visible text
+    'body{color:red}'). Root cause: defaultSchema.strip is ['script'] only;
+    lib/markdown-preview.ts does not override it. Fix is one line — add strip:
+    ['script','style'] to markdownSanitizeSchema. AC8/AC9 remain ⚠️ Partial
+    pending a live next build + browser sweep. Left in this stage with
+    follow-ups; not advancing to Done.
+updatedAt: '2026-04-19T03:21:57.780Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 7f86063d-60d2-4672-816c-eb88e544d6dc
+    startedAt: '2026-04-18T14:07:25.214Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: e8420833-249c-4920-9766-8a942786a9bb
+    startedAt: '2026-04-18T14:09:43.749Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: df02c944-f43f-4aed-be6b-cfc9ae48f716
+    startedAt: '2026-04-18T14:11:27.709Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 7ae69a18-bdff-4f6d-b7a6-522f1e9b4ba6
+    startedAt: '2026-04-18T14:17:09.913Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 6b858686-459f-49b9-bead-e51364947597
+    startedAt: '2026-04-18T16:37:57.827Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 9b563e3f-0ad5-4755-b68d-9411c577eba2
+    startedAt: '2026-04-18T16:39:18.048Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 0bb9ba9f-e7af-44b4-8882-bc9c8d086d67
+    startedAt: '2026-04-18T23:46:14.895Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 660b8b50-1456-413d-bb7e-e46c8d3d58e3
+    startedAt: '2026-04-18T23:53:11.080Z'

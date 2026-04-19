@@ -78,8 +78,8 @@ export default function SessionPanel({
   };
 
   return (
-    <div className="w-72 flex-shrink-0 flex flex-col bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900/50">
+    <div className="w-72 shrink-0 h-full min-h-0 flex flex-col bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900/50 shrink-0">
         <span className="text-sm font-medium text-zinc-300">Sessions</span>
         <Button
           variant="ghost"
@@ -92,8 +92,8 @@ export default function SessionPanel({
         </Button>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+      <ScrollArea className="flex-1 min-h-0 h-full w-full">
+        <div>
           {isLoading && sessions.length === 0 && (
             <div className="flex items-center justify-center py-8 text-zinc-500">
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -130,9 +130,23 @@ export default function SessionPanel({
                 )}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-mono text-xs text-zinc-400">
-                    {session.id.slice(0, 8)}
-                  </span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {session.isRunning && (
+                      <span
+                        role="status"
+                        aria-label="Running"
+                        title="Running"
+                        className="relative inline-flex shrink-0 h-2 w-2"
+                      >
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 animate-ping" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+                        <span className="sr-only">Running</span>
+                      </span>
+                    )}
+                    <span className="font-mono text-xs text-zinc-400 truncate">
+                      {session.id.slice(0, 8)}
+                    </span>
+                  </div>
                   <span className="text-xs text-zinc-600">
                     {formatRelativeTime(session.updatedAt)}
                   </span>

@@ -75,10 +75,47 @@ export default function ClaudeTerminal() {
     }
   }, []);
 
+  const refreshSessionsSilently = useCallback(async () => {
+    try {
+      const res = await fetch('/api/claude/sessions');
+      if (res.ok) {
+        const data: SessionSummary[] = await res.json();
+        setSessions(data);
+      }
+    } catch {
+      // silently fail
+    }
+  }, []);
+
   useEffect(() => {
     fetchSessions();
     return () => { abortRef.current?.abort(); };
   }, [fetchSessions]);
+
+  const hasRunningSession = sessions.some((s) => s.isRunning);
+
+  useEffect(() => {
+    if (!hasRunningSession) return;
+    if (typeof document === 'undefined') return;
+
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        refreshSessionsSilently();
+      }
+    }, 3000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshSessionsSilently();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [hasRunningSession, refreshSessionsSilently]);
 
   const processStream = useCallback(async (reader: ReadableStreamDefaultReader<Uint8Array>, assistantId: string) => {
     const decoder = new TextDecoder();
@@ -405,8 +442,8 @@ export default function ClaudeTerminal() {
   }, [sendPrompt]);
 
   return (
-    <div className="p-8 space-y-6 h-full">
-      <div className="flex items-center justify-between">
+    <div className="h-full flex flex-col min-h-0">
+      <div className="flex items-center justify-between px-8 pt-8 pb-4 shrink-0">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Claude Terminal</h1>
           <p className="text-muted-foreground">
@@ -423,7 +460,7 @@ export default function ClaudeTerminal() {
         </Button>
       </div>
 
-      <div className="flex gap-4" style={{ height: 'calc(100vh - 200px)' }}>
+      <div className="flex-1 min-h-0 flex gap-4 px-8 pb-8">
         <SessionPanel
           sessions={sessions}
           activeSessionId={sessionId}
@@ -432,8 +469,8 @@ export default function ClaudeTerminal() {
           isLoading={isLoadingSessions}
         />
 
-        <Card className="flex-1 flex flex-col bg-zinc-950 text-zinc-100 border-zinc-800 overflow-hidden">
-          <CardHeader className="border-b border-zinc-800 bg-zinc-900/50 flex-shrink-0">
+        <Card className="flex-1 min-h-0 h-full flex flex-col bg-zinc-950 text-zinc-100 border-zinc-800 overflow-hidden">
+          <CardHeader className="border-b border-zinc-800 bg-zinc-900/50 shrink-0">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-zinc-400" />
@@ -460,9 +497,9 @@ export default function ClaudeTerminal() {
               )}
             </div>
           </CardHeader>
-          <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
-            <ScrollArea className="flex-1">
-              <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 font-mono text-sm" style={{ maxHeight: 'calc(100vh - 340px)' }}>
+          <CardContent className="p-0 flex-1 min-h-0 flex flex-col">
+            <ScrollArea ref={scrollRef} className="flex-1 min-h-0 h-full w-full">
+              <div className="p-4 space-y-4 font-mono text-sm">
                 {messages.length === 0 && (
                   <div className="text-zinc-500 italic">
                     Start a conversation with Claude. Your messages will be sent via the Claude Code CLI.
@@ -521,7 +558,7 @@ export default function ClaudeTerminal() {
                 ))}
               </div>
             </ScrollArea>
-            <form onSubmit={sendMessage} className="p-4 border-t border-zinc-800 flex gap-2 flex-shrink-0">
+            <form onSubmit={sendMessage} className="p-4 border-t border-zinc-800 flex gap-2 shrink-0">
               <div className="flex-1 relative">
                 {slashOpen && (
                   <SlashPopup

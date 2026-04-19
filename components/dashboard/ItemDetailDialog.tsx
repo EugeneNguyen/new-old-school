@@ -1,13 +1,24 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { X } from 'lucide-react';
 import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import {
+  commentRehypePlugins,
+  commentRemarkPlugins,
+  markdownPreviewOptions,
+} from '@/lib/markdown-preview';
 import { ItemStatus, Stage, WorkflowItem } from '@/types/workflow';
+
+const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false });
+const MarkdownPreview = dynamic(() => import('@uiw/react-markdown-preview'), {
+  ssr: false,
+});
 
 interface Props {
   open: boolean;
@@ -18,11 +29,12 @@ interface Props {
   onSaved: (updated: WorkflowItem) => void;
 }
 
-const STATUSES: ItemStatus[] = ['Todo', 'In Progress', 'Done'];
-const STATUS_VARIANT: Record<ItemStatus, 'secondary' | 'default' | 'success'> = {
+const STATUSES: ItemStatus[] = ['Todo', 'In Progress', 'Done', 'Failed'];
+const STATUS_VARIANT: Record<ItemStatus, 'secondary' | 'default' | 'success' | 'destructive'> = {
   Todo: 'secondary',
   'In Progress': 'default',
   Done: 'success',
+  Failed: 'destructive',
 };
 
 export default function ItemDetailDialog({
@@ -43,6 +55,7 @@ export default function ItemDetailDialog({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const itemId = item?.id;
   useEffect(() => {
     if (!open || !item) return;
     setTitle(item.title);
@@ -60,7 +73,17 @@ export default function ItemDetailDialog({
       .then((data: { body?: string }) => setBody(data.body ?? ''))
       .catch((e) => console.error('Failed to load body:', e))
       .finally(() => setLoadingBody(false));
-  }, [open, item, workflowId]);
+    // Only reset on open or when a different item is shown — body/title/comments
+    // must not be clobbered when the parent re-renders with a live status update.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, itemId, workflowId]);
+
+  // Live-sync status and stage when the parent pushes an updated item.
+  useEffect(() => {
+    if (!open || !item) return;
+    setStatus(item.status);
+    setStage(item.stage);
+  }, [open, item?.status, item?.stage, item?.updatedAt, item]);
 
   if (!item) return null;
 
@@ -137,14 +160,34 @@ export default function ItemDetailDialog({
       <div className="grid flex-1 grid-cols-1 gap-0 overflow-hidden md:grid-cols-[1fr_220px]">
         <div className="flex max-h-[70vh] flex-col gap-4 overflow-auto p-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Description</label>
-            <textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder={loadingBody ? 'Loading…' : 'Write markdown description…'}
-              disabled={loadingBody}
-              className="min-h-[200px] w-full rounded-md border border-input bg-background p-3 font-mono text-xs leading-relaxed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
+            <label
+              htmlFor="item-detail-description"
+              className="text-xs font-medium text-muted-foreground"
+            >
+              Description
+            </label>
+            <div
+              id="item-detail-description"
+              data-color-mode="light"
+              className="item-detail-md-editor rounded-md border border-input bg-background focus-within:outline-none focus-within:ring-2 focus-within:ring-ring"
+            >
+              <MDEditor
+                value={loadingBody ? '' : body}
+                onChange={(value) => {
+                  if (loadingBody) return;
+                  setBody(value ?? '');
+                }}
+                height={240}
+                preview="live"
+                previewOptions={markdownPreviewOptions}
+                textareaProps={{
+                  placeholder: loadingBody ? 'Loading…' : 'Write markdown description…',
+                  disabled: loadingBody,
+                  readOnly: loadingBody,
+                  'aria-labelledby': 'item-detail-description',
+                }}
+              />
+            </div>
           </div>
 
           <div className="flex flex-col gap-2">
@@ -158,9 +201,17 @@ export default function ItemDetailDialog({
               {comments.map((c, idx) => (
                 <div
                   key={idx}
-                  className="rounded-md border bg-secondary/40 px-3 py-2 text-sm whitespace-pre-wrap"
+                  className="comment-markdown rounded-md border bg-secondary/40 px-3 py-2 text-sm"
                 >
-                  {c}
+                  {c.trim() ? (
+                    <MarkdownPreview
+                      source={c}
+                      remarkPlugins={commentRemarkPlugins}
+                      rehypePlugins={commentRehypePlugins}
+                      wrapperElement={{ 'data-color-mode': 'light' }}
+                      style={{ background: 'transparent' }}
+                    />
+                  ) : null}
                 </div>
               ))}
             </div>

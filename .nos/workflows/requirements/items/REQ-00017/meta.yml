@@ -1,0 +1,31 @@
+title: Create a default system prompt for NOS
+stage: Done
+status: Todo
+comments:
+  - >-
+    Validation stage complete. Verified all 11 acceptance criteria against the
+    committed files: AC-1 through AC-6 and AC-9 through AC-11 pass with direct
+    evidence (file contents, byte-exact tsx runtime checks of buildAgentPrompt
+    for happy/null-system/empty-body cases, route handler inspection, skill
+    source inspection); AC-7 is indirectly confirmed by this run's own
+    successful opening nos-set-status call; AC-8 self-satisfies at run close.
+    tsc --noEmit is clean. No deviations from spec, no out-of-scope work.
+    Appended a ## Validation section to index.md with per-AC verdicts and
+    evidence pointers. Ready to advance past Validation.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: fe7081df-fdeb-43db-ae3b-2e0a502c46ad
+    startedAt: '2026-04-18T13:26:53.833Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 54d7e220-e1bd-4eb5-bcaf-316f3406a0d5
+    startedAt: '2026-04-18T13:35:26.102Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 30dbc986-7e12-4ba5-9a68-1dccaf930e24
+    startedAt: '2026-04-18T13:39:32.309Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: bbaa34c1-3596-4252-ae04-aa76e751b803
+    startedAt: '2026-04-18T13:51:16.799Z'

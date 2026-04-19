@@ -1,0 +1,39 @@
+title: 'Fix Issue: Duplicated item when created'
+stage: Documentation
+status: Done
+comments:
+  - >-
+    Analysis appended to index.md. Root cause: KanbanBoard has two writers for a
+    new item — handleItemCreated (from the POST response) appends
+    unconditionally, while the item-created SSE echo also appends via a deduped
+    path. Because emitItemCreated fires inside createItem before the POST
+    resolves, the SSE insert happens first and handleItemCreated then blindly
+    appends a second copy; reload rehydrates from disk and clears the duplicate.
+    Fix is a one-function change: make handleItemCreated id-aware with the same
+    last-writer-wins merge used by the SSE handler (see KanbanBoard.tsx:58-75
+    for the reference). No schema, API, or persistence changes needed. Open
+    questions flagged for the documentation stage: whether to share the merge
+    helper, and whether to add a component-level regression test.
+  - >-
+    Added ## Specification section to index.md: 3 user stories, 7 numbered
+    Given/When/Then acceptance criteria covering both event-order races,
+    last-writer-wins merge, SSE-disconnected fallback, reload parity, idempotent
+    re-emission, and no-collateral-damage. Technical constraints pin the fix to
+    a shared mergeItem(items, incoming) helper in
+    components/dashboard/KanbanBoard.tsx used by both handleItemCreated and the
+    SSE item-created handler, with last-writer-wins on updatedAt and O(n) cost.
+    Explicitly out of scope: NewItemDialog UX, server/API/SSE transport changes,
+    optimistic UI, server-side dedup, and automated tests (manual verification
+    is sufficient). Open questions Q1 and Q2 from analysis are resolved in the
+    spec (last-writer-wins; shared helper required); Q3 is deferred per the
+    out-of-scope note.
+updatedAt: '2026-04-19T00:53:01.634Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: e7fe78cc-8782-4c07-9e64-951b5bf6d3da
+    startedAt: '2026-04-18T23:53:27.150Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 45d06836-b3af-4e3a-8b28-57afe59db931
+    startedAt: '2026-04-19T00:52:04.713Z'

@@ -10,7 +10,7 @@ import { triggerStagePipeline } from '@/lib/stage-pipeline';
 import { ItemStatus } from '@/types/workflow';
 import { createErrorResponse } from '@/app/api/utils/errors';
 
-const VALID_STATUSES: ItemStatus[] = ['Todo', 'In Progress', 'Done'];
+const VALID_STATUSES: ItemStatus[] = ['Todo', 'In Progress', 'Done', 'Failed'];
 
 export async function GET(
   _req: Request,
@@ -87,6 +87,8 @@ export async function PATCH(
       return createErrorResponse('No recognized fields in request body', 'BadRequest', 400);
     }
 
+    const priorStatus = readItem(id, itemId)?.status;
+
     const updated = updateItemMeta(id, itemId, patch);
     if (!updated) {
       return createErrorResponse(`Item '${itemId}' not found`, 'NotFound', 404);
@@ -95,6 +97,25 @@ export async function PATCH(
       const afterPipeline = await triggerStagePipeline(id, itemId);
       return NextResponse.json(afterPipeline ?? updated);
     }
+
+    if (
+      patch.status === 'Done' &&
+      priorStatus !== 'Done' &&
+      updated.status === 'Done'
+    ) {
+      const stages = readStages(id);
+      const currentIdx = stages.findIndex((s) => s.name === updated.stage);
+      if (currentIdx !== -1 && currentIdx < stages.length - 1) {
+        const current = stages[currentIdx];
+        if (current.autoAdvanceOnComplete === true) {
+          const next = stages[currentIdx + 1];
+          const advanced = updateItemMeta(id, itemId, { stage: next.name });
+          const afterPipeline = await triggerStagePipeline(id, itemId);
+          return NextResponse.json(afterPipeline ?? advanced ?? updated);
+        }
+      }
+    }
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error('Error updating workflow item:', error);

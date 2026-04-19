@@ -1,0 +1,111 @@
+title: Comment in the item is markdown, should style it with markdown
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis complete. The item's index.md was empty, so I derived scope from
+    the title (comments should render as Markdown) and the current code in
+    components/dashboard/ItemDetailDialog.tsx, which renders comments as plain
+    text inside a whitespace-pre-wrap div. Proposed direction: reuse the
+    existing markdownSanitizeSchema from lib/markdown-preview.ts plus
+    @uiw/react-md-editor's preview to render stored comment strings as Markdown,
+    while keeping the input a plain textarea. Flagged risks around bundle size,
+    preview CSS clashing with the bubble style, and CommonMark vs soft-break
+    semantics for legacy comments. Open questions left for the next stage cover:
+    whether to also upgrade the input to a live preview, whether to enable
+    remark-breaks, whether Kanban card comment previews should match, raw-HTML
+    policy, and code-block syntax highlighting.
+  - >-
+    Stopping implementation — gap flagged. The item's index.md contains only the
+    '## Analysis' section from the prior stage; there is no '## Specification'
+    section and no acceptance criteria. The 5 Open Questions from Analysis
+    (input stays plain textarea vs live preview, remark-breaks vs strict
+    CommonMark, Kanban comment previews also markdown, raw HTML policy,
+    code-block syntax highlighting) are unresolved and each affects the
+    implementation. Per the Implementation stage prompt ('treat the spec as
+    authoritative; if you find gaps, stop and flag them rather than guessing'),
+    I did not make assumptions or edit code. Next step: run a Specification
+    stage (or have a human resolve the open questions and write acceptance
+    criteria into index.md) before re-entering Implementation. Status left at
+    'In Progress'.
+  - >-
+    Re-ran Analysis stage. The index.md already contained a complete Scope /
+    Feasibility / Dependencies / Open Questions write-up from the prior Analysis
+    pass, and spot-checking ItemDetailDialog.tsx:193-207 confirmed its core
+    claims are still accurate (comments render inside a whitespace-pre-wrap div
+    with no Markdown processing; input is a plain textarea). No changes made to
+    index.md. The 5 open questions from the earlier analysis remain unresolved
+    and should be answered in a Specification stage before Implementation — most
+    impactful are (1) remark-breaks vs strict CommonMark for legacy comments
+    authored under pre-wrap semantics, and (2) whether Kanban card comment
+    previews should also switch to Markdown for consistency.
+  - >-
+    Appended the ## Specification section to index.md: four user stories, eleven
+    numbered acceptance criteria covering Markdown render, sanitize parity with
+    the body, no rehype-raw, remark-breaks for legacy line-break compatibility,
+    code-block styling, composer staying as a plain textarea, bubble styling
+    scoping, empty-comment safety, no body-editor regressions, no storage/API
+    change, and Kanban previews staying plain-text. Technical constraints pin
+    the change site to components/dashboard/ItemDetailDialog.tsx, reuse
+    markdownSanitizeSchema from lib/markdown-preview.ts (exporting it if
+    needed), forbid new Markdown renderer libs, and require scoped CSS. I
+    resolved all five open questions from Analysis using the defaults it
+    suggested (plain textarea composer, enable remark-breaks, Kanban stays
+    plain, no rehype-raw, inherit body's highlighting). No deviations from the
+    stage prompt; no code written.
+  - >-
+    Implemented comment Markdown rendering per REQ-00022 spec. Changes: (1)
+    lib/markdown-preview.ts exports new commentRemarkPlugins=[remarkBreaks] and
+    commentRehypePlugins=[[rehypeSanitize, markdownSanitizeSchema]]; body
+    pipeline (markdownPreviewOptions with rehype-raw) is unchanged. (2)
+    components/dashboard/ItemDetailDialog.tsx replaces the whitespace-pre-wrap
+    comment div with a dynamically-imported @uiw/react-markdown-preview (already
+    a transitive dep of @uiw/react-md-editor, so no second renderer lib added);
+    bubble keeps bg-secondary/40 via a new comment-markdown wrapper class,
+    data-color-mode='light', and transparent preview background. Whitespace-only
+    comments render nothing; the textarea composer and PATCH payload are
+    untouched. (3) app/globals.css adds scoped .comment-markdown .wmde-markdown
+    rules (transparent bg, inherited color, first/last child margin reset, muted
+    inline code bg, primary link color) — all keyed off .comment-markdown so the
+    item body editor and every other wmde-markdown surface are unaffected. (4)
+    package.json gains remark-breaks (allowed by spec); no other deps added, no
+    storage/API changes (comments is still string[]), Kanban card excerpts
+    remain plain-text per AC-11. tsc passes. Implementation Notes appended to
+    index.md. No deviations.
+  - >-
+    Validated REQ-00022 against all 11 acceptance criteria: each passed by
+    reading the implementation in components/dashboard/ItemDetailDialog.tsx,
+    lib/markdown-preview.ts, app/globals.css, the API route, and KanbanBoard.
+    Confirmed rehype-raw is excluded from the comment pipeline, remark-breaks is
+    wired, the sanitize schema is shared with the body, empty comments are
+    guarded by a c.trim() check, .comment-markdown CSS scoping does not bleed
+    into the body MDEditor, and the <textarea> composer + API payload shape are
+    unchanged. npx tsc --noEmit ran clean. Only caveat: a UI visual smoke test
+    was not run in this validation session, so a quick manual spot-check
+    in-browser before shipping is recommended. No follow-ups; advancing to Done.
+updatedAt: '2026-04-18T23:50:56.225Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 2faccb77-a56f-44e4-ba4d-ea411e18aec3
+    startedAt: '2026-04-18T14:52:34.489Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: a14d42d5-b29c-4587-8055-4cfb7376334d
+    startedAt: '2026-04-18T16:29:21.469Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 46b28e5d-99f6-4d9d-853d-3f8091c589c8
+    startedAt: '2026-04-18T16:36:19.507Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: ef3d3803-fe0e-44c2-9431-63c829fddecb
+    startedAt: '2026-04-18T16:37:38.922Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: e41587bf-6046-4cda-99f1-20620d5d1f15
+    startedAt: '2026-04-18T16:39:08.397Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 44d66e40-477e-4e20-8bd5-e6dc6a5648f6
+    startedAt: '2026-04-18T23:45:41.203Z'

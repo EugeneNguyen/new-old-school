@@ -10,7 +10,7 @@ export interface Stage {
   autoAdvanceOnComplete?: boolean | null;
 }
 
-export type ItemStatus = 'Todo' | 'In Progress' | 'Done';
+export type ItemStatus = 'Todo' | 'In Progress' | 'Done' | 'Failed';
 
 export interface ItemSession {
   stage: string;
@@ -27,6 +27,7 @@ export interface WorkflowItem {
   comments?: string[];
   body?: string;
   sessions?: ItemSession[];
+  updatedAt: string;
 }
 
 export interface WorkflowDetail {

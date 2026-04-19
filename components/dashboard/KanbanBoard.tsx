@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MoreVertical, Plus, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,10 +16,11 @@ interface Props {
   initialItems: WorkflowItem[];
 }
 
-const STATUS_VARIANT: Record<ItemStatus, 'secondary' | 'default' | 'success'> = {
+const STATUS_VARIANT: Record<ItemStatus, 'secondary' | 'default' | 'success' | 'destructive'> = {
   Todo: 'secondary',
   'In Progress': 'default',
   Done: 'success',
+  Failed: 'destructive',
 };
 
 export default function KanbanBoard({ workflowId, stages: initialStages, initialItems }: Props) {
@@ -28,17 +29,107 @@ export default function KanbanBoard({ workflowId, stages: initialStages, initial
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [detailItem, setDetailItem] = useState<WorkflowItem | null>(null);
+  const [detailItemId, setDetailItemId] = useState<string | null>(null);
+  const detailItem = detailItemId ? items.find((i) => i.id === detailItemId) ?? null : null;
   const [newItemOpen, setNewItemOpen] = useState(false);
   const [editStage, setEditStage] = useState<Stage | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    let cancelled = false;
+    const source = new EventSource(
+      `/api/workflows/${encodeURIComponent(workflowId)}/events`
+    );
+    const onMessage = (evt: MessageEvent) => {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(evt.data);
+      } catch {
+        return;
+      }
+      if (!parsed || typeof parsed !== 'object') return;
+      const payload = parsed as {
+        type?: string;
+        itemId?: string;
+        item?: WorkflowItem;
+      };
+      if (payload.type === 'item-deleted' && payload.itemId) {
+        setItems((curr) => curr.filter((i) => i.id !== payload.itemId));
+        return;
+      }
+      if (
+        (payload.type === 'item-updated' || payload.type === 'item-created') &&
+        payload.item
+      ) {
+        const incoming = payload.item;
+        setItems((curr) => {
+          const idx = curr.findIndex((i) => i.id === incoming.id);
+          if (idx === -1) return [...curr, incoming];
+          const existing = curr[idx];
+          // Last-writer-wins via updatedAt; ignore equal or older echoes.
+          if ((existing.updatedAt ?? '') >= (incoming.updatedAt ?? '')) {
+            return curr;
+          }
+          const next = curr.slice();
+          next[idx] = incoming;
+          return next;
+        });
+      }
+    };
+    const resync = async () => {
+      try {
+        const res = await fetch(
+          `/api/workflows/${encodeURIComponent(workflowId)}`,
+          { cache: 'no-store' }
+        );
+        if (!res.ok || cancelled) return;
+        const detail = (await res.json()) as {
+          items?: WorkflowItem[];
+          stages?: Stage[];
+        };
+        if (cancelled || !detail.items) return;
+        const serverItems = detail.items;
+        setItems((curr) => {
+          const byId = new Map(curr.map((i) => [i.id, i] as const));
+          return serverItems.map((srv) => {
+            const local = byId.get(srv.id);
+            // Last-writer-wins via updatedAt; keep local if it's strictly newer
+            // so an in-flight optimistic mutation is not clobbered.
+            if (local && (local.updatedAt ?? '') > (srv.updatedAt ?? '')) {
+              return local;
+            }
+            return srv;
+          });
+        });
+      } catch {
+        // Transient fetch failure; EventSource will continue retrying.
+      }
+    };
+    const onOpen = () => {
+      void resync();
+    };
+    source.addEventListener('message', onMessage);
+    source.addEventListener('open', onOpen);
+    return () => {
+      cancelled = true;
+      source.removeEventListener('message', onMessage);
+      source.removeEventListener('open', onOpen);
+      source.close();
+    };
+  }, [workflowId]);
 
   async function moveItem(itemId: string, newStage: string) {
     const previous = items;
     const target = items.find((i) => i.id === itemId);
     if (!target || target.stage === newStage) return;
 
+    const optimisticTs = new Date().toISOString();
     setItems((curr) =>
-      curr.map((i) => (i.id === itemId ? { ...i, stage: newStage, status: 'Todo' as ItemStatus } : i))
+      curr.map((i) =>
+        i.id === itemId
+          ? { ...i, stage: newStage, status: 'Todo' as ItemStatus, updatedAt: optimisticTs }
+          : i
+      )
     );
     setError(null);
 
@@ -177,11 +268,11 @@ export default function KanbanBoard({ workflowId, stages: initialStages, initial
                       setDraggingId(null);
                       setDragOverStage(null);
                     }}
-                    onClick={() => setDetailItem(item)}
+                    onClick={() => setDetailItemId(item.id)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        setDetailItem(item);
+                        setDetailItemId(item.id);
                       }
                     }}
                     className={cn(
@@ -208,7 +299,7 @@ export default function KanbanBoard({ workflowId, stages: initialStages, initial
       <ItemDetailDialog
         open={detailItem !== null}
         onOpenChange={(open) => {
-          if (!open) setDetailItem(null);
+          if (!open) setDetailItemId(null);
         }}
         workflowId={workflowId}
         item={detailItem}

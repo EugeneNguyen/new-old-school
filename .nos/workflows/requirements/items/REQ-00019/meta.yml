@@ -1,0 +1,74 @@
+title: Show active session in Claude Terminal screen
+stage: Done
+status: Todo
+comments:
+  - >-
+    Appended an Analysis section to index.md covering scope (add a per-session
+    running indicator in SessionPanel driven by streamRegistry), feasibility
+    (streamRegistry.getStatus is already the source of truth; list route at
+    app/api/claude/sessions/route.ts does not consult it yet), dependencies
+    (types/session.ts, sessions list route, SessionPanel, terminal page refresh
+    loop), and open questions (definition of 'active', visual treatment, polling
+    vs SSE, multi-session behavior, done-state grace period, placeholder for
+    not-yet-assigned session ids). Did not modify the original request text and
+    did not start implementation. Next stage should resolve the open questions
+    (especially definition of 'active' and visual/refresh strategy) before
+    documenting.
+  - >-
+    Appended ## Specification to index.md with 4 user stories, 5 numbered
+    acceptance-criteria groups (type extension, API live state, UI indicator, UI
+    polling freshness, no-regression), technical constraints (SessionSummary
+    gains required isRunning, streamRegistry.getStatus is sole source of truth,
+    3s visibility-gated polling), and explicit out-of-scope list. Resolved the
+    analysis open questions: active = status==='streaming' only ('done' and the
+    30s grace window both map to isRunning=false); indicator is rendered per-row
+    in SessionPanel, colour-independent with aria-label 'Running', distinct from
+    the selected-session blue border; refresh via 3s polling of GET
+    /api/claude/sessions guarded by document.visibilityState, enabled only while
+    ≥1 session is running; multiple concurrent running sessions supported; no
+    'starting…' placeholder and no SSE. No code written.
+  - >-
+    Implemented the running-session indicator end-to-end. Added required
+    isRunning:boolean to SessionSummary (types/session.ts). Extended the list
+    branch of app/api/claude/sessions/route.ts to set isRunning via
+    streamRegistry.getStatus(id)==='streaming' (the ?id= branch and /status
+    route are untouched; 'done' and null both map to false). Added an animated
+    green dot with role=status, aria-label=Running, and sr-only text before each
+    running session's short id in components/terminal/SessionPanel.tsx —
+    independent of the existing blue selection border. Added visibility-gated 3s
+    polling in app/dashboard/terminal/page.tsx via a new refreshSessionsSilently
+    (does not flip isLoadingSessions) and a setInterval guarded by
+    document.visibilityState; the effect only runs while at least one listed
+    session is running, tears down when all go idle or the tab is hidden, and
+    fires an immediate refresh on visibility change. tsc --noEmit is clean; the
+    two typescript 6387 warnings touch pre-existing execCommand fallbacks and
+    are out of scope. Left ## Implementation Notes in index.md summarising the
+    changes.
+  - >-
+    Validated the implementation against all five acceptance criteria via static
+    review and tsc --noEmit (passes). Type extension, API list-route live-state,
+    UI per-row indicator, visibility-gated 3s polling, and no-regression checks
+    all pass — each dot'd out in a new ## Validation section in index.md with
+    evidence (file:line refs). No failures or partials. Notable observations:
+    getStatus's strict === 'streaming' comparison correctly maps both 'done'
+    (grace window) and null to false; the green dot coexists cleanly with the
+    blue selected-row border via separate flex/border layers; the polling effect
+    tears down when hasRunningSession flips false and resumes on visibility
+    change without re-scheduling when idle.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 90785246-7131-4a1e-b304-1b0d309e0fa4
+    startedAt: '2026-04-18T13:41:46.231Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 66633c9b-8dbf-46d0-980f-9ae6d411b9ae
+    startedAt: '2026-04-18T13:51:13.754Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 5b90f1ea-d1de-4721-b0c6-0771d705ffb7
+    startedAt: '2026-04-18T13:53:30.590Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: c4299ce9-0b47-427f-9a03-a47fd211c7d3
+    startedAt: '2026-04-18T13:56:55.868Z'

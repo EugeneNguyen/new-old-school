@@ -1,0 +1,44 @@
+title: >-
+  The content that send to Claude Code Adapter should include also the comment
+  of the item
+stage: Implementation
+status: In Progress
+comments:
+  - >-
+    Analysis complete. The raw request (title only — index.md was empty) asks
+    that item comments be included in the prompt sent to the Claude Code
+    Adapter. Analysis is appended to index.md covering scope (change
+    buildAgentPrompt + triggerStagePipeline to render item.comments into
+    <item-content>), feasibility (low risk, single caller, but must keep the
+    workflowId/itemId trailing-lines contract intact and fence comments to
+    reduce prompt-injection ambiguity), dependencies (lib/system-prompt.ts,
+    lib/stage-pipeline.ts; WorkflowItem.comments already exists), and open
+    questions (ordering, placement vs trailing lines, per-comment format,
+    whether to extend the comment schema with author/timestamp now or defer,
+    re-run-on-reset semantics). Next stage should resolve the open questions —
+    especially placement and per-comment format — before documentation.
+  - >-
+    Specification added to index.md. Resolved the open questions with the
+    analysis-recommended defaults: comments render as a ## Comments section
+    inside <item-content> between body and the trailing workflowId/itemId lines
+    (preserves the standing prompt contract), chronological order, numbered ###
+    Comment N subsections to keep multi-line markdown intact, empty/blank arrays
+    emit nothing, no schema change. Touch points scoped to lib/system-prompt.ts
+    (add optional comments field) and lib/stage-pipeline.ts (forward
+    item.comments); types/workflow.ts and workflow-store.ts unchanged. Deferred
+    explicitly: author/timestamp metadata, truncation policy, and
+    .nos/system-prompt.md doc update.
+updatedAt: '2026-04-19T03:22:30.851Z'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 5c43b08e-15e6-4a36-be35-0610a34b4d42
+    startedAt: '2026-04-19T03:08:36.451Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: c3858d06-c65a-42a9-8f4e-e7c88944c405
+    startedAt: '2026-04-19T03:17:06.453Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 36d1628e-9b8a-467c-bfd2-22ac67593a8f
+    startedAt: '2026-04-19T03:22:20.101Z'

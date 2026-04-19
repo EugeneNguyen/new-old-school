@@ -5,6 +5,7 @@ export interface SessionSummary {
   preview: string;
   turnCount: number;
   model: string | null;
+  isRunning: boolean;
 }
 
 export interface SessionHistoryMessage {

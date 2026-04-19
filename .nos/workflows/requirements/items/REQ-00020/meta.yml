@@ -1,0 +1,133 @@
+title: Realtime status for item
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis appended to index.md covering scope (status/stage propagation, no
+    new collaborative semantics), feasibility (SSE via new
+    /api/workflows/[id]/events route + in-process broker, optionally chokidar
+    for external edits), dependencies (lib/workflow-store.ts as the write choke
+    point, KanbanBoard + ItemDetailDialog as consumers), and 6 open questions
+    for the Documentation stage — notably: watcher strategy (in-app notify only
+    vs. also chokidar for external edits), conflict handling with optimistic
+    drag-and-drop, and whether realtime covers only status or also
+    stage/title/comments. Recommended SSE + EventEmitter broker with chokidar
+    fallback. No code changes made.
+  - >-
+    Specification appended to index.md: 5 user stories (agent-driven updates,
+    external edits, drag-and-drop preservation, live dialog, multi-tab sync), 12
+    numbered acceptance criteria, and technical constraints. Resolved the
+    analysis's open questions with these defaults: SSE transport via new GET
+    /api/workflows/[id]/events; singleton EventEmitter broker on globalThis
+    (HMR-safe) in new lib/workflow-events.ts; chokidar watcher started lazily
+    per-workflow with awaitWriteFinish + 150ms debounce for external edits;
+    updatedAt added as a top-level meta.yml field to drive last-writer-wins
+    reconciliation against optimistic drag-and-drop; atomic writes via
+    tmp+rename; scope covers status/stage plus item-created/item-deleted, body
+    and comments explicitly out of scope. No code changes made.
+  - >-
+    Implemented realtime status propagation. New singleton EventEmitter broker
+    (lib/workflow-events.ts) + SSE endpoint at /api/workflows/[id]/events. All
+    meta.yml writers in lib/workflow-store.ts now funnel through a single
+    writeMeta helper that stamps updatedAt, writes atomically (tmp + rename),
+    and emits the appropriate event (item-updated or item-created). Added
+    chokidar watcher per workflow (ref-counted, started on first SSE subscribe)
+    with awaitWriteFinish + 150ms debounce + one YAML-parse retry for external
+    edits. KanbanBoard subscribes one EventSource per workflowId, merges events
+    by id with last-writer-wins on updatedAt, and stamps optimistic drag moves
+    with a client timestamp so stale echoes cannot clobber them. Detail dialog
+    now keys on itemId for heavy resets and has a separate effect to live-sync
+    status/stage without clobbering body/title edits. chokidar + fsevents added
+    to serverExternalPackages to keep Turbopack from bundling the native
+    binding. Deviation: no delete API exists today, so emitItemDeleted is wired
+    in the watcher path only. The pre-existing /_global-error Next canary
+    prerender issue is unrelated (reproduced on clean main).
+  - >-
+    Validation appended to index.md. 10/12 acceptance criteria pass; 2 partials:
+    (AC-5) item-deleted event is only fired by the chokidar unlink handler since
+    no delete API exists yet — this is also acknowledged in the Implementation
+    Notes deviations; (AC-12) the spec requires a one-shot GET
+    /api/workflows/[id] refetch on EventSource reconnect to resync missed
+    updates, but KanbanBoard relies solely on EventSource auto-retry without the
+    resync fetch. Per the stage instructions, leaving the item In Progress in
+    Validation with these two follow-ups. Verified with npx tsc --noEmit
+    (clean), code reading of the SSE/broker/store paths, and a live
+    nos-set-status round-trip. No regressions found in adjacent API routes — all
+    meta.yml writers funnel through writeMeta.
+  - >-
+    Re-analysis appended to index.md under '## Analysis (Re-run 2026-04-19)'.
+    Confirmed the original Analysis/Specification remain accurate against the
+    current code: broker, SSE route, chokidar watcher, and KanbanBoard consumer
+    are all in place. Two residual gaps re-verified by grep: (1) no
+    onopen/onerror resync fetch in KanbanBoard.tsx, so AC-12 stays partial; (2)
+    emitItemDeleted is only reachable via the chokidar unlink handler — no
+    in-app delete path exists yet (AC-5 partial). Neither blocks the user
+    stories. Recommended next step for fully closing the requirement: wire
+    source.onopen → GET /api/workflows/<id> resync. No new scope, dependencies,
+    risks, or open questions surfaced.
+  - >-
+    Documentation re-run: appended '## Specification (Re-run 2026-04-19)' to
+    index.md. Original spec (US-1..US-5, AC-1..AC-12, constraints, out-of-scope)
+    remains authoritative — no content changes. Recorded two clarifications: (1)
+    route path is canonical '[id]' not '[workflowId]' per project convention
+    (semantically identical); (2) AC-12 reconnect-resync and AC-5
+    item-deleted-via-API are confirmed as still-required acceptance conditions —
+    no spec edits needed, they are implementation follow-ups. Explicitly called
+    out no new stories/ACs/constraints/scope and restated the definition of
+    done. Next implementer action remains: wire source.onopen/onerror-recovery →
+    GET /api/workflows/<id> resync in KanbanBoard.tsx.
+  - >-
+    Closed AC-12 in KanbanBoard.tsx: the SSE effect now attaches an 'open'
+    handler that fetches GET /api/workflows/<id> with cache:'no-store' on every
+    connect (initial + every EventSource auto-reconnect) and merges into items
+    state with the same last-writer-wins-by-updatedAt rule as the live stream,
+    so optimistic drag-and-drop survives. A cancelled flag prevents stale async
+    writes after unmount. Fetch failures are swallowed; EventSource retry drives
+    eventual recovery. npx tsc --noEmit is clean. AC-5 in-app delete remains
+    intentionally latent and should be picked up with the future delete feature
+    — noted in Deviations.
+  - >-
+    Re-ran validation for REQ-00020 (Realtime status). Verified the AC-12
+    reconnect-resync gap is closed in KanbanBoard.tsx (EventSource open listener
+    → /api/workflows/<id> fetch → last-writer-wins merge preserving optimistic
+    updatedAt). Spot-checked AC-1…AC-4, AC-6…AC-11 against the current source
+    and confirmed no writer bypass of writeMeta (grep for fs.writeFile/meta.yml
+    across lib and app/api). npx tsc --noEmit clean. Only remaining partial is
+    AC-5 item-deleted via API, which the Specification (Re-run) explicitly
+    defers to the future in-app delete feature — not a blocker. Appended a ##
+    Validation (Re-run 2026-04-19) section to index.md with per-AC verdicts and
+    evidence.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: f649a5c4-3849-4ccf-8786-9ee3f3ad67ab
+    startedAt: '2026-04-18T13:53:38.181Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 8e6462ec-2c27-41f2-931a-08e4e0cc3bda
+    startedAt: '2026-04-18T13:55:27.068Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: a3d09935-388a-40ee-9aa8-e9faf7d432b9
+    startedAt: '2026-04-18T13:57:22.977Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 684f739d-6a64-4847-aea0-46ca53448d76
+    startedAt: '2026-04-18T14:06:48.977Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 3d132bd3-649f-475e-8cd7-3e0fd4c385ef
+    startedAt: '2026-04-18T23:46:21.774Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 60b754ca-539e-4dd8-8f42-a8a48142735e
+    startedAt: '2026-04-18T23:51:07.318Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 3869ec8e-fc88-4dcf-9e91-d26eae13e1c9
+    startedAt: '2026-04-18T23:53:12.641Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 8c274911-0af0-47ce-a9bb-6f867d833b49
+    startedAt: '2026-04-19T03:17:04.543Z'
+updatedAt: '2026-04-19T03:21:36.826Z'

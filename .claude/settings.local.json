@@ -56,7 +56,8 @@
       "Bash(node --check .claude/skills/nos-comment-item/nos-comment-item.mjs)",
       "Bash(node .claude/skills/nos-edit-item/nos-edit-item.mjs --workflow requirements --item REQ-00014)",
       "Bash(node .claude/skills/nos-comment-item/nos-comment-item.mjs --workflow requirements --item REQ-00014 --text \"   \")",
-      "Bash(NOS_BASE_URL=http://localhost:1 node .claude/skills/nos-move-stage/nos-move-stage.mjs --workflow requirements --item REQ-00014 --stage Done)"
+      "Bash(NOS_BASE_URL=http://localhost:1 node .claude/skills/nos-move-stage/nos-move-stage.mjs --workflow requirements --item REQ-00014 --stage Done)",
+      "Bash(git commit *)"
     ]
   }
 }

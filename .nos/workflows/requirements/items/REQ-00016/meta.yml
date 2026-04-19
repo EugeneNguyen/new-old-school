@@ -1,0 +1,21 @@
+title: Item Update modal > description field using markdown editor
+stage: Done
+status: Todo
+comments: []
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 8eb0053c-e077-4d09-a48c-1c8e7aba5b8c
+    startedAt: '2026-04-18T13:15:04.191Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 06bcdbac-5423-47ce-8431-d3a3da21b7b8
+    startedAt: '2026-04-18T13:17:25.665Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: cef99e7c-2a81-4dc7-89b0-c24bcc6f7948
+    startedAt: '2026-04-18T13:27:12.173Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 8e49586e-44c4-4b92-ba24-f73f1fe05ea8
+    startedAt: '2026-04-18T13:36:43.738Z'
