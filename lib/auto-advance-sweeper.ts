@@ -1,5 +1,9 @@
 import { listItems, listWorkflows } from '@/lib/workflow-store';
-import { autoAdvanceIfEligible, autoStartIfEligible } from '@/lib/auto-advance';
+import {
+  autoAdvanceIfEligible,
+  autoStartIfEligible,
+  completeSessionIfFinished,
+} from '@/lib/auto-advance';
 import { readHeartbeatMs } from '@/lib/settings';
 
 type TimerHandle = ReturnType<typeof setTimeout> | null;
@@ -35,6 +39,7 @@ async function tick(): Promise<void> {
     }
     for (const itemId of items) {
       try {
+        await completeSessionIfFinished(workflowId, itemId);
         await autoAdvanceIfEligible(workflowId, itemId);
         await autoStartIfEligible(workflowId, itemId);
       } catch (err) {

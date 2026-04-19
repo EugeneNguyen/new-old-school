@@ -320,6 +320,25 @@ export function appendItemSession(
   return writeMeta(workflowId, itemId, meta, 'updated');
 }
 
+export function appendItemComment(
+  workflowId: string,
+  itemId: string,
+  comment: string
+): WorkflowItem | null {
+  const text = comment.trim();
+  if (!text) return null;
+  const metaPath = path.join(itemDir(workflowId, itemId), META_FILE);
+  if (!fs.existsSync(metaPath)) return null;
+  const meta = (yaml.load(fs.readFileSync(metaPath, 'utf-8')) as Record<string, unknown>) ?? {};
+
+  const existing = Array.isArray(meta.comments)
+    ? (meta.comments as unknown[]).filter((c): c is string => typeof c === 'string')
+    : [];
+  meta.comments = [...existing, text];
+
+  return writeMeta(workflowId, itemId, meta, 'updated');
+}
+
 export function writeItemContent(
   workflowId: string,
   itemId: string,

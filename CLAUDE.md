@@ -3,6 +3,11 @@
 ## Workflows
 When the user refers to "workflows", this relates to the `.nos/workflows/` directory.
 
+When the user refers to the **"system prompt of nos"** (or any phrasing of it), that means the file at `.nos/system-prompt.md`.
+
+### Workflow Item Status Protocol
+Status transitions (`Todo` → `In Progress` → `Done`) are owned by the NOS runtime (the heartbeat sweeper in `lib/auto-advance-sweeper.ts` + `lib/auto-advance.ts`). Stage agents do **not** set status themselves — the runtime flips `In Progress` when it triggers a session and `Done` once the session's log file goes idle, attaching the agent's final output as a summary comment. Agents just do the stage work and end with a one-paragraph summary as their final message; prefix it with `FAILED:` if the stage work genuinely cannot be completed.
+
 ## CEO Agent Framework
 The primary agent can act as a **CEO Agent (Recursive Orchestrator)** for complex tasks.
 

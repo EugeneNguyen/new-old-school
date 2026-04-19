@@ -1,4 +1,9 @@
-import { appendItemSession, readItem, readStages } from '@/lib/workflow-store';
+import {
+  appendItemSession,
+  readItem,
+  readStages,
+  updateItemMeta,
+} from '@/lib/workflow-store';
 import { getDefaultAdapter } from '@/lib/agent-adapter';
 import { buildAgentPrompt, loadSystemPrompt } from '@/lib/system-prompt';
 import { readAgent } from '@/lib/agents-store';
@@ -11,6 +16,9 @@ export async function triggerStagePipeline(
   const item = readItem(workflowId, itemId);
   if (!item) return null;
   if (item.status !== 'Todo') return item;
+
+  const hasSessionForStage = item.sessions?.some((s) => s.stage === item.stage) === true;
+  if (hasSessionForStage) return item;
 
   const stages = readStages(workflowId);
   const stage = stages.find((s) => s.name === item.stage);
@@ -56,7 +64,11 @@ export async function triggerStagePipeline(
       startedAt: new Date().toISOString(),
     };
     if (resolvedAgentId) entry.agentId = resolvedAgentId;
-    const updated = appendItemSession(workflowId, itemId, entry);
+    appendItemSession(workflowId, itemId, entry);
+    const updated = updateItemMeta(workflowId, itemId, { status: 'In Progress' });
+    console.log(
+      `[stage-pipeline] workflow=${workflowId} item=${itemId} stage=${stage.name} session=${sessionId} -> In Progress`
+    );
     return updated ?? item;
   } catch (err) {
     console.error(

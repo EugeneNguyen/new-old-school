@@ -46,18 +46,20 @@
       "Edit(.claude/skills/nos-*/**)",
       "Write(/Volumes/EugeneSSD/MyProjects/new-old-school/.claude/skills/nos-*/**)",
       "Edit(/Volumes/EugeneSSD/MyProjects/new-old-school/.claude/skills/nos-*/**)",
-      "Bash(node .claude/skills/nos-set-status/nos-set-status.mjs --workflow requirements --item REQ-00014)",
       "Bash(echo \"exit=$?\")",
-      "Bash(node .claude/skills/nos-set-status/nos-set-status.mjs --workflow requirements --item REQ-00014 --status Bogus)",
       "Bash(node --check .claude/skills/nos-create-item/nos-create-item.mjs)",
       "Bash(node --check .claude/skills/nos-edit-item/nos-edit-item.mjs)",
-      "Bash(node --check .claude/skills/nos-set-status/nos-set-status.mjs)",
       "Bash(node --check .claude/skills/nos-move-stage/nos-move-stage.mjs)",
       "Bash(node --check .claude/skills/nos-comment-item/nos-comment-item.mjs)",
       "Bash(node .claude/skills/nos-edit-item/nos-edit-item.mjs --workflow requirements --item REQ-00014)",
       "Bash(node .claude/skills/nos-comment-item/nos-comment-item.mjs --workflow requirements --item REQ-00014 --text \"   \")",
       "Bash(NOS_BASE_URL=http://localhost:1 node .claude/skills/nos-move-stage/nos-move-stage.mjs --workflow requirements --item REQ-00014 --stage Done)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(python3 -c \"import sys, json; d=json.loads\\(sys.stdin.read\\(\\)\\); print\\('type=', d.get\\('type'\\)\\); print\\(json.dumps\\(d, indent=2\\)[:1500]\\)\")",
+      "Bash(curl -s -o /dev/null -w '%{http_code}\\\\n' http://localhost:30128/api/workflows/requirements)",
+      "Bash(python3 -c \"import sys,json; d=json.loads\\(sys.stdin.read\\(\\)\\); print\\('type=',d.get\\('type'\\)\\); r=d.get\\('result',''\\); print\\('result:', r[:400] if isinstance\\(r,str\\) else r\\)\")",
+      "Bash(curl -s http://localhost:30128/api/workflows/requirements)",
+      "Bash(python3 -c \"import sys,json; d=json.loads\\(sys.stdin.read\\(\\)\\); items=d.get\\('items',[]\\); r=[i for i in items if i['id']=='REQ-00038']; print\\(json.dumps\\(r[0] if r else {}, indent=2\\)[:1500]\\)\")"
     ]
   }
 }
