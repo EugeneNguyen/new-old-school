@@ -76,3 +76,30 @@
 * Surfacing the newly generated ID to the user post-creation (toast, focus-the-new-card, etc.) — current behavior of simply closing the dialog and letting the card appear in its column is preserved.
 * Adding automated tests (unit, integration, or E2E) for the dialog.
 * Any change to `KanbanBoard`, `ItemDetailDialog`, `Sidebar`, or other consumers — none import or depend on the removed field.
+
+## Implementation Notes
+
+Edited `components/dashboard/NewItemDialog.tsx` only:
+
+- Removed the `id`/`setId` `useState` declaration.
+- Removed `setId('')` from the open-reset `useEffect`.
+- Removed the `...(id.trim() ? { id: id.trim() } : {})` spread from the POST body; request now sends `{ title, body?, stage? }`.
+- Removed the `<label htmlFor="new-item-id">` block and its `<Input id="new-item-id" …>` from the form.
+
+No server-side change (`app/api/workflows/[id]/items/route.ts` still accepts an optional `id`). No other consumers referenced the removed field; grep for `new-item-id`/`setId` in the file returns nothing. All 9 acceptance criteria satisfied; no deviations.
+
+## Validation
+
+Verified against `components/dashboard/NewItemDialog.tsx` (post-change), `app/api/workflows/[id]/items/route.ts`, and `lib/workflow-store.ts#createItem`. `npx tsc --noEmit` passes with no output.
+
+- **AC1 — No ID input/label rendered** ✅ `components/dashboard/NewItemDialog.tsx` contains no `<label htmlFor="new-item-id">` or `<Input id="new-item-id" …>` block; repo-wide `grep new-item-id` returns only `.nos/workflows/requirements/items/**` docs, no source hits.
+- **AC2 — `id` state, setter, reset, spread all removed** ✅ `grep -n '\bsetId\b'` in the file returns no matches; the useState block at lines 40–45 declares only `title/body/stage/submitting/error/editorNonce`; the reset `useEffect` at lines 47–54 has no `setId('')`; the POST body at lines 68–72 has no `id` spread.
+- **AC3 — Request body is `{ title, body?, stage? }`** ✅ lines 68–72 build exactly `JSON.stringify({ title: title.trim(), ...(body ? { body } : {}), ...(stage ? { stage } : {}) })`; no `id` field.
+- **AC4 — Auto-generated ID appears on new card** ✅ When `input.id` is omitted, `lib/workflow-store.ts#createItem` falls through to `finalId = nextPrefixedId(itemsRoot, config.idPrefix)` (line 466), producing the workflow's `REQ-NNNNN`-style ID; `onCreated(created)` is invoked at `NewItemDialog.tsx:78` with the server's returned item, and `onOpenChange(false)` closes the dialog.
+- **AC5 — Empty-title validation preserved** ✅ `handleSubmit` at lines 56–61 sets `error = 'Title is required'` and returns before `setSubmitting(true)` or any `fetch` call when `!title.trim()`.
+- **AC6 — Non-OK response shown inline** ✅ lines 74–76 throw `new Error((await res.text()) || 'Request failed: ${res.status}')`; the catch at 80–85 sets `error` to the message and the `finally` clause restores `submitting = false`; the error banner renders at lines 174–178.
+- **AC7 — Reopen reset** ✅ `useEffect` at 47–54 resets `title`, `body`, `stage` (to `stages[0]?.name ?? ''`), `error`, and bumps `editorNonce` to remount the editor. No residual ID state exists.
+- **AC8 — API still accepts optional `id`** ✅ `app/api/workflows/[id]/items/route.ts` lines 29–31 validate `body.id` only when provided; line 50 forwards `body.id` to `createItem` when it is a string. No change was made to the route.
+- **AC9 — No lingering references** ✅ `grep -r 'new-item-id'` has zero source hits; `grep -n '\bsetId\b'` in `NewItemDialog.tsx` returns no matches.
+
+No regressions observed: the adjacent Description editor, Stage selector, Status badge, Cancel/Create buttons, and close-X control are untouched by the diff; Kanban/ItemDetail/Sidebar consumers never imported the removed field. All 9 acceptance criteria pass; item ready to advance.
