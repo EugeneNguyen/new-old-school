@@ -1,0 +1,57 @@
+title: MDXEditor not showing bullet point, please check
+stage: Validation
+status: In Progress
+comments:
+  - >-
+    Analyzed REQ-00050 and appended an `## Analysis` section to `index.md`. Root
+    cause is almost certainly Tailwind Preflight (`@tailwind base;` in
+    `app/globals.css`) zeroing `list-style` on `ul`/`ol`, which MDXEditor's
+    stylesheet doesn't re-assert inside its contenteditable surface. Scope
+    limits the fix to the `.item-detail-md-editor__content` scope in
+    `components/dashboard/ItemDescriptionEditor.tsx` + `app/globals.css`;
+    options, risks, dependencies, and four open questions (ordered-list nesting
+    style, task-list support, indentation target, generalization) are captured
+    for the Documentation stage.
+  - >-
+    Appended a `## Specification` section to REQ-00050's `index.md` covering 5
+    user stories, 12 numbered acceptance criteria (AC-1…AC-12), technical
+    constraints (exact selectors in `app/globals.css`, no `!important`, no
+    plugin/config changes), and explicit out-of-scope items. Closed the four
+    open questions with concrete decisions: ordered lists stay `decimal` at all
+    levels, task lists remain out of scope, `padding-inline-start: 1.5rem`, and
+    the override stays scoped to `.item-detail-md-editor__content`. No code was
+    written.
+  - >-
+    Appended five scoped CSS rules to `app/globals.css` (lines 105–109)
+    immediately after the existing `.item-detail-md-editor__content` block,
+    restoring `list-style-type: disc` on `<ul>`, `decimal` on `<ol>`,
+    `circle`/`square` on nested `<ul ul>`/`<ul ul ul>`, and
+    `padding-inline-start: 1.5rem` with small vertical margins — exactly
+    matching the spec's required selectors. Selector specificity from the
+    `.item-detail-md-editor__content` class chain overrides Tailwind Preflight's
+    reset with no `!important`. No changes were made to
+    `ItemDescriptionEditor.tsx`, Tailwind config, comment-preview rules, or any
+    package; all 12 AC are satisfied by this single-file addition.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: fb0c4f61-ce06-4bbd-95c7-50e5a672e9ff
+    startedAt: '2026-04-19T13:08:54.695Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: c32f26ec-33f0-4091-9f4e-c0acdceb0b84
+    startedAt: '2026-04-19T13:09:00.406Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: d388af4e-7577-44fc-9e36-c4b68770d486
+    startedAt: '2026-04-19T13:10:53.267Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 74524afa-b62b-480f-9c3a-4211d66f5938
+    startedAt: '2026-04-19T13:12:53.588Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 73a8acb3-f403-4a09-8895-68ba445ba595
+    startedAt: '2026-04-19T13:14:53.797Z'
+updatedAt: '2026-04-19T13:14:53.810Z'
