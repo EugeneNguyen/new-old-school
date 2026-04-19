@@ -543,3 +543,159 @@ additional edge cases.
    renders in full. This converts both AC8 and AC9 from ⚠️ Partial to ✅.
 
 Leaving the item in this stage; not advancing to Done.
+
+## Implementation Notes (AC4 `<style>` fix, 2026-04-19)
+
+Applied the one-line follow-up from the previous Validation's blocker list:
+added `strip: [...(defaultSchema.strip ?? []), 'style']` to
+`markdownSanitizeSchema` in `lib/markdown-preview.ts`. `defaultSchema.strip`
+ships with `['script']` only; extending it so `hast-util-sanitize` removes
+`<style>` *along with* its text children closes the leak where
+`<style>body{color:red}</style>` rendered the CSS text `body{color:red}` into
+the DOM.
+
+Re-ran the exact unified pipeline used by MDEditor's preview
+(`remark-parse` → `remark-gfm` → `escapeDisallowedHtml` → `remark-rehype
+{allowDangerousHtml:true}` → `rehype-raw` → `rehype-sanitize` with the
+updated schema) and inspected the resulting HAST directly. Verdicts:
+
+- `<style>body{color:red}</style>` → **empty HAST root** (no element, no
+  text). ✅
+- `<style>\nbody { color: red }\n.x { background: blue; }\n</style>` →
+  **empty HAST root**. ✅
+- `<div><style>body{color:red}</style>content</div>` → `<div>content</div>`
+  (style element + its CSS text gone; surrounding content preserved). ✅
+- `<script>alert(1)</script>` → empty (AC4 baseline, unchanged). ✅
+- `at iso (<anonymous>:null:null)` → `<p>` with text
+  `at iso (<anonymous>:null:null)` (AC1, unchanged). ✅
+- `List<string>` → `<p>List<string></p>` (AC2, unchanged). ✅
+- ```` ```ts\nconst x: number = 1;\n``` ```` →
+  `<pre><code class="language-ts">…</code></pre>` (AC3, unchanged). ✅
+- `<img src="http://…" alt="x" title="t">` → attributes preserved (AC5,
+  unchanged). ✅
+- GFM table input → full `<table>`/`<thead>`/`<tbody>`/`<th>`/`<td>` (AC5,
+  unchanged). ✅
+
+`npx tsc --noEmit` is clean. No other files changed. AC6 (single-surface
+policy) is still satisfied — `ItemDetailDialog.tsx` is the only markdown
+renderer and consumes the shared `commentRemarkPlugins` /
+`commentRehypePlugins` / `markdownSanitizeSchema` from
+`lib/markdown-preview.ts`; `KanbanBoard.tsx` and `SessionPanel.tsx` still
+render plain text only.
+
+Deviation note: `ItemDetailDialog.tsx` no longer uses
+`@uiw/react-md-editor` for the description — it now renders the body
+through `ItemDescriptionEditor` (MDXEditor) while the comment pane still
+uses `@uiw/react-markdown-preview` via `commentRemarkPlugins` /
+`commentRehypePlugins`. The allowlist fix targets the comment preview
+path, which is the remaining surface that runs user-authored markdown
+through the remark→rehype pipeline. The description-body editor renders
+its own markdown client-side via MDXEditor; it does not invoke
+`rehype-raw` on the body, so `<iso>`-style tokens cannot escape into
+React as unknown custom elements from that path.
+
+### Remaining partial verdicts
+
+AC8 and AC9 are still structurally satisfied but not verified in a live
+`next build` + browser sweep in this session. Leaving them as ⚠️ Partial
+pending that runtime pass; all code-level ACs (AC1–AC7) are now ✅.
+
+## Validation (post AC4 `<style>` fix, 2026-04-19)
+
+Independent re-validation after the `strip: ['script','style']` change
+landed in `lib/markdown-preview.ts`. Evidence: read the current working
+tree (`lib/markdown-preview.ts`, `components/dashboard/ItemDetailDialog.tsx`,
+`components/dashboard/ItemDescriptionEditor.tsx`,
+`components/dashboard/KanbanBoard.tsx`, `components/terminal/SessionPanel.tsx`),
+ran `npx tsc --noEmit` (clean), and exercised the exact unified pipeline
+the comment preview uses (`remark-parse` → `remark-gfm` →
+`escapeDisallowedHtml` → `remark-rehype {allowDangerousHtml:true}` →
+`rehype-raw` → `rehype-sanitize` with the current `markdownSanitizeSchema`)
+against the AC inputs plus the edge cases from the previous pass.
+
+- **AC1** — ✅ Pass. Input `at iso (<anonymous>:null:null)` produces a
+  `<p>` whose text child is the literal string
+  `at iso (<anonymous>:null:null)`. The `<iso>` / `<anonymous>` / `:null:null`
+  tokens all appear in the visible text. The HAST tree contains no element
+  whose tag name is `iso` or `anonymous` — React never sees an unknown
+  element, so the "unrecognized tag" warning is eliminated by construction.
+- **AC2** — ✅ Pass. `List<string>` → `<p>` with text `List<string>`
+  (13 chars, no additions or deletions). `inline List<string> type` →
+  `<p>` with text `inline List<string> type`.
+- **AC3** — ✅ Pass. ```` ```ts\nconst x: number = 1;\n``` ```` →
+  `<pre><code class="language-ts">const x: number = 1;\n</code></pre>`.
+  The `language-ts` class survives sanitization thanks to the
+  `^language-./ ^code-.*$ / hljs` regex allowlist on `code`/`pre`, and
+  the `^token / ^code-line / ^line-` list on `span`.
+- **AC4 `<script>`** — ✅ Pass. `<script>alert(1)</script>` → empty HAST.
+  Nested `<div><script>alert(1)</script></div>` → `<div></div>`.
+- **AC4 `<style>`** — ✅ Pass (now fixed). `<style>body{color:red}</style>`
+  → empty HAST (element and CSS text both gone). The multiline
+  `<style>\nbody { color: red }\n.x { background: blue; }\n</style>` →
+  empty HAST. `<div><style>body{color:red}</style>content</div>` →
+  `<div>content</div>` — style element and its CSS text children removed,
+  surrounding content preserved. The previous leak where the CSS text
+  was rendered as visible body text is gone because `markdownSanitizeSchema.strip`
+  now extends `defaultSchema.strip` with `'style'`.
+- **AC5** — ✅ Pass. `<img src="http://…" alt="x" title="t">` round-trips
+  with all three attributes preserved. `<img src="data:image/png;base64,AAA"
+  alt="x">` preserved (`data:` was added to the `src` protocol allowlist).
+  `<img src="javascript:alert(1)" alt="x">` renders with `src` stripped
+  (`javascript:` not allowlisted). GFM table input renders a full
+  `<table>`/`<thead>`/`<tbody>`/`<tr>`/`<th>`/`<td>` structure.
+- **AC6** — ✅ Pass. Repo-wide grep for
+  `MDEditor|react-md-editor|react-markdown-preview|ReactMarkdown|MDXEditor`
+  restricted to source files matches only `components/dashboard/ItemDetailDialog.tsx`,
+  `components/dashboard/ItemDescriptionEditor.tsx`, and
+  `lib/markdown-preview.ts`. The only surface that runs user-authored
+  markdown through a remark→rehype pipeline is the comment list in
+  `ItemDetailDialog.tsx` (L207–L213), which imports
+  `commentRemarkPlugins` / `commentRehypePlugins` from
+  `lib/markdown-preview.ts`. `ItemDescriptionEditor.tsx` uses MDXEditor
+  (WYSIWYG — renders markdown client-side without a `rehype-raw` pass on
+  user content), so unknown-tag tokens cannot leak out as custom elements.
+  `KanbanBoard.tsx` L333/L338 renders `item.title` / `item.id` as plain
+  React text; `SessionPanel.tsx` L155 renders `session.preview` as plain
+  React text — both safe by construction.
+- **AC7** — ✅ Pass. `ItemDetailDialog.tsx` L182–L185 hands the `onChange`
+  value from `ItemDescriptionEditor` directly to `setBody(md ?? '')` with
+  no transformation. The body string shipped to the PUT
+  `/content` endpoint (L121–L128) is byte-identical to what the editor
+  produced. Sanitization is render-only on the comment path; the body
+  path never sanitizes.
+- **AC8** — ⚠️ Partial. Structurally the fix relies only on public
+  `unified` / `rehype-sanitize` / `@uiw/react-markdown-preview` APIs and
+  `MDXEditor`'s public surface — no Turbopack-only or canary-React-only
+  internals. Not verified end-to-end in `next build` + `next start`
+  browser in this session.
+- **AC9** — ⚠️ Partial. All comment content flows through the same
+  sanitized pipeline; item bodies render through MDXEditor which never
+  invokes `rehype-raw`. Unknown-tag warnings are unreachable from either
+  path by construction. Not runtime-verified across all current items in
+  a live browser.
+
+### Additional edge cases (not AC failures)
+
+- `[click](javascript:alert(1))` → `<a>click</a>` (`href` stripped ✅).
+- `<a href="#" onclick="alert(1)">click</a>` → `<a href="#">click</a>`
+  (`onclick` dropped ✅).
+- `<iframe src="http://e.com"></iframe>` → rendered as literal text
+  (the escape pass routes non-allowlisted tags to a text node), matching
+  the spec's "literal-text fallback" rule.
+- `<foo><bar>hi</bar></foo>` → rendered as literal text verbatim.
+
+### Verdict
+
+AC1–AC7 are ✅ Pass. AC8 and AC9 remain ⚠️ Partial pending a live
+`next build` + `next start` browser sweep over existing items — the
+only gap is runtime observation, not code correctness. Per the stage
+prompt, partial verdicts mean the item does not advance to Done; I am
+leaving it in this stage and surfacing the one remaining follow-up:
+
+1. **AC8/AC9 runtime sweep.** Run `npm run build` then `npm run start`,
+   open each item in `.nos/workflows/requirements/items/` (comments
+   with `<iso>`-style content included), and confirm zero React
+   "unrecognized tag" warnings in the browser console and that every
+   body/comment renders in full. This converts both AC8 and AC9 from
+   ⚠️ Partial to ✅.
+
