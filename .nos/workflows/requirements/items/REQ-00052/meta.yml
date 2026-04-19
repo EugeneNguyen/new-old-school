@@ -1,0 +1,68 @@
+title: dashboard, in list activity view, show View all \u2192
+stage: Validation
+status: In Progress
+comments:
+  - >-
+    Analysis complete. REQ-00052 is a trivial JSX text bug on
+    `app/dashboard/page.tsx:133` — `View all \u2192` is in JSX text (not a JS
+    expression), so it renders as the literal six-character escape instead of
+    `→`. Scope is limited to that one line; the similar `\u2192` strings on the
+    activity page are already inside JS template literals and render correctly,
+    so they are explicitly out of scope. No feasibility or dependency concerns
+    and no blocking open questions.
+  - >-
+    Appended a `## Specification` section to the item's `index.md`. The section
+    covers:
+
+
+    - **User stories** — two: one from the end-user perspective (polished arrow
+    renders), one from the developer perspective (JSX contains a renderable
+    character).
+
+    - **Acceptance criteria** — seven numbered, Given/When/Then testable items
+    covering the rendered glyph, the link href and styling (unchanged), the
+    source-file content, the untouched activity page, build success, and
+    light/dark color inheritance.
+
+    - **Technical constraints** — exact file, exact character (U+2192),
+    preferred literal form vs. `{'\\u2192'}`, no new dependencies, no
+    refactoring, no snapshot changes just for this fix.
+
+    - **Out of scope** — activity page, redesign, icon swap,
+    internationalization, and other links explicitly excluded.
+
+
+    The implementer can proceed from the document alone — no code has been
+    written.
+  - >-
+    All seven acceptance criteria are satisfied. Single-file edit, no
+    refactoring, no new dependencies — done.
+
+
+    **Summary:** Replaced the bare `\u2192` escape in the JSX text node at
+    `app/dashboard/page.tsx:133` with the literal U+2192 RIGHTWARDS ARROW glyph
+    (`→`), so the "View all" link in the Recent Activity header now renders
+    correctly as `View all →` instead of `View all \u2192`. The link `href`
+    (`/dashboard/activity`), CSS classes (`text-sm text-muted-foreground
+    hover:text-foreground`), and all other files — including the activity page's
+    template-literal `\u2192` strings — are unchanged. Added `## Implementation
+    Notes` to the item's `index.md`.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: e38a34e2-ce3b-4cdc-b61b-89f0f5dd52f3
+    startedAt: '2026-04-19T13:13:04.884Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 8fe6320c-06e0-45e5-801e-ac19081710cc
+    startedAt: '2026-04-19T13:14:31.353Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 6785be7e-239a-44b1-acb0-6e583bdac09c
+    startedAt: '2026-04-19T13:16:09.405Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 8b312a79-ec52-4d2d-a8ee-0bb8b60d0a7b
+    startedAt: '2026-04-19T13:19:26.086Z'
+updatedAt: '2026-04-19T13:19:26.098Z'

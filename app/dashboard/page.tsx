@@ -130,7 +130,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">Recent Activity</h2>
           <Link href="/dashboard/activity" className="text-sm text-muted-foreground hover:text-foreground">
-            View all \u2192
+            View all →
           </Link>
         </div>
         {recentActivity.length === 0 ? (
