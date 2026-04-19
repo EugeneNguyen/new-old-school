@@ -6,7 +6,6 @@ import { X } from 'lucide-react';
 import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
   commentRehypePlugins,
@@ -34,12 +33,6 @@ interface Props {
 }
 
 const STATUSES: ItemStatus[] = ['Todo', 'In Progress', 'Done', 'Failed'];
-const STATUS_VARIANT: Record<ItemStatus, 'secondary' | 'default' | 'success' | 'destructive'> = {
-  Todo: 'secondary',
-  'In Progress': 'default',
-  Done: 'success',
-  Failed: 'destructive',
-};
 
 function formatRelativeTs(ts: string): string {
   const diff = Date.now() - new Date(ts).getTime();
@@ -373,6 +366,7 @@ export default function ItemDetailDialog({
                     key={s}
                     type="button"
                     onClick={() => setStatus(s)}
+                    aria-pressed={active}
                     className={cn(
                       'flex items-center justify-between rounded-md border px-3 py-1.5 text-sm transition-colors',
                       active
@@ -381,7 +375,19 @@ export default function ItemDetailDialog({
                     )}
                   >
                     <span>{s}</span>
-                    {active && <Badge variant={STATUS_VARIANT[s]}>{s}</Badge>}
+                    {active && (
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          'h-2 w-2 rounded-full shrink-0',
+                          s === 'Todo'        ? 'bg-muted-foreground' :
+                          s === 'In Progress' ? 'bg-primary' :
+                          s === 'Done'        ? 'bg-green-500 dark:bg-green-400' :
+                                                 'bg-destructive'
+                        )}
+                      />
+                    )}
+                    {active && <span className="sr-only">active</span>}
                   </button>
                 );
               })}
