@@ -1,0 +1,96 @@
+title: >-
+  create routine mode: a workflow that will create an item automatically at a
+  cron time
+stage: Validation
+status: In Progress
+comments:
+  - >-
+    Analysis complete. I appended an `## Analysis` section to REQ-00081's
+    `index.md` covering scope (routine mode toggle, cron field, server-side
+    scheduler, auto-created item shape), feasibility (recommending piggybacking
+    on the existing 15s heartbeat sweeper with a `lastFiredAt` deduplication
+    file and an npm cron parser), dependencies (sweeper, workflow-store,
+    settings, stage pipeline, frontend settings UI, and an external
+    `cron-parser` package), and seven open questions with recommended answers.
+    The feature is highly feasible given the existing infrastructure — the main
+    engineering concerns are deduplication across ticks and persisting
+    last-fired state across restarts.
+  - >-
+    Specification complete. I appended a `## Specification` section to
+    REQ-00081's `index.md` with five user stories (enable/configure/disable
+    routine mode, distinguish routine items, normal pipeline triggering), ten
+    testable acceptance criteria in Given/When/Then form (covering creation,
+    deduplication, restart resilience, validation, disabling, and activity
+    logging), detailed technical constraints (file schemas for `routine.yaml`
+    and `routine-state.json`, heartbeat integration points, `cron-parser`
+    dependency, API/UI requirements, atomic writes), and explicit out-of-scope
+    boundaries matching the analysis. An implementer should be able to build
+    this feature entirely from this document.
+  - >-
+    All implementation tasks for REQ-00081 (routine mode) are complete. Here's a
+    summary of what was built:
+
+
+    **Backend:**
+
+    - `lib/routine-scheduler.ts` - Core scheduling logic with
+    `readRoutineConfig`, `writeRoutineConfig`, `readRoutineState`,
+    `writeRoutineState`, `validateCronExpression`, `processWorkflow`, and
+    `tickRoutines`
+
+    - `lib/auto-advance-sweeper.ts` - Integrated `tickRoutines()` into the
+    heartbeat tick loop
+
+    - `lib/activity-log.ts` - Added `routine-item-created` event type
+
+    - `app/api/workflows/[id]/routine/route.ts` - GET/PUT API for routine config
+
+
+    **Frontend:**
+
+    - `components/dashboard/RoutineSettingsDialog.tsx` - Toggle + cron input
+    dialog
+
+    - `components/dashboard/WorkflowItemsView.tsx` - Added "Routine" button
+
+
+    **Key features:**
+
+    - Routine config stored in `.nos/workflows/<id>/config/routine.yaml`
+
+    - State persisted in `.nos/workflows/<id>/routine-state.json` with
+    `lastFiredAt`
+
+    - Items created with title `(routine) YYYY-MM-DD HH:mm`, body `Created by
+    routine at YYYY-MM-DD HH:mm`, and `origin: routine` in meta.yml
+
+    - Deduplication via `lastFiredAt` prevents duplicate creation across
+    ticks/restarts
+
+    - Stage pipeline triggered for routine items
+
+    - `routine-item-created` activity logged
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 0def4796-0122-43ae-843a-327755b94edd
+    startedAt: '2026-04-20T16:01:33.594Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: f2177dd5-1167-4bc1-b2bc-bed30aeb87ab
+    startedAt: '2026-04-20T16:01:33.619Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: b14e6176-b857-4ade-a209-e2a8b719ef11
+    startedAt: '2026-04-20T16:03:42.395Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: eddab1bc-fecc-4844-9067-82d4b0ca35d3
+    startedAt: '2026-04-20T16:05:20.331Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 6ce83135-1b23-455e-b50e-957fd9eda71c
+    startedAt: '2026-04-20T16:12:49.593Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-20T16:12:49.595Z'
