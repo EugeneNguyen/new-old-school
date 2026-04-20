@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { readWorkflowDetail } from '@/lib/workflow-store';
+import { withWorkspace } from '@/lib/workspace-context';
 import WorkflowItemsView from '@/components/dashboard/WorkflowItemsView';
 
 export default async function WorkflowPage({
@@ -12,7 +13,7 @@ export default async function WorkflowPage({
   const { id } = await params;
   const sp = await searchParams;
   const itemParam = typeof sp.item === 'string' ? sp.item : null;
-  const detail = readWorkflowDetail(id);
+  const detail = await withWorkspace(() => readWorkflowDetail(id));
   if (!detail) {
     notFound();
   }

@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { readWorkflowDetail } from '@/lib/workflow-store';
+import { withWorkspace } from '@/lib/workspace-context';
 import WorkflowSettingsView from '@/components/dashboard/WorkflowSettingsView';
 
 export default async function WorkflowSettingsPage({
@@ -8,7 +9,7 @@ export default async function WorkflowSettingsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const detail = readWorkflowDetail(id);
+  const detail = await withWorkspace(() => readWorkflowDetail(id));
   if (!detail) {
     notFound();
   }
