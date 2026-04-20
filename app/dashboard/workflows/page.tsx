@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Edit3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -49,6 +49,10 @@ export default function WorkflowsPage() {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{ name: string; idPrefix: string }>({ name: '', idPrefix: '' });
+  const [editError, setEditError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -147,6 +151,41 @@ export default function WorkflowsPage() {
     }
   }
 
+  async function handleSave() {
+    if (!editingId) return;
+    setSaving(true);
+    setEditError(null);
+    const nameErr = validateName(editForm.name.trim());
+    const prefixErr = editForm.idPrefix.trim() ? validatePrefix(editForm.idPrefix.trim()) : null;
+    if (nameErr || prefixErr) {
+      setEditError(nameErr ?? prefixErr ?? 'Invalid');
+      setSaving(false);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/workflows/${encodeURIComponent(editingId)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: editForm.name.trim(), idPrefix: editForm.idPrefix.trim() }),
+      });
+      if (res.ok) {
+        setEditingId(null);
+        await reload();
+        return;
+      }
+      let msg = `Update failed (${res.status})`;
+      try {
+        const data = (await res.json()) as { message?: string };
+        if (data?.message) msg = data.message;
+      } catch { /* ignore */ }
+      setEditError(msg);
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleDelete(id: string) {
     setDeleting(true);
     setDeleteError(null);
@@ -216,15 +255,29 @@ export default function WorkflowsPage() {
                     <p className="text-sm font-medium">{wf.name}</p>
                     <p className="font-mono text-xs text-muted-foreground">{wf.id}</p>
                   </Link>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPendingDeleteId(wf.id)}
-                    disabled={deletingThis}
-                    aria-label={`Delete ${wf.id}`}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setEditForm({ name: wf.name, idPrefix: (wf as any).idPrefix ?? '' });
+                        setEditError(null);
+                        setEditingId(wf.id);
+                      }}
+                      aria-label={`Edit ${wf.id}`}
+                    >
+                      <Edit3 className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPendingDeleteId(wf.id)}
+                      disabled={deletingThis}
+                      aria-label={`Delete ${wf.id}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -311,6 +364,65 @@ export default function WorkflowsPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {editingId !== null && (
+        (() => {
+          const wf = workflows.find((w) => w.id === editingId);
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle>Edit workflow</CardTitle>
+                <CardDescription>
+                  {wf ? <>Editing &apos;{wf.name}&apos; ({wf.id})</> : null}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground" htmlFor="edit-wf-name">
+                    name
+                  </label>
+                  <Input
+                    id="edit-wf-name"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                    autoComplete="off"
+                  />
+                  {editError && validateName(editForm.name.trim()) && (
+                    <p className="text-xs text-destructive">{validateName(editForm.name.trim())}</p>
+                  )}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground" htmlFor="edit-wf-prefix">
+                    idPrefix
+                  </label>
+                  <Input
+                    id="edit-wf-prefix"
+                    value={editForm.idPrefix}
+                    onChange={(e) => setEditForm((f) => ({ ...f, idPrefix: e.target.value }))}
+                    autoComplete="off"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Uppercase letters, digits, dash, underscore. Prefix for item IDs (e.g. BUG-001).
+                  </p>
+                </div>
+                {editError && (
+                  <div className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    {editError}
+                  </div>
+                )}
+                <div className="flex items-center justify-end gap-2">
+                  <Button variant="outline" onClick={() => setEditingId(null)} disabled={saving}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSave} disabled={saving}>
+                    {saving ? 'Saving…' : 'Save'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()
       )}
 
       {pendingDeleteId !== null && (

@@ -76,6 +76,26 @@ export function deleteWorkflow(id: string): boolean {
   }
 }
 
+export interface WorkflowPatch {
+  name?: string;
+  idPrefix?: string;
+}
+
+export function updateWorkflow(id: string, patch: WorkflowPatch): boolean {
+  const configPath = path.join(workflowDir(id), 'config.json');
+  if (!fs.existsSync(configPath)) return false;
+  try {
+    const raw = fs.readFileSync(configPath, 'utf-8');
+    const config = JSON.parse(raw) as Record<string, unknown>;
+    if (patch.name !== undefined) config.name = patch.name.trim();
+    if (patch.idPrefix !== undefined) config.idPrefix = patch.idPrefix.trim();
+    atomicWriteFile(configPath, JSON.stringify(config, null, 2));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export interface WorkflowConfig {
   name: string;
   idPrefix: string;
