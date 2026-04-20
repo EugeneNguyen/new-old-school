@@ -257,8 +257,8 @@ export default function ChatWidget() {
   if (hidden) return null;
 
   return (
-    // FAB position: bottom-24 = 6rem, right-6 = 1.5rem (above toast zone)
-    <div className="fixed bottom-24 right-6 z-50 flex flex-col items-end gap-3">
+    // FAB position: bottom-6 = 1.5rem, right-6 = 1.5rem (above toast zone)
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
       {isOpen && (
         <Card
           role="dialog"
