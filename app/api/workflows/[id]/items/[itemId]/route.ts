@@ -11,6 +11,7 @@ import { autoAdvanceIfEligible } from '@/lib/auto-advance';
 import { ItemStatus } from '@/types/workflow';
 import { createErrorResponse } from '@/app/api/utils/errors';
 import type { ActivityActor } from '@/lib/activity-log';
+import { withWorkspace } from '@/lib/workspace-context';
 
 const VALID_STATUSES: ItemStatus[] = ['Todo', 'In Progress', 'Done', 'Failed'];
 
@@ -18,6 +19,7 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
+  return withWorkspace(async () => {
   try {
     const { id, itemId } = await params;
     if (!workflowExists(id)) {
@@ -32,12 +34,14 @@ export async function GET(
     console.error('Error reading workflow item:', error);
     return createErrorResponse('Failed to read item');
   }
+  });
 }
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
+  return withWorkspace(async () => {
   try {
     const actor = ((req.headers.get('x-nos-actor') as ActivityActor) ?? 'ui');
     const { id, itemId } = await params;
@@ -111,4 +115,5 @@ export async function PATCH(
     console.error('Error updating workflow item:', error);
     return createErrorResponse('Failed to update item');
   }
+  });
 }

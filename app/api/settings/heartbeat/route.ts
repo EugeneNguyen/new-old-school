@@ -1,20 +1,24 @@
 import { NextResponse } from 'next/server';
 import { readHeartbeatMs, writeHeartbeatMs } from '@/lib/settings';
 import { rescheduleHeartbeat } from '@/lib/auto-advance-sweeper';
+import { withWorkspace } from '@/lib/workspace-context';
 
 export const runtime = 'nodejs';
 
 export async function GET() {
-  try {
-    const intervalMs = readHeartbeatMs();
-    return NextResponse.json({ intervalMs });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+  return withWorkspace(async () => {
+    try {
+      const intervalMs = readHeartbeatMs();
+      return NextResponse.json({ intervalMs });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+  });
 }
 
 export async function PUT(req: Request) {
+  return withWorkspace(async () => {
   let body: unknown;
   try {
     body = await req.json();
@@ -43,4 +47,5 @@ export async function PUT(req: Request) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
+  });
 }

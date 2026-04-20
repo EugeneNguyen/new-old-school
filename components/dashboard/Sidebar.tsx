@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useSidebar } from './SidebarContext';
 import { useEffect, useState } from 'react';
 import { Workflow } from '@/types/workflow';
+import WorkspaceSwitcher from './WorkspaceSwitcher';
 
 function isActive(href: string, pathname: string | null): boolean {
   if (!pathname) return false;
@@ -56,6 +57,8 @@ export default function Sidebar() {
         </div>
         {!collapsed && <span className="tracking-tight whitespace-nowrap">New Old-school</span>}
       </div>
+
+      <WorkspaceSwitcher collapsed={collapsed} />
 
       <nav className="flex-1 px-2 py-4 space-y-1">
         {tools.map((tool) => {

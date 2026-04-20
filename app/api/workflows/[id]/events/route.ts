@@ -11,6 +11,7 @@ import {
 } from '@/lib/workflow-events';
 import { getProjectRoot } from '@/lib/project-root';
 import { createErrorResponse } from '@/app/api/utils/errors';
+import { withWorkspace } from '@/lib/workspace-context';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -113,6 +114,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withWorkspace(async () => {
   const { id } = await params;
   if (!workflowExists(id)) {
     return createErrorResponse(`Workflow '${id}' not found`, 'NotFound', 404);
@@ -175,5 +177,6 @@ export async function GET(
       'Cache-Control': 'no-cache, no-transform',
       Connection: 'keep-alive',
     },
+  });
   });
 }

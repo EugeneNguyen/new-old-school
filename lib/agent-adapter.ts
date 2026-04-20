@@ -15,11 +15,13 @@ export interface AgentAdapter {
 
 export const OTHER_MODEL_SENTINEL = '__other__';
 
-const SESSIONS_DIR = join(getProjectRoot(), '.claude', 'sessions');
+function sessionsDir(): string {
+  return join(getProjectRoot(), '.claude', 'sessions');
+}
 const SESSION_ID_TIMEOUT_MS = 10_000;
 
 function ensureSessionsDir() {
-  mkdirSync(SESSIONS_DIR, { recursive: true });
+  mkdirSync(sessionsDir(), { recursive: true });
 }
 
 function extractSessionId(line: string): string | null {
@@ -76,7 +78,7 @@ export const claudeAdapter: AgentAdapter = {
       }, SESSION_ID_TIMEOUT_MS);
 
       function openFileStream(sessionId: string) {
-        const filePath = join(SESSIONS_DIR, `${sessionId}.txt`);
+        const filePath = join(sessionsDir(), `${sessionId}.txt`);
         fileStream = createWriteStream(filePath, { flags: 'a' });
         fileStream.write(JSON.stringify({ type: 'user_prompt', content: prompt }) + '\n');
       }

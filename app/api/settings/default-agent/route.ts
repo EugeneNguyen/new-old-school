@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readDefaultAgent, writeDefaultAgent, type DefaultAgentConfig } from '@/lib/settings';
 import { hasAdapter } from '@/lib/agent-adapter';
+import { withWorkspace } from '@/lib/workspace-context';
 
 export const runtime = 'nodejs';
 
@@ -20,16 +21,19 @@ function validateAdapter(adapter: string | null | undefined): string | null {
 }
 
 export async function GET() {
-  try {
-    const config = readDefaultAgent();
-    return NextResponse.json(config);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+  return withWorkspace(async () => {
+    try {
+      const config = readDefaultAgent();
+      return NextResponse.json(config);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+  });
 }
 
 export async function PATCH(req: Request) {
+  return withWorkspace(async () => {
   let body: unknown;
   try {
     body = await req.json();
@@ -73,4 +77,5 @@ export async function PATCH(req: Request) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
+  });
 }

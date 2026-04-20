@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { workflowExists, itemExists } from '@/lib/workflow-store';
 import { readItemActivity } from '@/lib/activity-log';
 import { createErrorResponse } from '@/app/api/utils/errors';
+import { withWorkspace } from '@/lib/workspace-context';
 
 export const runtime = 'nodejs';
 
@@ -9,6 +10,7 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
+  return withWorkspace(async () => {
   try {
     const { id, itemId } = await params;
     if (!workflowExists(id)) {
@@ -26,4 +28,5 @@ export async function GET(
     console.error('Error reading item activity:', error);
     return createErrorResponse('Failed to read activity');
   }
+  });
 }

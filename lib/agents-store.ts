@@ -5,7 +5,9 @@ import type { Agent } from '@/types/workflow';
 import { readStages, listWorkflows } from '@/lib/workflow-store';
 import { getProjectRoot } from '@/lib/project-root';
 
-const AGENTS_ROOT = path.join(getProjectRoot(), '.nos', 'agents');
+function agentsRoot(): string {
+  return path.join(getProjectRoot(), '.nos', 'agents');
+}
 const META_FILE = 'meta.yml';
 const CONTENT_FILE = 'index.md';
 
@@ -18,7 +20,7 @@ function atomicWriteFile(filePath: string, contents: string): void {
 }
 
 function agentDir(id: string): string {
-  return path.join(AGENTS_ROOT, id);
+  return path.join(agentsRoot(), id);
 }
 
 function slugify(input: string): string {
@@ -74,11 +76,11 @@ function readAgentFolder(id: string): Agent | null {
 }
 
 export function listAgents(): Agent[] {
-  if (!fs.existsSync(AGENTS_ROOT)) return [];
-  const entries = fs.readdirSync(AGENTS_ROOT);
+  if (!fs.existsSync(agentsRoot())) return [];
+  const entries = fs.readdirSync(agentsRoot());
   const agents: Agent[] = [];
   for (const entry of entries) {
-    const full = path.join(AGENTS_ROOT, entry);
+    const full = path.join(agentsRoot(), entry);
     try {
       if (!fs.statSync(full).isDirectory()) continue;
       const agent = readAgentFolder(entry);
@@ -144,7 +146,7 @@ export function createAgent(input: CreateAgentInput): Agent | { error: string } 
     if (!baseId) baseId = `agent-${Date.now()}`;
   }
 
-  fs.mkdirSync(AGENTS_ROOT, { recursive: true });
+  fs.mkdirSync(agentsRoot(), { recursive: true });
 
   let finalId = baseId;
   let counter = 2;

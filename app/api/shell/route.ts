@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { createErrorResponse } from '@/app/api/utils/errors';
+import { withWorkspace } from '@/lib/workspace-context';
+import { getProjectRoot } from '@/lib/project-root';
 
 const execPromise = promisify(exec);
 
@@ -17,6 +19,7 @@ const ALLOWED_COMMANDS = new Set([
 ]);
 
 export async function POST(request: NextRequest) {
+  return withWorkspace(async () => {
   try {
     const { command } = await request.json();
 
@@ -30,7 +33,7 @@ export async function POST(request: NextRequest) {
       return createErrorResponse(`Command '${baseCommand}' is not allowed for security reasons`, 'Forbidden', 403);
     }
 
-    const { stdout, stderr } = await execPromise(command);
+    const { stdout, stderr } = await execPromise(command, { cwd: getProjectRoot() });
 
     if (stderr) {
       return NextResponse.json({
@@ -47,4 +50,5 @@ export async function POST(request: NextRequest) {
   } catch (err: any) {
     return createErrorResponse(err.message || 'Execution failed', 'InternalServerError', 500);
   }
+  });
 }

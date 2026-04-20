@@ -1,26 +1,30 @@
 import { NextResponse } from 'next/server';
 import { loadSystemPrompt, saveSystemPrompt } from '@/lib/system-prompt';
 import { getProjectRoot } from '@/lib/project-root';
+import { withWorkspace } from '@/lib/workspace-context';
 
 export const runtime = 'nodejs';
 
 const MAX_BYTES = 65536;
 
 export async function GET() {
-  try {
-    const projectRoot = getProjectRoot();
-    const content = loadSystemPrompt(projectRoot);
-    if (content === null) {
-      return NextResponse.json({ content: '', exists: false });
+  return withWorkspace(async () => {
+    try {
+      const projectRoot = getProjectRoot();
+      const content = loadSystemPrompt(projectRoot);
+      if (content === null) {
+        return NextResponse.json({ content: '', exists: false });
+      }
+      return NextResponse.json({ content, exists: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return NextResponse.json({ error: message }, { status: 500 });
     }
-    return NextResponse.json({ content, exists: true });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+  });
 }
 
 export async function PUT(req: Request) {
+  return withWorkspace(async () => {
   let body: unknown;
   try {
     body = await req.json();
@@ -44,4 +48,5 @@ export async function PUT(req: Request) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
+  });
 }

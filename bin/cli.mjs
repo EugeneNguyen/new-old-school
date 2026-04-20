@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { spawn } from 'child_process';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import net from 'net';
 import { fileURLToPath } from 'url';
@@ -16,43 +17,18 @@ const projectRoot = process.env.NOS_PROJECT_ROOT || process.cwd();
 const port = Number(process.env.NOS_PORT) || 30128;
 const url = `http://localhost:${port}`;
 
-const runtimeDir = path.join(projectRoot, '.nos', 'runtime');
+const nosHome = process.env.NOS_HOME && process.env.NOS_HOME.trim()
+  ? path.resolve(process.env.NOS_HOME)
+  : path.join(os.homedir(), '.nos');
+const runtimeDir = path.join(nosHome, 'runtime');
 const lockfilePath = path.join(runtimeDir, 'server.json');
 const logFilePath = path.join(runtimeDir, 'server.log');
 const LOG_MAX_BYTES = 10 * 1024 * 1024;
 
 // ---- Bootstrapping ----
 
-function ensureNosDir() {
-  const target = path.join(projectRoot, '.nos');
-  if (fs.existsSync(target)) return;
-  const source = path.join(pkgRoot, 'templates', '.nos');
-  if (!fs.existsSync(source)) {
-    console.error(`nos: bundled template missing at ${source}`);
-    process.exit(1);
-  }
-  try {
-    fs.cpSync(source, target, { recursive: true, errorOnExist: true, force: false });
-  } catch (err) {
-    const msg = err?.path ?? err?.message ?? String(err);
-    console.error(`nos: failed to scaffold .nos/: ${msg}`);
-    process.exit(1);
-  }
-}
-
 function ensureRuntimeDir() {
   fs.mkdirSync(runtimeDir, { recursive: true });
-}
-
-function ensureGitignore() {
-  const gitignorePath = path.join(projectRoot, '.gitignore');
-  const entry = '.nos/runtime/';
-  try {
-    const existing = fs.existsSync(gitignorePath) ? fs.readFileSync(gitignorePath, 'utf8') : '';
-    if (existing.includes(entry)) return;
-    const sep = existing && !existing.endsWith('\n') ? '\n' : '';
-    fs.writeFileSync(gitignorePath, existing + sep + entry + '\n', 'utf8');
-  } catch {}
 }
 
 function resolveNextBin() {
@@ -323,13 +299,11 @@ async function main() {
   if (cmd === 'status') return handleStatus();
   if (cmd === 'stop') return handleStopCmd();
 
-  ensureNosDir();
   const nextBin = resolveNextBin();
 
   if (!process.stdout.isTTY) return handleNoTTY(nextBin);
 
   ensureRuntimeDir();
-  ensureGitignore();
 
   return runTUI(nextBin);
 }

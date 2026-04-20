@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createAgent, listAgents, SLUG_REGEX } from '@/lib/agents-store';
 import { createErrorResponse } from '@/app/api/utils/errors';
+import { withWorkspace } from '@/lib/workspace-context';
 
 export async function GET() {
+  return withWorkspace(async () => {
   try {
     const agents = listAgents();
     return NextResponse.json({ agents });
@@ -10,9 +12,11 @@ export async function GET() {
     console.error('Error listing agents:', error);
     return createErrorResponse('Failed to list agents');
   }
+  });
 }
 
 export async function POST(req: Request) {
+  return withWorkspace(async () => {
   try {
     const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
     if (!body || typeof body !== 'object') {
@@ -70,4 +74,5 @@ export async function POST(req: Request) {
     console.error('Error creating agent:', error);
     return createErrorResponse('Failed to create agent');
   }
+  });
 }

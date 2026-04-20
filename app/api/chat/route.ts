@@ -6,14 +6,17 @@ import { createErrorResponse } from '@/app/api/utils/errors';
 import { streamRegistry } from '@/lib/stream-registry';
 import { getProjectRoot } from '@/lib/project-root';
 import { readDefaultAgent } from '@/lib/settings';
+import { withWorkspace } from '@/lib/workspace-context';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const SESSIONS_DIR = join(getProjectRoot(), '.claude', 'sessions');
+function sessionsDir(): string {
+  return join(getProjectRoot(), '.claude', 'sessions');
+}
 
 function ensureSessionsDir() {
-  mkdirSync(SESSIONS_DIR, { recursive: true });
+  mkdirSync(sessionsDir(), { recursive: true });
 }
 
 function extractSessionId(line: string): string | null {
@@ -25,6 +28,7 @@ function extractSessionId(line: string): string | null {
 }
 
 export async function POST(request: NextRequest) {
+  return withWorkspace(async () => {
   try {
     const { prompt, sessionId } = await request.json();
 
@@ -63,7 +67,7 @@ export async function POST(request: NextRequest) {
     function getFileStream() {
       if (fileStream) return fileStream;
       if (resolvedSessionId) {
-        const filePath = join(SESSIONS_DIR, `${resolvedSessionId}.txt`);
+        const filePath = join(sessionsDir(), `${resolvedSessionId}.txt`);
         fileStream = createWriteStream(filePath, { flags: 'a' });
         return fileStream;
       }
@@ -157,4 +161,5 @@ export async function POST(request: NextRequest) {
   } catch (err: any) {
     return createErrorResponse(err.message || 'Failed to start chat session', 'InternalServerError', 500);
   }
+  });
 }

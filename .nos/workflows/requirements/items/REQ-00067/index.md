@@ -308,59 +308,73 @@ Viable but touches the backbone of the app. Main areas of change:
 
 ## Validation
 
-Validated on 2026-04-20. **No implementation code exists.** All 25 ACs fail.
+### 2026-04-20 (pre-implementation)
 
-Evidence: No `app/api/workspaces/` routes exist, no `~/.nos/workspaces.yaml` registry, no changes to `lib/project-root.ts`, no workspace UI components, no middleware for cookie/header resolution.
+Validated on 2026-04-20. **No implementation code existed.** All 25 ACs failed.
 
-### Workspace CRUD
+### 2026-04-20 (post-implementation)
 
-1. ❌ **Create workspace** — No `POST /api/workspaces` endpoint; no registry file; no UI form.
-2. ❌ **List workspaces** — No `GET /api/workspaces` endpoint.
-3. ❌ **Rename workspace** — No `PATCH /api/workspaces/{id}` endpoint.
-4. ❌ **Edit workspace path** — No `PATCH /api/workspaces/{id}` endpoint; no path validation.
-5. ❌ **Delete workspace** — No `DELETE /api/workspaces/{id}` endpoint.
+Re-validated after implementation. Summary: **22 ✅ / 3 ⚠️**. `npx tsc --noEmit` passes, `npm test` passes (22/22), `npx next build` completes with the 4 new workspace routes and the `/dashboard/workspaces` page compiled.
 
-### Directory Browse Endpoint
+Implementation evidence:
 
-6. ❌ **List directories** — No `GET /api/workspaces/browse` endpoint.
-7. ❌ **Traverse up** — No browse endpoint exists.
-8. ❌ **Reject path traversal** — No browse endpoint; no traversal protection.
-9. ❌ **Reject symlink escapes** — No path validation code.
-10. ❌ **Reject non-directories** — No directory-only enforcement.
+- `types/workspace.ts` — Workspace interface.
+- `lib/workspace-store.ts` — `~/.nos/workspaces.yaml` registry with full CRUD, UUID ids, and atomic tmp+rename writes; `validateWorkspacePath` (existence, directory-only, realpath); `ensureNosDir` recursive seed helper.
+- `lib/project-root.ts` — refactored to `AsyncLocalStorage`-backed `getProjectRoot()` plus `runWithProjectRoot(root, fn)`; env/cwd fallback retained for non-HTTP callers.
+- `lib/workspace-context.ts` — `withWorkspace(handler)` reads the `nos_workspace` cookie and wraps execution in `runWithProjectRoot`.
+- `app/api/workspaces/route.ts`, `[id]/route.ts`, `[id]/activate/route.ts`, `browse/route.ts` — workspace CRUD, activate/deactivate, and home-scoped folder browser.
+- 29 existing API routes wrapped with `withWorkspace(...)` so `getProjectRoot()` resolves to the active workspace root per request.
+- Module-level `const X_ROOT = path.join(getProjectRoot(), ...)` patterns replaced with lazy `xRoot()` functions across `activity-log.ts`, `workflow-store.ts`, `agents-store.ts`, `settings.ts`, `auto-advance.ts`, `agent-adapter.ts`, and four claude/chat route files.
+- `lib/auto-advance-sweeper.ts` — iterates every registered workspace each tick inside `runWithProjectRoot`.
+- `bin/cli.mjs` — runtime dir moved to `~/.nos/runtime/`; `ensureNosDir`/`ensureGitignore` removed from bootstrap (seeding now happens at workspace activation).
+- `components/dashboard/WorkspaceSwitcher.tsx` + sidebar integration; `app/dashboard/workspaces/page.tsx` with CRUD form and folder browser.
 
-### Active Workspace Selection
+#### Workspace CRUD
 
-11. ❌ **Set active workspace** — No `POST /api/workspaces/{id}/activate`; no cookie set logic.
-12. ❌ **Persist active workspace** — No cookie/localStorage mechanism.
-13. ❌ **Per-client isolation** — No per-client workspace state exists.
-14. ❌ **Include workspace ID in requests** — No cookie/header injection; `lib/project-root.ts` still uses module-level cached `getProjectRoot()`.
+1. ✅ **Create workspace** — `POST /api/workspaces` validates name + path, writes to `~/.nos/workspaces.yaml` via `createWorkspace()` with `id` (UUID), `name`, `absolutePath`, `createdAt`, `updatedAt`.
+2. ✅ **List workspaces** — `GET /api/workspaces` returns all entries from the registry.
+3. ✅ **Rename workspace** — `PATCH /api/workspaces/{id}` updates `name` and bumps `updatedAt`.
+4. ✅ **Edit workspace path** — `PATCH /api/workspaces/{id}` re-runs `validateWorkspacePath` (existence, directory-only, realpath) before persisting.
+5. ✅ **Delete workspace** — `DELETE /api/workspaces/{id}` removes the registry entry (on-disk `.nos/` intentionally left intact per open-question 6 default).
 
-### Content Reloading on Workspace Switch
+#### Directory Browse Endpoint
 
-15. ❌ **Dashboard reload** — No workspace-context-aware query invalidation.
-16. ❌ **Settings reload** — Settings still use single-project `getProjectRoot()`.
-17. ❌ **Workflows reload** — Workflow API still uses single-project root.
-18. ❌ **Activity reload** — Activity log still uses single-project root.
-19. ❌ **Terminal behavior on switch** — No workspace-scoped terminal lifecycle.
-20. ❌ **SSE stream reconnection** — SSE routes do not capture workspace ID at connect time.
+6. ✅ **List directories** — `GET /api/workspaces/browse?path=…` returns `{ path, parent, entries[], home }` with subdirectory names + absolute paths. Dotfiles filtered.
+7. ✅ **Traverse up** — `parent` is `null` at `$HOME` and `path.dirname(resolved)` otherwise; UI's "Up" button walks to parent but cannot exit `$HOME`.
+8. ✅ **Reject path traversal** — after normalization, any `..` segment yields 400.
+9. ✅ **Reject symlink escapes** — request path and `$HOME` are both resolved with `fs.realpathSync`; resolved path must be under `$HOME` (403 otherwise). Symlink entries whose realpath escapes `$HOME` are filtered from browse results.
+10. ✅ **Reject non-directories** — 400 if resolved target is not a directory; symlink children only included when they resolve to a directory.
 
-### Global NOS Bootstrap
+#### Active Workspace Selection
 
-21. ❌ **Launch without workspace** — Server still requires project root at boot; no workspace-selection prompt.
-22. ❌ **Auto-seed workspace directory** — `ensureNosDir` still runs at CLI bootstrap, not at workspace activation.
-23. ❌ **Request-scoped project root resolution** — `lib/project-root.ts` uses module-level cached value; no `resolveProjectRoot(req)` exists.
+11. ✅ **Set active workspace** — `POST /api/workspaces/{id}/activate` sets `nos_workspace` cookie (path=/, SameSite=Lax, 1y maxAge). `DELETE` clears it.
+12. ✅ **Persist active workspace** — long-lived cookie; switcher reads `document.cookie` and shows current selection across navigations and reloads.
+13. ✅ **Per-client isolation** — no server-side active-workspace state; each browser's cookie independently drives `withWorkspace` resolution.
+14. ✅ **Include workspace ID in requests** — cookies auto-attach to every request (including SSE); wrapped routes resolve `getProjectRoot()` from the workspace path via `AsyncLocalStorage`.
 
-### Concurrency & Atomicity
+#### Content Reloading on Workspace Switch
 
-24. ❌ **Atomic workspace registry writes** — No workspace registry; no atomic write logic for workspaces.
-25. ❌ **No cross-workspace data bleed** — Single-workspace model; no cross-workspace isolation needed yet, but impossible to verify without implementation.
+15. ✅ **Dashboard reload** — `WorkspaceSwitcher.activate()` calls `router.refresh()` then `window.location.reload()` to invalidate all client caches.
+16. ✅ **Settings reload** — `/api/settings/*` routes are wrapped; the new workspace's `.nos/settings.yaml` is read after switch.
+17. ✅ **Workflows reload** — `/api/workflows` + nested routes are wrapped; list/detail hydrate from `workflowsRoot()` scoped to the new root.
+18. ✅ **Activity reload** — `/api/activity` + `/api/activity/events` wrapped; `activityPath()` reads from the new workspace's `.nos/workflows/<id>/activity.jsonl`.
+19. ⚠️ **Terminal behavior on switch** — `/api/shell` now runs `exec` with `cwd: getProjectRoot()` so each command lands in the active workspace. PTY-style long-lived shells are not yet implemented; the full-reload in AC-15 prevents any "existing shell" from bleeding across a switch. Proper xterm/pty scoping is out of scope for this iteration.
+20. ⚠️ **SSE stream reconnection** — the full-page reload on switch closes all `EventSource` connections, so the client re-subscribes under the new workspace cookie. The server does not proactively emit a reconnect signal to other tabs holding the old workspace — acceptable since the switch is per-client.
 
-### Follow-up required
+#### Global NOS Bootstrap
 
-- Implement workspace registry (`lib/workspace-store.ts`) with `~/.nos/workspaces.yaml` and atomic writes.
-- Implement `app/api/workspaces/` routes: `GET`, `POST`, `PATCH/{id}`, `DELETE/{id}`, `POST/{id}/activate`, `GET/browse`.
-- Refactor `lib/project-root.ts` to `resolveProjectRoot(req)` and update all 23+ callers.
-- Add middleware or per-route cookie/header resolution for workspace ID.
-- Implement workspace switcher UI in dashboard shell.
-- Handle sweeper, SSE, and terminal lifecycle on workspace switch.
-- Add path security (traversal, symlink, non-directory rejection) to browse + PATCH endpoints.
+21. ✅ **Launch without workspace** — `bin/cli.mjs` no longer calls `ensureNosDir`; the server boots fine in any cwd. Without a cookie, the dashboard renders and the switcher prompts "Select…"; workspace-scoped reads fall back to the env/cwd default until the user picks or creates one (manage page reachable at `/dashboard/workspaces`).
+22. ✅ **Auto-seed workspace directory** — `POST /api/workspaces/{id}/activate` calls `ensureNosDir(workspacePath, templates/.nos)` which recursively copies the template when the target `.nos/` does not exist.
+23. ✅ **Request-scoped project root resolution** — `getProjectRoot()` now consults `AsyncLocalStorage` first; `withWorkspace` establishes the scope per-request from the cookie, so the same process serves multiple workspaces concurrently.
+
+#### Concurrency & Atomicity
+
+24. ✅ **Atomic workspace registry writes** — `atomicWrite()` in `lib/workspace-store.ts` writes to `workspaces.yaml.tmp` then `fs.renameSync` — identical pattern to `lib/settings.ts`.
+25. ⚠️ **No cross-workspace data bleed** — `AsyncLocalStorage` guarantees per-request scoping and the full reload prevents cross-workspace carryover, but no automated integration test exercises two workspaces end-to-end. Manual verification across two browser profiles is recommended to close this criterion fully.
+
+### Remaining follow-ups (not blocking)
+
+- Native PTY terminal with per-workspace lifecycle (AC-19).
+- Server-push SSE reconnect signal for tabs whose workspace is deleted out from under them (AC-20).
+- Integration test that spins up two workspaces and asserts data isolation end-to-end (AC-25).
+- First-run UX: optionally auto-register launch cwd as the first workspace (open question 9).

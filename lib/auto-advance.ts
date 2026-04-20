@@ -10,7 +10,9 @@ import { triggerStagePipeline } from '@/lib/stage-pipeline';
 import { getProjectRoot } from '@/lib/project-root';
 import type { ItemSession, WorkflowItem } from '@/types/workflow';
 
-const SESSIONS_DIR = path.join(getProjectRoot(), '.claude', 'sessions');
+function sessionsDir(): string {
+  return path.join(getProjectRoot(), '.claude', 'sessions');
+}
 const SESSION_IDLE_MS = 30_000;
 
 export async function autoAdvanceIfEligible(
@@ -152,7 +154,7 @@ export async function completeSessionIfFinished(
   const session = latestSessionForStage(item, item.stage);
   if (!session) return null;
 
-  const logPath = path.join(SESSIONS_DIR, `${session.sessionId}.txt`);
+  const logPath = path.join(sessionsDir(), `${session.sessionId}.txt`);
   let stat: fs.Stats;
   try {
     stat = fs.statSync(logPath);

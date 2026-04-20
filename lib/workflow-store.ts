@@ -6,7 +6,9 @@ import { emitItemCreated, emitItemUpdated } from '@/lib/workflow-events';
 import { getProjectRoot } from '@/lib/project-root';
 import { appendActivity, hashBody, type ActivityActor } from '@/lib/activity-log';
 
-const WORKFLOWS_ROOT = path.join(getProjectRoot(), '.nos', 'workflows');
+function workflowsRoot(): string {
+  return path.join(getProjectRoot(), '.nos', 'workflows');
+}
 const META_FILE = 'meta.yml';
 const CONTENT_FILE = 'index.md';
 
@@ -34,7 +36,7 @@ function writeMeta(
 }
 
 function workflowDir(id: string) {
-  return path.join(WORKFLOWS_ROOT, id);
+  return path.join(workflowsRoot(), id);
 }
 
 function itemDir(workflowId: string, itemId: string) {
@@ -62,9 +64,9 @@ export function createWorkflow(id: string, config: WorkflowConfig): boolean {
 }
 
 export function deleteWorkflow(id: string): boolean {
-  const target = path.join(WORKFLOWS_ROOT, id);
+  const target = path.join(workflowsRoot(), id);
   const resolved = path.resolve(target);
-  if (!resolved.startsWith(path.resolve(WORKFLOWS_ROOT))) return false;
+  if (!resolved.startsWith(path.resolve(workflowsRoot()))) return false;
   if (!workflowExists(id)) return false;
   try {
     fs.rmSync(resolved, { recursive: true, force: true });
@@ -236,10 +238,10 @@ function parseSessions(raw: unknown): ItemSession[] | null {
 }
 
 export function listWorkflows(): string[] {
-  if (!fs.existsSync(WORKFLOWS_ROOT)) return [];
+  if (!fs.existsSync(workflowsRoot())) return [];
   const out: string[] = [];
-  for (const entry of fs.readdirSync(WORKFLOWS_ROOT)) {
-    const full = path.join(WORKFLOWS_ROOT, entry);
+  for (const entry of fs.readdirSync(workflowsRoot())) {
+    const full = path.join(workflowsRoot(), entry);
     try {
       if (fs.statSync(full).isDirectory()) out.push(entry);
     } catch {

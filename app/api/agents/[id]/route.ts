@@ -6,11 +6,13 @@ import {
   type AgentPatch,
 } from '@/lib/agents-store';
 import { createErrorResponse } from '@/app/api/utils/errors';
+import { withWorkspace } from '@/lib/workspace-context';
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withWorkspace(async () => {
   try {
     const { id } = await params;
     const agent = readAgent(id);
@@ -22,12 +24,14 @@ export async function GET(
     console.error('Error reading agent:', error);
     return createErrorResponse('Failed to read agent');
   }
+  });
 }
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withWorkspace(async () => {
   try {
     const { id } = await params;
     if (!readAgent(id)) {
@@ -86,12 +90,14 @@ export async function PATCH(
     console.error('Error updating agent:', error);
     return createErrorResponse('Failed to update agent');
   }
+  });
 }
 
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withWorkspace(async () => {
   try {
     const { id } = await params;
     const result = deleteAgent(id);
@@ -120,4 +126,5 @@ export async function DELETE(
     console.error('Error deleting agent:', error);
     return createErrorResponse('Failed to delete agent');
   }
+  });
 }

@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { reorderStages, workflowExists, StageError } from '@/lib/workflow-store';
 import { createErrorResponse } from '@/app/api/utils/errors';
+import { withWorkspace } from '@/lib/workspace-context';
 
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withWorkspace(async () => {
   try {
     const { id } = await params;
 
@@ -44,4 +46,5 @@ export async function PUT(
     console.error('Error reordering workflow stages:', error);
     return createErrorResponse('Failed to reorder stages');
   }
+  });
 }

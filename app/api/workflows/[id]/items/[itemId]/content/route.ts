@@ -2,11 +2,13 @@ import { NextResponse } from 'next/server';
 import { readItem, workflowExists, writeItemContent } from '@/lib/workflow-store';
 import { createErrorResponse } from '@/app/api/utils/errors';
 import type { ActivityActor } from '@/lib/activity-log';
+import { withWorkspace } from '@/lib/workspace-context';
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
+  return withWorkspace(async () => {
   try {
     const { id, itemId } = await params;
     if (!workflowExists(id)) {
@@ -21,12 +23,14 @@ export async function GET(
     console.error('Error reading item content:', error);
     return createErrorResponse('Failed to read item content');
   }
+  });
 }
 
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
+  return withWorkspace(async () => {
   try {
     const actor = ((req.headers.get('x-nos-actor') as ActivityActor) ?? 'ui');
     const { id, itemId } = await params;
@@ -46,4 +50,5 @@ export async function PUT(
     console.error('Error writing item content:', error);
     return createErrorResponse('Failed to write item content');
   }
+  });
 }

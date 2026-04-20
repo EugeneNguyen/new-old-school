@@ -4,16 +4,20 @@ import { join } from 'path';
 import { streamRegistry } from '@/lib/stream-registry';
 import { createErrorResponse } from '@/app/api/utils/errors';
 import { getProjectRoot } from '@/lib/project-root';
+import { withWorkspace } from '@/lib/workspace-context';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const SESSIONS_DIR = join(getProjectRoot(), '.claude', 'sessions');
+function sessionsDir(): string {
+  return join(getProjectRoot(), '.claude', 'sessions');
+}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withWorkspace(async () => {
   const { id } = await params;
   const from = parseInt(request.nextUrl.searchParams.get('from') || '0', 10);
 
@@ -26,7 +30,7 @@ export async function GET(
 
   const stream = new ReadableStream({
     start(controller) {
-      const filePath = join(SESSIONS_DIR, `${id}.txt`);
+      const filePath = join(sessionsDir(), `${id}.txt`);
       try {
         const content = readFileSync(filePath, 'utf-8');
         const lines = content.split('\n').filter(Boolean);
@@ -60,5 +64,6 @@ export async function GET(
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
     },
+  });
   });
 }

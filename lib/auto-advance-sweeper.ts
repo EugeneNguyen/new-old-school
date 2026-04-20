@@ -5,6 +5,8 @@ import {
   completeSessionIfFinished,
 } from '@/lib/auto-advance';
 import { readHeartbeatMs } from '@/lib/settings';
+import { runWithProjectRoot, getProjectRoot } from '@/lib/project-root';
+import { listWorkspaces } from '@/lib/workspace-store';
 
 type TimerHandle = ReturnType<typeof setTimeout> | null;
 
@@ -20,7 +22,7 @@ function setTimer(handle: TimerHandle): void {
   (globalThis as GlobalWithTimer)[GLOBAL_KEY] = handle;
 }
 
-async function tick(): Promise<void> {
+async function sweepWorkspace(): Promise<void> {
   let workflows: string[] = [];
   try {
     workflows = listWorkflows();
@@ -48,6 +50,21 @@ async function tick(): Promise<void> {
           err
         );
       }
+    }
+  }
+}
+
+async function tick(): Promise<void> {
+  const workspaces = listWorkspaces();
+  const roots = workspaces.length > 0
+    ? workspaces.map((w) => w.absolutePath)
+    : [getProjectRoot()];
+
+  for (const root of roots) {
+    try {
+      await runWithProjectRoot(root, sweepWorkspace);
+    } catch (err) {
+      console.error(`[auto-advance] sweep failed for root=${root}`, err);
     }
   }
 }

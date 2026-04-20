@@ -36,10 +36,12 @@ export interface ReadActivityOpts {
 
 // --- Internals ---
 
-const WORKFLOWS_ROOT = path.join(getProjectRoot(), '.nos', 'workflows');
+function workflowsRoot(): string {
+  return path.join(getProjectRoot(), '.nos', 'workflows');
+}
 
 function activityPath(workflowId: string): string {
-  return path.join(WORKFLOWS_ROOT, workflowId, 'activity.jsonl');
+  return path.join(workflowsRoot(), workflowId, 'activity.jsonl');
 }
 
 export function hashBody(body: string): string {

@@ -4,11 +4,13 @@ import {
   workflowEvents,
   type WorkflowEvent,
 } from '@/lib/workflow-events';
+import { withWorkspace } from '@/lib/workspace-context';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  return withWorkspace(async () => {
   const encoder = new TextEncoder();
   let keepAlive: NodeJS.Timeout | null = null;
   let listener: ((evt: WorkflowEvent) => void) | null = null;
@@ -61,5 +63,6 @@ export async function GET(request: NextRequest) {
       'Cache-Control': 'no-cache, no-transform',
       Connection: 'keep-alive',
     },
+  });
   });
 }

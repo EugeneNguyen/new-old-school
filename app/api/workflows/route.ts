@@ -5,6 +5,7 @@ import { Workflow } from '@/types/workflow';
 import { getProjectRoot } from '@/lib/project-root';
 import { createWorkflow, workflowExists } from '@/lib/workflow-store';
 import { createErrorResponse } from '@/app/api/utils/errors';
+import { withWorkspace } from '@/lib/workspace-context';
 
 const ID_REGEX = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 const PREFIX_REGEX = /^[A-Z0-9][A-Z0-9_-]{0,15}$/;
@@ -16,6 +17,7 @@ interface CreateBody {
 }
 
 export async function GET() {
+  return withWorkspace(async () => {
   try {
     const workflowsDir = path.join(getProjectRoot(), '.nos', 'workflows');
 
@@ -50,9 +52,11 @@ export async function GET() {
     console.error('Error fetching workflows:', error);
     return NextResponse.json({ error: 'Failed to fetch workflows' }, { status: 500 });
   }
+  });
 }
 
 export async function POST(req: Request) {
+  return withWorkspace(async () => {
   let body: CreateBody;
   try {
     body = (await req.json()) as CreateBody;
@@ -95,4 +99,5 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({ id: rawId, name: rawName }, { status: 201 });
+  });
 }

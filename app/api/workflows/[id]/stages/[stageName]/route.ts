@@ -2,11 +2,13 @@ import { NextResponse } from 'next/server';
 import { updateStage, deleteStage, workflowExists, StageError, type StagePatch } from '@/lib/workflow-store';
 import { agentExists } from '@/lib/agents-store';
 import { createErrorResponse } from '@/app/api/utils/errors';
+import { withWorkspace } from '@/lib/workspace-context';
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string; stageName: string }> }
 ) {
+  return withWorkspace(async () => {
   try {
     const { id, stageName: rawStageName } = await params;
     const stageName = decodeURIComponent(rawStageName);
@@ -106,12 +108,14 @@ export async function PATCH(
     console.error('Error updating workflow stage:', error);
     return createErrorResponse('Failed to update stage');
   }
+  });
 }
 
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string; stageName: string }> }
 ) {
+  return withWorkspace(async () => {
   try {
     const { id, stageName: rawStageName } = await params;
     const stageName = decodeURIComponent(rawStageName);
@@ -144,4 +148,5 @@ export async function DELETE(
     console.error('Error deleting workflow stage:', error);
     return createErrorResponse('Failed to delete stage');
   }
+  });
 }

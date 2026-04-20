@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { addStage, workflowExists, StageError } from '@/lib/workflow-store';
 import { createErrorResponse } from '@/app/api/utils/errors';
+import { withWorkspace } from '@/lib/workspace-context';
 
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withWorkspace(async () => {
   try {
     const { id } = await params;
 
@@ -58,4 +60,5 @@ export async function POST(
     console.error('Error creating workflow stage:', error);
     return createErrorResponse('Failed to create stage');
   }
+  });
 }

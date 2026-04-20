@@ -4,12 +4,15 @@ import { join } from 'path';
 import { createErrorResponse } from '@/app/api/utils/errors';
 import { streamRegistry } from '@/lib/stream-registry';
 import { getProjectRoot } from '@/lib/project-root';
+import { withWorkspace } from '@/lib/workspace-context';
 import type { SessionSummary, SessionHistory, SessionHistoryMessage } from '@/types/session';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const SESSIONS_DIR = join(getProjectRoot(), '.claude', 'sessions');
+function sessionsDir(): string {
+  return join(getProjectRoot(), '.claude', 'sessions');
+}
 
 function parseLines(filePath: string): string[] {
   try {
@@ -85,11 +88,12 @@ function parseSessionHistory(filePath: string): SessionHistoryMessage[] {
 }
 
 export async function GET(request: NextRequest) {
+  return withWorkspace(async () => {
   try {
     const sessionId = request.nextUrl.searchParams.get('id');
 
     if (sessionId) {
-      const filePath = join(SESSIONS_DIR, `${sessionId}.txt`);
+      const filePath = join(sessionsDir(), `${sessionId}.txt`);
       try {
         statSync(filePath);
       } catch {
@@ -103,7 +107,7 @@ export async function GET(request: NextRequest) {
 
     let files: string[];
     try {
-      files = readdirSync(SESSIONS_DIR).filter(f => f.endsWith('.txt'));
+      files = readdirSync(sessionsDir()).filter(f => f.endsWith('.txt'));
     } catch {
       return NextResponse.json([]);
     }
@@ -111,7 +115,7 @@ export async function GET(request: NextRequest) {
     const sessions: SessionSummary[] = [];
 
     for (const file of files) {
-      const filePath = join(SESSIONS_DIR, file);
+      const filePath = join(sessionsDir(), file);
       const summary = parseSessionSummary(filePath, file);
       if (summary) sessions.push(summary);
     }
@@ -122,4 +126,5 @@ export async function GET(request: NextRequest) {
   } catch (err: any) {
     return createErrorResponse(err.message || 'Failed to list sessions', 'InternalServerError', 500);
   }
+  });
 }

@@ -3,13 +3,15 @@ import path from 'path';
 import yaml from 'js-yaml';
 import { getProjectRoot } from '@/lib/project-root';
 
-const SETTINGS_FILE = path.join(getProjectRoot(), '.nos', 'settings.yaml');
+function settingsFile(): string {
+  return path.join(getProjectRoot(), '.nos', 'settings.yaml');
+}
 const MAX_BYTES = 65536;
 const DEFAULT_HEARTBEAT_MS = 60000;
 
 function readFileRaw(): Record<string, unknown> {
   try {
-    const raw = fs.readFileSync(SETTINGS_FILE, 'utf-8');
+    const raw = fs.readFileSync(settingsFile(), 'utf-8');
     const parsed = yaml.load(raw);
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
       return parsed as Record<string, unknown>;
@@ -22,10 +24,10 @@ function readFileRaw(): Record<string, unknown> {
 }
 
 function atomicWrite(contents: string): void {
-  fs.mkdirSync(path.dirname(SETTINGS_FILE), { recursive: true });
-  const tmp = `${SETTINGS_FILE}.tmp`;
+  fs.mkdirSync(path.dirname(settingsFile()), { recursive: true });
+  const tmp = `${settingsFile()}.tmp`;
   fs.writeFileSync(tmp, contents, 'utf-8');
-  fs.renameSync(tmp, SETTINGS_FILE);
+  fs.renameSync(tmp, settingsFile());
 }
 
 export function readHeartbeatMs(): number {

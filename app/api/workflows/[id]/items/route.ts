@@ -3,11 +3,13 @@ import { createItem, readStages, workflowExists } from '@/lib/workflow-store';
 import { triggerStagePipeline } from '@/lib/stage-pipeline';
 import { createErrorResponse } from '@/app/api/utils/errors';
 import type { ActivityActor } from '@/lib/activity-log';
+import { withWorkspace } from '@/lib/workspace-context';
 
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  return withWorkspace(async () => {
   try {
     const actor = ((req.headers.get('x-nos-actor') as ActivityActor) ?? 'ui');
     const { id } = await params;
@@ -63,4 +65,5 @@ export async function POST(
     console.error('Error creating workflow item:', error);
     return createErrorResponse('Failed to create item');
   }
+  });
 }
