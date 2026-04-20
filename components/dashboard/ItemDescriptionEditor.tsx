@@ -51,6 +51,7 @@ export default function ItemDescriptionEditor({
         readOnly={readOnly}
         placeholder={placeholder}
         contentEditableClassName="item-detail-md-editor__content"
+        suppressHtmlProcessing
         plugins={[
           headingsPlugin(),
           listsPlugin(),
