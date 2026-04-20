@@ -43,13 +43,6 @@ export async function GET(req: NextRequest) {
     return createErrorResponse('path does not exist', 'NotFound', 404);
   }
 
-  const homeReal = fs.realpathSync(home);
-  const resolvedWithSep = resolved + path.sep;
-  const homeWithSep = homeReal + path.sep;
-  if (resolved !== homeReal && !resolvedWithSep.startsWith(homeWithSep)) {
-    return createErrorResponse('path must be inside your home directory', 'Forbidden', 403);
-  }
-
   let stat: fs.Stats;
   try {
     stat = fs.statSync(resolved);
@@ -74,8 +67,6 @@ export async function GET(req: NextRequest) {
     if (d.isSymbolicLink()) {
       try {
         const target = fs.realpathSync(path.join(resolved, d.name));
-        const targetWithSep = target + path.sep;
-        if (target !== homeReal && !targetWithSep.startsWith(homeWithSep)) continue;
         isDir = fs.statSync(target).isDirectory();
       } catch {
         continue;
@@ -86,12 +77,12 @@ export async function GET(req: NextRequest) {
   }
   entries.sort((a, b) => a.name.localeCompare(b.name));
 
-  const parent = resolved === homeReal ? null : path.dirname(resolved);
+  const parent = path.dirname(resolved);
   const response: BrowseResponse = {
     path: resolved,
-    parent,
+    parent: parent === resolved ? null : parent,
     entries,
-    home: homeReal,
+    home: fs.realpathSync(home),
   };
   return NextResponse.json(response);
 }
