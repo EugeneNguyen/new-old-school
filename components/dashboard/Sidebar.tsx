@@ -128,6 +128,12 @@ export default function Sidebar() {
           </button>
           {!collapsed && workflowsExpanded && (
             <div className="pl-4 space-y-1">
+              <Link
+                href="/dashboard/workflows"
+                className="flex items-center px-3 py-2 rounded-md transition-colors text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              >
+                All workflows…
+              </Link>
               {workflows.map((wf) => {
                 const href = `/dashboard/workflows/${wf.id}`;
                 const active = isActive(href, pathname);
