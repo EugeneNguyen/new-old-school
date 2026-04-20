@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^7.10.1",
-    "@mdxeditor/editor": "^3.54.1",
+    "@mdxeditor/editor": "^3.55.0",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-toast": "^1.2.15",
