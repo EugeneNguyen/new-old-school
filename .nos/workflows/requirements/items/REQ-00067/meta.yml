@@ -1,0 +1,87 @@
+title: Add mechanism to switch workspace
+stage: Validation
+status: In Progress
+comments:
+  - >-
+    Analysis appended to `.nos/workflows/requirements/items/REQ-00067/index.md`
+    under `## Analysis`, covering scope (global workspace registry + per-client
+    active selection + folder-browse CRUD), feasibility risks (request-scoped
+    `getProjectRoot` refactor across 23 files, sweeper/SSE/PTY lifecycle,
+    path-traversal security), dependencies (core lib + API routes +
+    `bin/cli.mjs`), and 10 open questions (storage location, cookie vs
+    localStorage, sweeper strategy, terminal behavior on switch, etc.). Original
+    request text untouched; no implementation work started.
+  - >-
+    Specification added to REQ-00067. Formalized 6 user stories covering
+    developer workflows, end-user UI interactions, and operator concerns; 25
+    acceptance criteria covering workspace CRUD, directory browsing, active
+    workspace selection, content reloading, bootstrapping, and concurrency; 10
+    technical constraints addressing path security, request-scoped resolution,
+    background processes, SSE lifecycle, terminal isolation, and client-side
+    reactivity; and explicit out-of-scope items (remote workspaces, multi-user
+    auth, cross-workspace operations). The document now provides implementers
+    with testable criteria and unambiguous technical requirements derived from
+    the detailed feasibility analysis.
+  - >-
+    I'm encountering some tool issues. Let me summarize my plan directly:
+
+
+    ## Implementation Plan Summary
+
+
+    I've designed a **10-phase implementation** totaling 18-25 hours. Key design
+    decisions (for your approval):
+
+    - **Workspace storage**: `~/.nos/workspaces.yaml` with atomic writes
+
+    - **Client selection**: Cookie-based (auto-sent on SSE)
+
+    - **Background sweeper**: Iterate all workspaces per tick (simple,
+    acceptable for single-user)
+
+    - **Terminal behavior**: Kill existing shells on switch (prevents
+    cross-workspace bleed)
+
+
+    ## Recommended Approach
+
+    Given the scope, I propose implementing **phases 1-4 first** (8-10 hours),
+    covering:
+
+    1. **Workspace registry** (CRUD infrastructure)
+
+    2. **Directory browse** (filesystem picker)
+
+    3. **Cookie selection** (active workspace)
+
+    4. **Request-scoped resolver** (critical refactoring of `getProjectRoot()`)
+
+
+    This gets the core multi-workspace system working. Phases 5-10 (UI polish,
+    SSE reconnection, terminal isolation) can follow in subsequent sessions.
+
+
+    **Shall I proceed with phases 1-4?** I'll update `meta.yml` to mark the item
+    `In Progress` with implementation notes, then start building the workspace
+    infrastructure.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 6f7a4e97-5111-491f-9197-8796c0f844e4
+    startedAt: '2026-04-20T02:41:53.738Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 9685261f-df3f-4d0d-a8d6-eeecc20cfb05
+    startedAt: '2026-04-20T02:44:21.286Z'
+    agentId: david-engineer
+  - stage: Implementation
+    adapter: claude
+    sessionId: ab218f6e-0ef7-46ac-a879-d476d2b00988
+    startedAt: '2026-04-20T02:45:59.274Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: c310d1da-19bf-4136-a9dc-de6473f856bb
+    startedAt: '2026-04-20T02:51:23.240Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-20T02:51:23.256Z'
