@@ -2,6 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useItemDoneSound } from './hooks/use-item-done-sound.ts';
+import {
+  notifyBrowser,
+  isBrowserNotificationEnabled,
+  isItemDoneNotificationEnabled,
+} from './notifications.ts';
 import type { ItemStatus, Stage, WorkflowItem } from '../types/workflow.ts';
 
 const SELF_ORIGINATION_TTL_MS = 5000;
@@ -52,6 +57,7 @@ export function useWorkflowItems({
   const [detailItemId, setDetailItemId] = useState<string | null>(null);
   const [newItemOpen, setNewItemOpen] = useState(false);
   const [editStage, setEditStage] = useState<Stage | null>(null);
+  const [addStageOpen, setAddStageOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const playDoneSound = useItemDoneSound();
@@ -59,6 +65,7 @@ export function useWorkflowItems({
   const onItemNotFoundRef = useRef(onItemNotFound);
   onItemNotFoundRef.current = onItemNotFound;
   const autoOpenHandledRef = useRef<string | null>(null);
+  const baselineRef = useRef<{ items: WorkflowItem[] } | null>(null);
 
   useEffect(() => {
     if (!initialOpenItemId) return;
@@ -132,6 +139,12 @@ export function useWorkflowItems({
               !selfOriginatedRef.current.has(incoming.id)
             ) {
               playDoneSound();
+              if (baselineRef.current && isBrowserNotificationEnabled() && isItemDoneNotificationEnabled()) {
+                notifyBrowser({
+                  title: `Item ${incoming.id} completed`,
+                  body: incoming.title,
+                });
+              }
             }
           }
           return mergeWorkflowItem(curr, incoming);
@@ -152,6 +165,9 @@ export function useWorkflowItems({
         if (cancelled) return;
         if (detail.stages) setStages(detail.stages);
         if (detail.items) {
+          if (!baselineRef.current) {
+            baselineRef.current = { items: detail.items };
+          }
           setItems((curr) => reconcileWorkflowItems(curr, detail.items ?? []));
         }
       } catch {
@@ -221,6 +237,8 @@ export function useWorkflowItems({
   const closeNewItem = useCallback(() => setNewItemOpen(false), []);
   const openStage = useCallback((stage: Stage) => setEditStage(stage), []);
   const closeStage = useCallback(() => setEditStage(null), []);
+  const openAddStage = useCallback(() => setAddStageOpen(true), []);
+  const closeAddStage = useCallback(() => setAddStageOpen(false), []);
 
   const handleItemSaved = useCallback((updated: WorkflowItem) => {
     setItems((curr) => curr.map((item) => (item.id === updated.id ? updated : item)));
@@ -236,6 +254,50 @@ export function useWorkflowItems({
     setEditStage(null);
   }, []);
 
+  const handleStageCreated = useCallback((next: { stages: Stage[]; items: WorkflowItem[] }) => {
+    setStages(next.stages);
+    setItems(next.items);
+  }, []);
+
+  const handleStageDeleted = useCallback((next: { stages: Stage[] }) => {
+    setStages(next.stages);
+    setEditStage(null);
+  }, []);
+
+  const handleStagesReordered = useCallback(
+    async (orderedNames: string[]) => {
+      const previous = stages;
+      setStages((prev) => {
+        const nameToStage = new Map(prev.map((s) => [s.name, s] as const));
+        return orderedNames.map((name) => nameToStage.get(name)!).filter(Boolean);
+      });
+
+      try {
+        const res = await fetch(
+          `/api/workflows/${encodeURIComponent(workflowId)}/stages/order`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order: orderedNames }),
+          }
+        );
+        if (!res.ok) {
+          const msg = await res.text();
+          throw new Error(msg || `Request failed: ${res.status}`);
+        }
+        const data = (await res.json()) as { stages: Stage[] };
+        if (data.stages) {
+          setStages(data.stages);
+        }
+      } catch (e) {
+        console.error('Failed to reorder stages:', e);
+        setStages(previous);
+        throw e;
+      }
+    },
+    [stages, workflowId]
+  );
+
   const detailItem = detailItemId ? items.find((item) => item.id === detailItemId) ?? null : null;
 
   return {
@@ -247,6 +309,7 @@ export function useWorkflowItems({
     detailItemId,
     newItemOpen,
     editStage,
+    addStageOpen,
     moveItem,
     openItem,
     closeItem,
@@ -254,9 +317,14 @@ export function useWorkflowItems({
     closeNewItem,
     openStage,
     closeStage,
+    openAddStage,
+    closeAddStage,
     markSelfOriginated,
     handleItemSaved,
     handleItemCreated,
     handleStageSaved,
+    handleStageCreated,
+    handleStageDeleted,
+    handleStagesReordered,
   };
 }

@@ -1,1 +1,4 @@
 autoAdvanceHeartbeatMs: 15000
+defaultAgent:
+  adapter: claude
+  model: sonnet-replacement

@@ -194,6 +194,32 @@ The `## Implementation Notes` section is missing from this item, and none of the
 | AC-23 | Auto-advance sweeper picks up new neighbor after reorder | ⚠️ | Cannot exercise because reorder path does not exist. Code inspection of `lib/auto-advance-sweeper.ts` / `lib/auto-advance.ts` would still be required to confirm; deferred until reorder is implemented. |
 | AC-24 | `handleStagesReordered` exported from `lib/use-workflow-items.ts` | ❌ | `grep handleStagesReordered lib/use-workflow-items.ts` returns no matches. |
 
+## Implementation Notes
+
+### Work completed in this run
+
+1. **Backend changes**:
+   - Added `reorderStages(workflowId, orderedNames[])` to `lib/workflow-store.ts` with SET_MISMATCH validation (lines 636-693)
+   - Created `PUT /api/workflows/[id]/stages/order` endpoint at `app/api/workflows/[id]/stages/order/route.ts`
+   - Added DELETE handler to `app/api/workflows/[id]/stages/[stageName]/route.ts`
+   - Added SET_MISMATCH error code to StageError class
+
+2. **Frontend changes**:
+   - Created `WorkflowSettingsView` component at `components/dashboard/WorkflowSettingsView.tsx`
+   - Created settings page at `app/dashboard/workflows/[id]/settings/page.tsx`
+   - Updated `WorkflowItemsView`: replaced "Add stage" button with Settings gear button at lines 168-175
+   - Removed `AddStageDialog` mount from `WorkflowItemsView` (lines 245-252 removed)
+   - Added `handleStagesReordered` to `lib/use-workflow-items.ts`
+
+### Deviations from spec
+
+- None yet; implementation follows spec.
+
+### Verification needed
+
+- AC-23: Verify heartbeat sweeper picks up new neighbor after reorder (requires testing with live workflow)
+- AC-14, AC-15: Delete disabled/enabled UX needs testing with stages that have/don't have items
+
 ### Follow-ups for the next Implementation run
 
 1. Add `reorderStages(workflowId, orderedNames[])` to `lib/workflow-store.ts` with set-equality validation and a typed conflict error.

@@ -1,0 +1,86 @@
+title: In setting, we should have multiple tab
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analyzed REQ-00056. The request is for a tabbed Settings page UI.
+
+
+    **Summary:**
+
+    - **Scope**: Four tabs (System Prompt, Heartbeat Config, Notifications,
+    Adapter) — moves existing three Cards into tabs, adds a fourth for REQ-00055
+    adapter defaults.
+
+    - **Feasibility**: High — simple React state tab switcher, no backend
+    changes needed. Checked shadcn Tabs availability is TBD; custom tab switcher
+    works as fallback.
+
+    - **Dependencies**: `app/dashboard/settings/page.tsx` only. REQ-00055
+    provides the Adapter tab content.
+
+    - **Open questions**: All resolved — use shadcn Tabs if available, else
+    custom; include Adapter tab with placeholder now; fixed order; basic
+    responsive support.
+
+
+    The full Analysis with deviations and a draft Specification are written to
+    `index.md`.
+  - >-
+    Wrote the formal `## Specification` section for REQ-00056, replacing the
+    earlier draft. It captures 4 user stories, 15 numbered Given/When/Then
+    acceptance criteria (tab rendering, switching + keyboard nav, per-tab parity
+    with the pre-tab version, responsive behavior, negative confirmations),
+    technical constraints (only `app/dashboard/settings/page.tsx` changes;
+    custom switcher with `role=tablist/tab/tabpanel`, `hidden`-attr panels to
+    preserve state, flex-wrap for <640px, no new deps — `components/ui/`
+    confirmed to lack `Tabs`), and an explicit out-of-scope list. The Adapter
+    tab hosts the already-implemented `DefaultAgentSettings` (REQ-00055)
+    unchanged.
+  - >-
+    The implementation is complete. The Settings page
+    (`app/dashboard/settings/page.tsx`) has been restructured into a tabbed
+    interface with exactly four tabs — System Prompt, Heartbeat Config,
+    Notifications, Adapter — in the specified order. All pre-existing state,
+    effects, and handlers are unchanged and live at the `SettingsPage` level, so
+    per-panel state (unsaved edits, typed values) survives tab switches.
+    Inactive panels use the `hidden` attribute so they're removed from the
+    accessibility tree and their form IDs don't conflict. Keyboard navigation
+    (`ArrowLeft`/`ArrowRight`/`Home`/`End`) is wired with automatic activation.
+    The tab bar uses `flex flex-wrap` so it wraps on narrow viewports without
+    horizontal scrolling. No new dependencies were added and no `components/ui/`
+    files were touched.
+  - >-
+    All 15 acceptance criteria pass. The tabbed Settings page
+    (`app/dashboard/settings/page.tsx`) correctly implements: four tabs in the
+    specified order; `role="tablist"`/`tab`/`tabpanel` with proper `aria-*`
+    wiring; active-state styling; ArrowLeft/Right/Home/End keyboard nav with
+    wrapping and automatic activation; per-panel state preservation via
+    unconditional render + `hidden` attribute; identical wiring to the pre-tab
+    API endpoints for System Prompt, Heartbeat, Notifications, and
+    DefaultAgentSettings (REQ-00055); `flex-wrap` responsive behavior; and no
+    new dependencies. TypeScript reports no errors in the settings files
+    (unrelated pre-existing errors elsewhere in the tree were not introduced
+    here). Live DOM-scrape of `/dashboard/settings` confirms the four tab
+    buttons and panels render with the correct roles and ids. The `##
+    Validation` section in `index.md` has been written with a ✅ verdict for
+    every criterion.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: bcaab202-e91f-4a10-a319-b662272fcfec
+    startedAt: '2026-04-19T13:30:17.812Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 70bb71f4-922a-4257-8713-eb756e9c7157
+    startedAt: '2026-04-19T15:17:45.446Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 86978942-8d05-4ad1-97d3-756ad5d30487
+    startedAt: '2026-04-19T15:20:00.739Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 35188a40-61d9-4102-a67a-95138cf97857
+    startedAt: '2026-04-19T15:22:55.799Z'
+updatedAt: '2026-04-19T15:25:28.884Z'

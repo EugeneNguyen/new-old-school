@@ -158,7 +158,31 @@ export default function MembersPage() {
   }
 
   function startCreate() {
-    openEditor({ ...BLANK_EDITOR });
+    // Fetch defaults with 3 second timeout, then proceed with defaults
+    const DEFAULTS_FETCH_TIMEOUT_MS = 3000;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), DEFAULTS_FETCH_TIMEOUT_MS);
+
+    fetch('/api/settings/default-agent', { cache: 'no-store', signal: controller.signal })
+      .then((res) => res.json())
+      .then((data: { adapter?: string | null; model?: string | null }) => {
+        clearTimeout(timer);
+        if (data?.adapter) {
+          const { choice, customModel } = deriveChoice(data.model ?? null);
+          openEditor({
+            ...BLANK_EDITOR,
+            adapter: data.adapter,
+            choice,
+            customModel,
+          });
+        } else {
+          openEditor({ ...BLANK_EDITOR });
+        }
+      })
+      .catch(() => {
+        clearTimeout(timer);
+        openEditor({ ...BLANK_EDITOR });
+      });
   }
 
   function startEdit(agent: Agent) {

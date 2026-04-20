@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutGrid, List, Search, X } from 'lucide-react';
+import { LayoutGrid, List, Search, X, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -61,6 +61,8 @@ export default function WorkflowItemsView({ workflowId, stages, initialItems, in
     handleItemSaved,
     handleItemCreated,
     handleStageSaved,
+    handleStageCreated,
+    handleStageDeleted,
   } = useWorkflowItems({
     workflowId,
     initialStages: stages,
@@ -101,31 +103,10 @@ export default function WorkflowItemsView({ workflowId, stages, initialItems, in
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Button size="sm" onClick={openNewItem} disabled={currentStages.length === 0}>
+          Add item
+        </Button>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex w-full rounded-md border bg-background p-1 sm:w-auto">
-            <button
-              type="button"
-              aria-pressed={viewMode === 'kanban'}
-              onClick={() => updateViewMode('kanban')}
-              className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-1.5 text-sm sm:flex-none ${
-                viewMode === 'kanban' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
-              }`}
-            >
-              <LayoutGrid className="h-4 w-4" />
-              Kanban
-            </button>
-            <button
-              type="button"
-              aria-pressed={viewMode === 'list'}
-              onClick={() => updateViewMode('list')}
-              className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-1.5 text-sm sm:flex-none ${
-                viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
-              }`}
-            >
-              <List className="h-4 w-4" />
-              List
-            </button>
-          </div>
           <div className="relative flex items-center">
             <Search className="pointer-events-none absolute left-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -155,10 +136,39 @@ export default function WorkflowItemsView({ workflowId, stages, initialItems, in
               </Button>
             )}
           </div>
+          <div className="inline-flex w-full rounded-md border bg-background p-1 sm:w-auto">
+            <button
+              type="button"
+              aria-pressed={viewMode === 'kanban'}
+              onClick={() => updateViewMode('kanban')}
+              className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-1.5 text-sm sm:flex-none ${
+                viewMode === 'kanban' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
+              }`}
+            >
+              <LayoutGrid className="h-4 w-4" />
+              Kanban
+            </button>
+            <button
+              type="button"
+              aria-pressed={viewMode === 'list'}
+              onClick={() => updateViewMode('list')}
+              className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-1.5 text-sm sm:flex-none ${
+                viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
+              }`}
+            >
+              <List className="h-4 w-4" />
+              List
+            </button>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => router.push(`/dashboard/workflows/${workflowId}/settings`)}
+          >
+            <Settings className="mr-1.5 h-4 w-4" />
+            Settings
+          </Button>
         </div>
-        <Button size="sm" onClick={openNewItem} disabled={currentStages.length === 0}>
-          Add item
-        </Button>
       </div>
 
       {error && (
@@ -229,6 +239,7 @@ export default function WorkflowItemsView({ workflowId, stages, initialItems, in
         workflowId={workflowId}
         stage={editStage}
         onSaved={handleStageSaved}
+        onDeleted={handleStageDeleted}
       />
     </div>
   );

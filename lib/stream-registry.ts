@@ -56,4 +56,11 @@ export const streamRegistry = {
   getLineCount(sessionId: string): number {
     return streams.get(sessionId)?.lineCount ?? 0;
   },
+
+  kill(sessionId: string): boolean {
+    const entry = streams.get(sessionId);
+    if (!entry) return false;
+    try { entry.process.kill(); } catch {}
+    return true;
+  },
 };

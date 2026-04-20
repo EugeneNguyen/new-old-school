@@ -14,6 +14,7 @@ interface Props {
   workflowId: string;
   stage: Stage | null;
   onSaved: (next: { stages: Stage[]; items: WorkflowItem[] }) => void;
+  onDeleted: (next: { stages: Stage[] }) => void;
 }
 
 export default function StageDetailDialog({
@@ -22,6 +23,7 @@ export default function StageDetailDialog({
   workflowId,
   stage,
   onSaved,
+  onDeleted,
 }: Props) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -31,6 +33,8 @@ export default function StageDetailDialog({
   const [maxDisplayItems, setMaxDisplayItems] = useState<string>('');
   const [agents, setAgents] = useState<Agent[]>([]);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -46,6 +50,7 @@ export default function StageDetailDialog({
         : ''
     );
     setError(null);
+    setConfirmDelete(false);
   }, [open, stage]);
 
   useEffect(() => {
@@ -121,6 +126,38 @@ export default function StageDetailDialog({
       setError(e instanceof Error ? e.message : 'Failed to save stage');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!stage || !confirmDelete) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/workflows/${encodeURIComponent(workflowId)}/stages/${encodeURIComponent(stage.name)}`,
+        { method: 'DELETE' }
+      );
+      const data = (await res.json()) as { stages?: Stage[]; error?: string; itemCount?: number };
+      if (!res.ok) {
+        if (res.status === 409 && typeof data.itemCount === 'number' && data.itemCount > 0) {
+          setError(`Cannot delete: ${data.itemCount} item(s) still in this stage. Move them first.`);
+          setDeleting(false);
+          return;
+        }
+        setError(typeof data.error === 'string' ? data.error : `Request failed: ${res.status}`);
+        setDeleting(false);
+        return;
+      }
+      if (data.stages) {
+        onDeleted({ stages: data.stages });
+      }
+      onOpenChange(false);
+    } catch (e) {
+      console.error('Failed to delete stage:', e);
+      setError(e instanceof Error ? e.message : 'Failed to delete stage');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -225,13 +262,49 @@ export default function StageDetailDialog({
       )}
 
       <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
-        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-          Close
-        </Button>
-        <Button onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving…' : 'Save'}
-        </Button>
+        {!confirmDelete ? (
+          <>
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+              Close
+            </Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving…' : 'Save'}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setConfirmDelete(false);
+                setError(null);
+              }}
+              disabled={deleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting…' : `Delete "${stage?.name}"`}
+            </Button>
+          </>
+        )}
       </div>
+
+      {!confirmDelete && (
+        <div className="flex items-center justify-end border-t px-4 py-2">
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="text-xs text-destructive hover:underline"
+          >
+            Delete stage
+          </button>
+        </div>
+      )}
     </Dialog>
   );
 }

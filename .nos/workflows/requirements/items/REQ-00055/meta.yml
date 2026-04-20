@@ -1,0 +1,96 @@
+title: in setting, add mechanism to config the default adapter & model
+stage: Done
+status: Todo
+comments:
+  - >-
+    The Analysis section has been appended to REQ-00055's `index.md`. The
+    analysis covers:
+
+
+    1. **Scope** — a new "Default Agent Settings" card in the Settings page with
+    Adapter + Model selects, persisted to `.nos/config.json`, pre-filling the
+    agent create form. Out-of-scope items (bulk edits, per-workflow defaults,
+    auto-creation) are explicitly listed.
+
+
+    2. **Feasibility** — high. The adapter/model infrastructure from REQ-00042
+    is already in place and reused. Primary risks are around storage format
+    (need to verify config.json read/write patterns), timing of defaults
+    injection into the create form, and handling orphaned values when a saved
+    adapter no longer exists.
+
+
+    3. **Dependencies** — `app/dashboard/settings/page.tsx`, new API route for
+    default-agent config, and `app/dashboard/agents/page.tsx` (create form
+    pre-fill). No changes to `lib/agent-adapter.ts`, `lib/stage-pipeline.ts`, or
+    `types/workflow.ts` — the default is purely a UI pre-fill. Relies on
+    REQ-00042's adapter registry and model listing endpoints.
+
+
+    4. **Open questions** — six items to resolve before documentation: storage
+    format (config.json vs dedicated file), how to display the "no saved
+    default" state, whether to pre-load model lists on Settings page mount, how
+    `startCreate` in the agents page should fetch defaults, whether a "Clear"
+    button is needed, and how to handle orphaned saved adapters on load.
+
+
+    The item is ready for the Specification stage.
+  - >-
+    Specification complete. The document now contains:
+
+
+    - **User stories** (5): Global default configuration, UI pattern reuse,
+    Clear functionality, orphaned-adapter warning, and graceful fallback for
+    slow fetches.
+
+    - **Acceptance criteria** (13): 8 for the Settings UI (no-default state,
+    saved-default state, model loading/error handling, orphaned adapter
+    detection, adapter change, Save/Clear buttons), 2 for the API (GET/PATCH
+    routes), and 3 for create-form pre-fill (defaults injection, timeout
+    behavior, backwards-compat).
+
+    - **Technical constraints**: Files to modify (`settings/page.tsx`, new API
+    route, `agents/page.tsx`), storage shape in `.nos/config.json`,
+    adapter/model validation, timeout values (5s for model list, 3s for defaults
+    fetch), and reuse of REQ-00042 infrastructure.
+
+    - **Out of scope**: Bulk updates, per-workflow defaults, auto-creation,
+    required defaults, non-agent adapters, separate delete affordance, tests,
+    i18n.
+
+
+    The six open questions from Analysis have been resolved and documented in
+    the Deviations section.
+  - >-
+    [runtime] session log stalled; Now I have all the context needed. Let me
+    implement REQ-00055.
+  - >-
+    Validation complete. Item remains in the Validation stage — do NOT advance
+    to Done. 9/13 acceptance criteria pass, 2 fail outright (AC #3 model-absent
+    warning, AC #5 orphaned-adapter warning — both warning setters exist but are
+    never called with a message), and 2 are partial (AC #4 saved-model synthetic
+    option missing on fetch-error path; AC #6 `Other` sentinel not appended on
+    success path). A 6-item follow-up list is in `## Validation` in `index.md`,
+    including a required dev-server restart — turbopack is stuck on a stale
+    duplicate-definition error referencing a file state that no longer exists
+    (`lib/settings.ts:103`, current file is 96 lines), which blocked all runtime
+    UI/API verification. Commit `9c910c2` pushed to `main`.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 4bf547cc-938a-481c-b69b-6d874f21db7a
+    startedAt: '2026-04-19T13:22:47.104Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 40da5500-ab6a-496f-9bea-5847972c08f0
+    startedAt: '2026-04-19T13:25:58.365Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 43ae3fc9-20ca-4682-b566-2088ad0037c2
+    startedAt: '2026-04-19T13:29:06.552Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: e8f93f67-ebff-448b-a932-90eba7a04775
+    startedAt: '2026-04-19T15:18:07.964Z'
+updatedAt: '2026-04-19T15:24:28.539Z'

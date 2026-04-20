@@ -1,0 +1,132 @@
+title: Setup the page title
+stage: Done
+status: Todo
+comments:
+  - >-
+    A prior Analysis session (one of two listed in `meta.yml`) had already
+    appended a comprehensive `## Analysis` section covering Scope, Feasibility,
+    Dependencies, and Open questions, but in doing so it stripped the original
+    `# Setup the page title` heading. I restored that heading so the raw request
+    text is preserved, and left the existing analysis intact rather than
+    duplicating it. No implementation was started. Open questions flagged for
+    Documentation stage: exact brand/title string, centralized-map vs inline
+    titles, dynamic-segment wording for `workflows/[id]`, fallback title on load
+    failure, landing page status, and whether `description` is in scope.
+  - >-
+    Specification for REQ-00065 is complete. I've written 4 user stories
+    covering the end-user benefit, developer experience, product branding, and
+    dynamic workflow pages. The spec includes 17 numbered acceptance criteria
+    organized by root metadata setup, static page routes, dynamic workflow
+    routes, client component refactoring, and build/runtime validation. I've
+    documented 5 technical constraints (metadata API, workflow data loading,
+    file paths, title format consistency, and backward compatibility) and 6
+    explicit out-of-scope items to prevent scope creep. The spec prominently
+    flags the 5 product decisions from the Analysis phase (exact brand/title
+    suffix, centralized vs. inline titles, dynamic workflow title format,
+    landing page status, and description field scope) as blockers that must be
+    resolved before the Documentation stage can refine this further or
+    Implementation can begin. The implementer now has a complete specification
+    to work from once those decisions are made.
+  - >-
+    Implementation blocked: awaiting product decisions on brand/title format
+    (name, suffix, landing page), title source management (centralized vs
+    inline), dynamic workflow title format, and description field scope. See
+    index.md 'Open Questions Requiring Product Decision' section for details.
+    Once these 5 decisions are finalized, implementation can proceed using the
+    17 ACs already defined.
+  - >-
+    Implementation is blocked by unresolved product decisions. I re-read the
+    specification and confirmed that it explicitly lists 5 critical blockers
+    under "Open Questions Requiring Product Decision" that must be answered
+    before any code changes can be made: the product brand/title format (product
+    name, suffix style, landing page treatment), title source management
+    strategy (centralized constant map vs. inline per-page), dynamic workflow
+    title format, landing page existence confirmation, and description field
+    scope. I documented this blocker in a new `## Implementation Notes` section
+    in `index.md` and added a comment to the item explaining that once these 5
+    decisions are finalized by the product team, implementation can proceed
+    directly from the 17 acceptance criteria and technical constraints already
+    defined. No code was changed.
+  - >-
+    Validation complete. No metadata exports exist anywhere in the codebase —
+    `grep -rn 'metadata|generateMetadata' app/` returned nothing, and
+    `app/layout.tsx` confirms no `metadata` object. All 17 ACs fail. The `##
+    Validation` section has been appended to `index.md` with a full
+    criterion-by-criterion table, root cause explanation, and 3 follow-up items.
+    The item remains in the Validate stage. Commit `e019b17` pushed. The
+    blocking issue is the 5 unresolved product decisions in the spec's "Open
+    Questions" section — those must be answered before the Implementation stage
+    can proceed.
+  - >-
+    A prior Analysis session (one of two listed in `meta.yml`) had already
+    appended a comprehensive `## Analysis` section covering Scope, Feasibility,
+    Dependencies, and Open questions, but in doing so it stripped the original
+    `# Setup the page title` heading. I restored that heading so the raw request
+    text is preserved, and left the existing analysis intact rather than
+    duplicating it. No implementation was started. Open questions flagged for
+    Documentation stage: exact brand/title string, centralized-map vs inline
+    titles, dynamic-segment wording for `workflows/[id]`, fallback title on load
+    failure, landing page status, and whether `description` is in scope.
+  - >-
+    Specification for REQ-00065 is complete. I've written 4 user stories
+    covering the end-user benefit, developer experience, product branding, and
+    dynamic workflow pages. The spec includes 17 numbered acceptance criteria
+    organized by root metadata setup, static page routes, dynamic workflow
+    routes, client component refactoring, and build/runtime validation. I've
+    documented 5 technical constraints (metadata API, workflow data loading,
+    file paths, title format consistency, and backward compatibility) and 6
+    explicit out-of-scope items to prevent scope creep. The spec prominently
+    flags the 5 product decisions from the Analysis phase (exact brand/title
+    suffix, centralized vs. inline titles, dynamic workflow title format,
+    landing page status, and description field scope) as blockers that must be
+    resolved before the Documentation stage can refine this further or
+    Implementation can begin. The implementer now has a complete specification
+    to work from once those decisions are made.
+  - >-
+    Implementation is blocked by unresolved product decisions. I re-read the
+    specification and confirmed that it explicitly lists 5 critical blockers
+    under "Open Questions Requiring Product Decision" that must be answered
+    before any code changes can be made: the product brand/title format (product
+    name, suffix style, landing page treatment), title source management
+    strategy (centralized constant map vs. inline per-page), dynamic workflow
+    title format, landing page existence confirmation, and description field
+    scope. I documented this blocker in a new `## Implementation Notes` section
+    in `index.md` and added a comment to the item explaining that once these 5
+    decisions are finalized by the product team, implementation can proceed
+    directly from the 17 acceptance criteria and technical constraints already
+    defined. No code was changed.
+  - >-
+    Validation complete. No metadata exports exist anywhere in the codebase —
+    `grep -rn 'metadata|generateMetadata' app/` returned nothing, and
+    `app/layout.tsx` confirms no `metadata` object. All 17 ACs fail. The `##
+    Validation` section has been appended to `index.md` with a full
+    criterion-by-criterion table, root cause explanation, and 3 follow-up items.
+    The item remains in the Validate stage. Commit `e019b17` pushed. The
+    blocking issue is the 5 unresolved product decisions in the spec's "Open
+    Questions" section — those must be answered before the Implementation stage
+    can proceed.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 2a0519f6-f344-4279-96d6-5c36801e2116
+    startedAt: '2026-04-20T01:47:06.025Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 083c9ad9-01b0-47a4-b3db-ddfb7d2670b4
+    startedAt: '2026-04-20T01:47:12.714Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: b099c80f-a9ed-4ad0-b3ed-c25dfa12581f
+    startedAt: '2026-04-20T01:48:57.967Z'
+    agentId: david-engineer
+  - stage: Implementation
+    adapter: claude
+    sessionId: 189fa1ee-9bcf-4fb2-974a-b829c9f8e229
+    startedAt: '2026-04-20T01:51:07.075Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 80cadb9f-2b22-4d2e-885e-a6a043594d8f
+    startedAt: '2026-04-20T01:52:30.396Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-20T02:00:25.710Z'

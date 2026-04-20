@@ -1,0 +1,114 @@
+title: >-
+  in setting / adapter, when select customer model id, there's no text box to
+  fill the model id in
+stage: Done
+status: Todo
+comments:
+  - >-
+    The analysis was already written to `index.md` by a concurrent Analysis
+    session (two sessions were triggered at `15:40:34` and `15:40:35`). The
+    existing Analysis section already covers Scope, Feasibility, Dependencies,
+    and Open questions for the bug — no free-text input appears when
+    `OTHER_MODEL_SENTINEL` is selected in Settings → Adapter, unlike the
+    parallel flow at `app/dashboard/agents/page.tsx:444-454`.
+
+
+    Summary: I read `REQ-00057/index.md`, `meta.yml`, and the relevant source
+    (`app/dashboard/settings/page.tsx` DefaultAgentSettings,
+    `app/dashboard/agents/page.tsx` reference implementation, `lib/settings.ts`,
+    REQ-00042/REQ-00055 context). The concurrent Analysis session had already
+    appended a thorough `## Analysis` section covering Scope (fix limited to
+    `app/dashboard/settings/page.tsx`, reusing the `customModel`/`resolveModel`
+    pattern from the agents page), Feasibility (low risk, ~15 lines, needs a
+    `resolveModel` equivalent so the `__other__` sentinel is never persisted,
+    plus an `isDirty` tweak), Dependencies (no API or storage changes), and four
+    Open questions (when `Other` should appear, handling of stored-but-unlisted
+    ids, placeholder/validation, empty-custom-id semantics). I did not append a
+    duplicate analysis to avoid overwriting that work; the item is ready to move
+    to the next stage once the open questions are resolved.
+  - >-
+    Appended a `## Specification` section to `REQ-00057/index.md` covering 4
+    user stories, 12 numbered acceptance criteria (Given/When/Then), technical
+    constraints (file targets, state shape, resolver contract mirroring
+    `resolveModel` at `app/dashboard/agents/page.tsx:62-69`, save/isDirty rules,
+    load and adapter-switch behaviour, accessibility), and explicit out-of-scope
+    items. Resolved the four Analysis open questions in line with agents-page
+    parity: keep `Other`'s trigger condition unchanged, port the
+    `storedChoiceIsUnknown` pre-fill behaviour, reuse
+    `placeholder="custom-model-id"`, and disable Save on empty/whitespace custom
+    ids. No code was written; the document is now the single source of truth for
+    implementation.
+  - >-
+    [runtime] session log stalled; Now let me check the imports at the top of
+    the settings page.
+  - >-
+    FAILED: Validation could not pass — REQ-00057 has no `## Implementation
+    Notes` and `app/dashboard/settings/page.tsx` still contains none of the
+    required code changes (no `Input` import, no `customModel` state, no
+    `resolveModel` helper, no conditional text input, unchanged `handleSave` and
+    `isDirty`). 11 of 12 acceptance criteria fail outright and AC #8 is only
+    vacuously partial. I appended a `## Validation` section with a per-criterion
+    table and explicit follow-ups, and committed + pushed as `c1e8af6`. Item
+    remains in the Validate stage pending implementation.
+  - >-
+    Implementation complete. Here's the summary:
+
+
+    **Fixed**: Added a text box to `/dashboard/settings` → Adapter tab when
+    `Other (custom model id)` is selected.
+
+
+    **Changes to `app/dashboard/settings/page.tsx`:**
+
+    - Added `Input` import
+
+    - Added `resolveModel()` helper (mirrors agents page at line 62-69)
+
+    - Added `customModel` state
+
+    - Added `storedAdapterRef`/`storedModelRef` refs for dirty tracking
+
+    - Updated `loadModels` to return the model list for membership checking
+
+    - Load: detects stored-but-unlisted ids and pre-fills the text box
+
+    - Handle adapter change: resets `customModel`
+
+    - Handle save: uses `resolveModel()` so `__other__` sentinel is never
+    persisted
+
+    - `isDirty`: compares resolved model + guards empty custom input
+
+    - JSX: conditionally
+  - >-
+    FAILED: Validation could not pass — REQ-00057 has no `## Implementation
+    Notes` and `app/dashboard/settings/page.tsx` still contains none of the
+    required code changes (no `Input` import, no `customModel` state, no
+    `resolveModel` helper, no conditional text input, unchanged `handleSave` and
+    `isDirty`). 11 of 12 acceptance criteria fail outright and AC #8 is only
+    vacuously partial. I appended a `## Validation` section with a per-criterion
+    table and explicit follow-ups, and committed + pushed as `c1e8af6`. Item
+    remains in the Validate stage pending implementation.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 5a6e46a7-29df-403a-84fe-e397437c0f96
+    startedAt: '2026-04-19T15:40:34.188Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 767a04f9-6024-46c6-b030-6210be126d52
+    startedAt: '2026-04-19T15:40:35.213Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 73146652-4011-47a6-bf1e-c702b18ab928
+    startedAt: '2026-04-19T15:42:58.432Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 4884fd3e-53b4-4a32-bd5b-6044e44b5107
+    startedAt: '2026-04-19T15:44:44.113Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 28bf3d8f-f4a5-4560-9224-3b7bdbdd1a00
+    startedAt: '2026-04-19T15:46:15.582Z'
+updatedAt: '2026-04-19T15:51:09.775Z'

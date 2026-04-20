@@ -4,7 +4,7 @@
   "description": "Internal tools served locally via npx nos",
   "main": "index.js",
   "bin": {
-    "nos": "./bin/cli.js"
+    "nos": "./bin/cli.mjs"
   },
   "files": [
     "bin",
@@ -39,8 +39,11 @@
     "test": "node --test lib/**/*.test.ts"
   },
   "dependencies": {
+    "@inquirer/prompts": "^7.10.1",
     "@mdxeditor/editor": "^3.54.1",
+    "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-toast": "^1.2.15",
     "@types/js-yaml": "^4.0.9",
     "@uiw/react-markdown-preview": "^5.2.0",
     "chokidar": "^3.6.0",

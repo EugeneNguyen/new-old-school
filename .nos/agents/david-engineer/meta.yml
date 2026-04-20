@@ -1,6 +1,6 @@
 id: david-engineer
-displayName: David [Engineer]
-model: sonnet-replacement
+displayName: David [Junior Engineer]
+model: haiku-replacement
 createdAt: '2026-04-19T05:53:55.086Z'
-updatedAt: '2026-04-19T10:58:38.333Z'
+updatedAt: '2026-04-20T01:51:46.457Z'
 adapter: claude

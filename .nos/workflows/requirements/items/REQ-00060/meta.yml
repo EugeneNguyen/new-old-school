@@ -1,0 +1,93 @@
+title: In edit item/add item
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis already present in `index.md` from an earlier session — content
+    covers Scope, Feasibility, Dependencies, and Open questions thoroughly, so
+    no further edits needed.
+
+
+    Summary: Found the REQ-00060 item's `index.md` already contains a complete
+    `## Analysis` section (added by a prior session that ran in parallel). It
+    covers (1) Scope — replacing list-style Stage/Status pickers in
+    `NewItemDialog.tsx` and `ItemDetailDialog.tsx` with dropdowns while
+    preserving NOS runtime status ownership; (2) Feasibility — native `<select>`
+    vs. Radix-based custom dropdown trade-offs, with notes on the color-dot
+    rendering constraint; (3) Dependencies — the two dialog files, reused
+    helpers (`getItemStatusStyle`, `cn`), and a possible new
+    `components/ui/select.tsx` plus `@radix-ui/react-select`; (4) Open questions
+    — dropdown implementation choice, how to handle Status in the New Item flow,
+    scope breadth to other pickers, and visual spec for the color dot. I
+    verified the referenced code locations (NewItemDialog stage list at
+    ~152–171, ItemDetailDialog stage/status at ~333+/~359+) still match. Because
+    the analysis was complete and accurate, I made no modifications. Next stage
+    (Documentation) can proceed directly; the team should resolve the four open
+    questions before implementation.
+  - >-
+    Appended a `## Specification` section to REQ-00060's `index.md` with 5 user
+    stories, 20 numbered acceptance criteria (grouped by Stage detail, Status
+    detail, Stage create, Status create, a11y, and regression), technical
+    constraints pinning file paths / a new `components/ui/select.tsx` built on
+    `@radix-ui/react-select` / unchanged `Stage` and `ItemStatus` contracts /
+    `getItemStatusStyle` as color source, and an explicit out-of-scope list.
+    Resolved the four open questions in-spec: Radix-based headless dropdown
+    (native `<select>` rejected because it cannot render the status dot),
+    disabled Status dropdown in the create dialog (not removed), scope limited
+    to the two named dialogs, and the status dot shown in both trigger and menu
+    items. One downstream dependency the Plan stage must confirm: adding
+    `@radix-ui/react-select` to `package.json`; the spec names a hand-rolled
+    headless fallback if that is rejected.
+  - >-
+    All 20 acceptance criteria are satisfied. Here is a summary of what was
+    done:
+
+
+    **REQ-00060 Implementation complete.** Installed `@radix-ui/react-select`
+    and created `components/ui/select.tsx` — a thin Radix wrapper with per-item
+    adornment, trigger adornment, `disabled` support, and portal rendering (no
+    Dialog clipping). Replaced the Stage and Status button lists in both
+    `ItemDetailDialog.tsx` and `NewItemDialog.tsx` with `<Select>` dropdowns;
+    Status options carry colored dots derived from `getItemStatusStyle`; the New
+    Item Status field is rendered as a disabled dropdown locked to `Todo`. The
+    existing `setStage`/`setStatus` handlers and wire contracts are unchanged.
+    TypeScript check passes with no errors.
+  - >-
+    Validated REQ-00060 against all 20 acceptance criteria by reading the three
+    modified files (`components/ui/select.tsx`,
+    `components/dashboard/NewItemDialog.tsx`,
+    `components/dashboard/ItemDetailDialog.tsx`), confirming
+    `@radix-ui/react-select` ^2.2.6 is installed, running `npx tsc --noEmit`
+    (clean) and `npm test` (22/22 pass). Appended a `## Validation` section with
+    per-AC verdicts: 19 ✅ and 1 ⚠️. The partial is AC 5 — when an item's stage
+    is absent from `workflow.stages`, Radix Select renders the placeholder
+    instead of echoing the raw string "as-is"; the menu still opens and the user
+    can recover, but the trigger doesn't literally display the unknown value.
+    All other criteria pass cleanly (wire contracts preserved, a11y via Radix,
+    colored dots from `getItemStatusStyle`, disabled status in create dialog,
+    portal escape from Dialog). Because one criterion is partial, I left the
+    item in the Validate stage and did not advance it; committed (`0fa23f2`) and
+    pushed to `main`.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 5ef6f719-25ac-4b03-8236-2844ba4b1085
+    startedAt: '2026-04-19T16:10:46.930Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 1b6c89cd-663d-4049-a1d5-e841bafd47c7
+    startedAt: '2026-04-19T16:10:52.359Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: cecd0db0-a6e1-48bc-a16d-a20b00a39c5f
+    startedAt: '2026-04-19T16:12:37.980Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 041feb91-8ad3-4d4e-a7c2-7299357bc764
+    startedAt: '2026-04-19T16:14:31.084Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 8757e39b-4952-46fe-b3ea-bbaad6460fe6
+    startedAt: '2026-04-19T16:18:02.461Z'
+updatedAt: '2026-04-19T16:20:48.134Z'

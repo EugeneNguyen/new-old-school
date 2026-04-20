@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { X } from 'lucide-react';
 import { Dialog } from '@/components/ui/dialog';
@@ -8,7 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { getItemStatusStyle } from '@/lib/item-status-style';
+import { Select } from '@/components/ui/select';
 import { Stage, WorkflowItem } from '@/types/workflow';
+import { toast } from '@/lib/hooks/use-toast';
 
 const ItemDescriptionEditor = dynamic(() => import('./ItemDescriptionEditor'), {
   ssr: false,
@@ -38,13 +40,33 @@ export default function NewItemDialog({
   const [error, setError] = useState<string | null>(null);
   const [editorNonce, setEditorNonce] = useState(0);
 
+  const prevOpenRef = useRef(false);
+  const stagesRef = useRef(stages);
+  stagesRef.current = stages;
+
+  // Reset form only on false → true open transition.
+  useEffect(() => {
+    const wasOpen = prevOpenRef.current;
+    prevOpenRef.current = open;
+    if (!wasOpen && open) {
+      setTitle('');
+      setBody('');
+      setStage(stagesRef.current[0]?.name ?? '');
+      setError(null);
+      setEditorNonce((n) => n + 1);
+    }
+  }, [open]);
+
+  // Reconcile selected stage while dialog is open (does not touch other fields).
   useEffect(() => {
     if (!open) return;
-    setTitle('');
-    setBody('');
-    setStage(stages[0]?.name ?? '');
-    setError(null);
-    setEditorNonce((n) => n + 1);
+    setStage((current) => {
+      if (current === '' && stages.length > 0) return stages[0].name;
+      if (current !== '' && !stages.some((s) => s.name === current)) {
+        return stages[0]?.name ?? '';
+      }
+      return current;
+    });
   }, [open, stages]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -73,7 +95,9 @@ export default function NewItemDialog({
       onOpenChange(false);
     } catch (e) {
       console.error('Failed to create item:', e);
-      setError(e instanceof Error ? e.message : 'Failed to create item');
+      const msg = e instanceof Error ? e.message : 'Failed to create item';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -129,41 +153,31 @@ export default function NewItemDialog({
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Stage
               </p>
-              <div className="flex flex-col gap-1">
-                {stages.map((s) => {
-                  const active = s.name === stage;
-                  return (
-                    <button
-                      key={s.name}
-                      type="button"
-                      onClick={() => setStage(s.name)}
-                      className={cn(
-                        'rounded-md border px-3 py-1.5 text-left text-sm transition-colors',
-                        active
-                          ? 'border-primary bg-primary/10 font-medium text-primary'
-                          : 'border-transparent hover:border-border hover:bg-background'
-                      )}
-                    >
-                      {s.name}
-                    </button>
-                  );
-                })}
-              </div>
+              <Select
+                value={stage}
+                onValueChange={setStage}
+                options={stages.map((s) => ({ value: s.name, label: s.name }))}
+                aria-label="Stage"
+              />
             </div>
 
             <div className="flex flex-col gap-2">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Status
               </p>
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2 rounded-md border border-primary bg-primary/10 px-3 py-1.5 text-sm font-medium">
+              <Select
+                value="Todo"
+                onValueChange={() => {}}
+                options={[{ value: 'Todo', label: 'Todo' }]}
+                disabled
+                triggerAdornment={
                   <span
-                    className={cn('h-2 w-2 rounded-full shrink-0', todoStyle.dot)}
                     aria-hidden="true"
+                    className={cn('h-2 w-2 rounded-full shrink-0', todoStyle.dot)}
                   />
-                  <span className={todoStyle.label}>Todo</span>
-                </div>
-              </div>
+                }
+                aria-label="Status"
+              />
             </div>
           </aside>
         </div>

@@ -107,3 +107,41 @@ export async function PATCH(
     return createErrorResponse('Failed to update stage');
   }
 }
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string; stageName: string }> }
+) {
+  try {
+    const { id, stageName: rawStageName } = await params;
+    const stageName = decodeURIComponent(rawStageName);
+
+    if (!workflowExists(id)) {
+      return createErrorResponse(`Workflow '${id}' not found`, 'NotFound', 404);
+    }
+
+    try {
+      const stages = deleteStage(id, stageName);
+      return NextResponse.json({ stages });
+    } catch (error) {
+      if (error instanceof StageError) {
+        if (error.code === 'NOT_FOUND') {
+          return createErrorResponse(error.message, 'NotFound', 404);
+        }
+        if (error.code === 'HAS_ITEMS') {
+          return NextResponse.json(
+            { error: error.message, itemCount: error.itemCount },
+            { status: 409 }
+          );
+        }
+        if (error.code === 'LAST_STAGE') {
+          return createErrorResponse(error.message, 'BadRequest', 400);
+        }
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error deleting workflow stage:', error);
+    return createErrorResponse('Failed to delete stage');
+  }
+}

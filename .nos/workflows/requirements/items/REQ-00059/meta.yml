@@ -1,0 +1,85 @@
+title: Add stage button should be inside of a workflow setting
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis appended to `REQ-00059/index.md` under an `## Analysis` section
+    covering scope, feasibility, dependencies, and open questions. Key findings:
+    `Add stage` currently lives in `WorkflowItemsView.tsx:168-170` and must be
+    relocated to a new per-workflow settings surface; `AddStageDialog` and
+    `StageDetailDialog` can be reused; POST/PATCH/DELETE stage APIs already
+    exist and the server-side "no items" delete guard is in place; the only
+    genuinely new work is a **reorder stages** primitive in
+    `lib/workflow-store.ts` plus a `PUT /api/workflows/[id]/stages/order`
+    endpoint, with a small risk around heartbeat sweeper behavior after reorder
+    that should be spiked. Six open questions flagged (settings route vs. modal,
+    DnD vs. arrows, kanban shortcut removal, delete UX, mid-run reorder,
+    concurrent rename) — these should be resolved before Documentation.
+  - >-
+    Specification appended to `REQ-00059/index.md` under `## Specification` with
+    7 user stories, 24 numbered acceptance criteria grouped by surface
+    (route/entry point, list, add, edit, delete, reorder, hook), explicit
+    technical constraints (new `PUT /api/workflows/[id]/stages/order` endpoint,
+    `reorderStages` store primitive, route shape
+    `app/dashboard/workflows/[id]/settings/page.tsx`, reused
+    `AddStageDialog`/`StageDetailDialog`, removed button at
+    `WorkflowItemsView.tsx:168-170`), and out-of-scope list. All six open
+    questions were resolved up front (dedicated route, up/down arrows MVP,
+    kanban shortcut preserved, delete disabled when non-empty with server 409
+    fallback, mid-run reorder allowed, 409 on concurrent name-set mismatch) so
+    the Documentation stage has no remaining ambiguity.
+  - >-
+    [runtime] session log stalled; Let me read the StageDetailDialog and the
+    existing stages API route.
+  - >-
+    FAILED: Validation could not pass REQ-00059 — the Implementation stage
+    session stalled (per Comment 3) and left no `## Implementation Notes`
+    section and no code changes. Of the 24 acceptance criteria: 1 pass (AC-4,
+    kanban stage-header shortcut preserved by default since nothing was
+    removed), 22 fail (no settings route, no Settings/gear button, `Add stage`
+    button + `AddStageDialog` still mounted at
+    `components/dashboard/WorkflowItemsView.tsx:168-170` and 244-251, no
+    `reorderStages` helper in `lib/workflow-store.ts`, no `PUT
+    /api/workflows/[id]/stages/order` endpoint, no `handleStagesReordered` in
+    `lib/use-workflow-items.ts`), and 1 partial (AC-23 can't be exercised
+    without a reorder path). `## Validation` section appended to
+    `REQ-00059/index.md` with per-AC evidence and a 7-item follow-up list for
+    the next Implementation run; the item stays in this stage and the change has
+    been committed (`091a7ec`) and pushed to `main`.
+  - >-
+    [runtime] session log stalled; Now create the WorkflowSettingsView component
+    and settings page.
+  - >-
+    FAILED: Validation could not pass REQ-00059 — the Implementation stage
+    session stalled (per Comment 3) and left no `## Implementation Notes`
+    section and no code changes. Of the 24 acceptance criteria: 1 pass (AC-4,
+    kanban stage-header shortcut preserved by default since nothing was
+    removed), 22 fail (no settings route, no Settings/gear button, `Add stage`
+    button + `AddStageDialog` still mounted at
+    `components/dashboard/WorkflowItemsView.tsx:168-170` and 244-251, no
+    `reorderStages` helper in `lib/workflow-store.ts`, no `PUT
+    /api/workflows/[id]/stages/order` endpoint, no `handleStagesReordered` in
+    `lib/use-workflow-items.ts`), and 1 partial (AC-23 can't be exercised
+    without a reorder path). `## Validation` section appended to
+    `REQ-00059/index.md` with per-AC evidence and a 7-item follow-up list for
+    the next Implementation run; the item stays in this stage and the change has
+    been committed (`091a7ec`) and pushed to `main`.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 91a09e04-0d05-4d32-a1d2-a294fbd2b5c8
+    startedAt: '2026-04-19T16:09:58.105Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: d3198d73-2761-474d-a4fa-bc9ab2735854
+    startedAt: '2026-04-19T16:12:15.525Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 51044027-c4be-4b1b-b6e1-825a53ad39f6
+    startedAt: '2026-04-19T16:14:53.690Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 40bfbafc-f861-4de4-9fcf-2b79acca3592
+    startedAt: '2026-04-19T16:19:55.416Z'
+updatedAt: '2026-04-19T16:31:33.353Z'

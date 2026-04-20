@@ -122,19 +122,29 @@ Risks / unknowns:
 
 1. **Exact title copy and brand suffix**: What is the product's official name and title format?
    - Is the product "NOS", "nos", or "Yeu Con"?
+      - Product is New Old-school, short is NOS
    - What suffix should appear on all pages? (e.g., `"%s · NOS"` vs. `"%s | NOS"` vs. `"NOS — %s"`)
+      - NOS - %s
    - Should the root landing page show the full brand name (no suffix) or the brand only?
+      - Root should be dashboard (NOS - Dashboard)
 
 2. **Title source management**: Should page titles be centralized in a single `lib/page-titles.ts` constant map, or defined inline in each route file?
 
-3. **Dynamic workflow title format**: For `workflows/[id]`, what should the tab title display?
+   - Define in each route
+
+4. **Dynamic workflow title format**: For `workflows/[id]`, what should the tab title display?
    - Workflow name only? (e.g., "My Workflow")
    - Name and ID? (e.g., "My Workflow (REQ-00065)")
    - ID only? (e.g., "REQ-00065")
+   - Answer: Name and ID
 
-4. **Landing page confirmation**: Does `app/page.tsx` exist as a public landing page, or does it redirect to `/dashboard`? Its title depends on this.
+5. **Landing page confirmation**: Does `app/page.tsx` exist as a public landing page, or does it redirect to `/dashboard`? Its title depends on this.
 
-5. **Scope of `description` field**: Is the optional `description` field in scope for this requirement, or is it title-only?
+   - No public landing, but still is landing, so it have the title. the title should be "NOS"
+
+7. **Scope of `description` field**: Is the optional `description` field in scope for this requirement, or is it title-only?
+
+   - title only
 
 ## Implementation Notes
 

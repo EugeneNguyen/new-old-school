@@ -1,0 +1,82 @@
+title: new item model cleaned up in heartbeat?
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis complete. Root cause: `NewItemDialog.tsx:41-48` resets form state
+    on `[open, stages]`, but `stages` gets a new array reference every time the
+    SSE `resync()` in `lib/use-workflow-items.ts:154` fires on an EventSource
+    `open`/reconnect (the "heartbeat" the user felt). That wipes
+    title/body/stage and bumps `editorNonce`, remounting the markdown editor.
+    Appended a full Scope / Feasibility / Dependencies / Open-questions section
+    to `index.md`; left the original request text untouched and did not
+    implement a fix.
+  - >-
+    Specification appended to `REQ-00058/index.md`. It adds a `## Specification`
+    section with 3 user stories, 10 numbered Given/When/Then acceptance criteria
+    (covering the reset-on-open contract, input preservation across `stages`
+    reference churn, stage-selection reconciliation, empty-stages fallback, and
+    the SSE-reconnect regression guard), a technical-constraints block pinning
+    the change to `NewItemDialog.tsx` with Option A (ref-based previous-`open` /
+    latest-`stages`) as the baseline implementation, and an explicit Out of
+    scope list matching the Analysis. No code was written; the doc is now the
+    single source of truth for implementation and validation.
+  - >-
+    TypeScript is clean. The implementation is complete.
+
+
+    **What changed:** Replaced the single `useEffect([open, stages])` in
+    `NewItemDialog.tsx` with two focused effects:
+
+
+    1. **Reset effect** — depends only on `[open]`, tracks the previous value
+    via `prevOpenRef`. Fires the full form reset
+    (title/body/stage/error/editorNonce) exclusively on a `false → true` open
+    transition. Reads current `stages` through a ref so it never needs to be a
+    dependency, satisfying `exhaustive-deps`.
+
+
+    2. **Reconciliation effect** — depends on `[open, stages]`, runs while the
+    dialog is open, and only updates `stage`: if the selected stage still exists
+    it's left alone; if it was removed it falls back to `stages[0]`; if stage is
+    empty and stages are now available it populates. Never touches title, body,
+    error, or editorNonce.
+
+
+    This means SSE reconnects (which cause `setStages` → new array reference) no
+    longer trigger the form reset — they only hit the lightweight reconciliation
+    path. All 10 acceptance criteria are satisfied and no other files were
+    modified.
+  - >-
+    All ACs pass, so per stage-prompt step 5, no commit/push needed (commit+push
+    is only for failures). Ending the run.
+
+
+    Validated REQ-00058: all 10 acceptance criteria pass ✅. The fix in
+    `components/dashboard/NewItemDialog.tsx` splits the original combined effect
+    into a reset effect (dep `[open]`, triggers only on false→true via
+    `prevOpenRef`, reads latest `stages` through `stagesRef`) and a
+    reconciliation effect (dep `[open, stages]`, functional `setStage` that only
+    touches the selected stage). TypeScript passes clean; no sibling dialogs
+    were modified as part of this work; props contract and submit flow are
+    unchanged. Appended a full `## Validation` section to `index.md` with per-AC
+    evidence.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 76278c66-a51b-4d3a-8b68-ab403d61d74b
+    startedAt: '2026-04-19T15:41:19.622Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 70dc3dea-b5ea-452d-99c2-40634f394af6
+    startedAt: '2026-04-19T15:43:35.917Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: ef23143c-8430-4fc0-8e96-98cdf633ef10
+    startedAt: '2026-04-19T15:45:37.174Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 8f8dc042-25b9-4254-b1c2-633dc6845523
+    startedAt: '2026-04-19T15:47:23.548Z'
+updatedAt: '2026-04-19T15:50:09.468Z'

@@ -1,0 +1,72 @@
+title: change behavious of npx nos
+stage: Done
+status: Todo
+comments:
+  - >-
+    The Analysis section is already present in `index.md` (a concurrent session
+    appears to have written it — both sessions in `meta.yml` started within the
+    same second). The existing analysis covers all four required sub-sections
+    (Scope, Feasibility, Dependencies, Open questions) in good depth, so I am
+    not duplicating or overwriting it.
+
+
+    Summary: Confirmed REQ-00062's request to replace the current `npx nos`
+    foreground launch (`bin/cli.js`) with an interactive TUI that can show logs,
+    minimize to a detached background process, or stop the service, plus
+    single-instance attach on re-invocation. The `index.md` already carries a
+    full `## Analysis` section scoping the change to `bin/cli.js` + a new
+    `.nos/runtime/` lockfile, flagging risks around detach/re-attach semantics,
+    orphaned lockfiles, TTY handling, and cross-platform behavior, and listing
+    open questions (TUI library choice, lockfile location, browser auto-open,
+    non-TTY fallback, optional `status`/`stop` subcommands). No implementation
+    started; no original request text modified. Next stage can proceed to
+    documentation.
+  - >-
+    Added a `## Specification` section to `REQ-00062/index.md` resolving all
+    eight open questions from the analysis: `ink` ≥ v4 as the TUI library,
+    per-project lockfile at `.nos/runtime/server.json`, stop-and-restart for
+    minimize semantics, one server per project root, browser auto-open preserved
+    on first launch only, 10 MB log rotation with truncate-on-start, non-TTY
+    passthrough fallback, and `npx nos status` / `npx nos stop` subcommands
+    included. The spec covers seven user stories, twelve numbered acceptance
+    criteria (AC-1 through AC-12) in Given/When/Then form, a concrete lockfile
+    JSON schema, environment variable contracts, TUI library and
+    process-management constraints, performance bounds, and an explicit
+    out-of-scope list. No implementation written; the document is ready for the
+    Implement stage.
+  - >-
+    [runtime] session log stalled; I'll start by reading the current
+    `bin/cli.js` and understanding the project structure before implementing.
+  - >-
+    Validated REQ-00062: all 12 acceptance criteria fail. `bin/cli.js` is
+    unchanged from its pre-spec baseline — no TUI, no `.nos/runtime/` lockfile,
+    no `ink` dependency, no subcommand parser, no detach/attach logic, and no
+    `## Implementation Notes` section in `index.md`. The Implementation session
+    (`0ad05403…`) stalled per comment #3 without producing code. Appended a `##
+    Validation` section with 12 ❌ verdicts and a 10-item follow-up punch list,
+    committed, and pushed. Item stays in the Validation stage for a re-run of
+    Implementation.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 56b77b0d-1682-498c-b642-fe787648abb7
+    startedAt: '2026-04-19T16:43:54.815Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 8bbb7e39-9be8-4939-9a21-e4f2e76a0086
+    startedAt: '2026-04-19T16:44:01.632Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 350149b6-acdf-4ee9-8a14-4bd079eea1f8
+    startedAt: '2026-04-19T16:46:02.382Z'
+    agentId: david-engineer
+  - stage: Implementation
+    adapter: claude
+    sessionId: 0ad05403-1d73-4a60-ace1-0877ba64647b
+    startedAt: '2026-04-19T16:48:17.701Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: f5bb4583-2a86-42e5-bb77-daf77e91f885
+    startedAt: '2026-04-19T16:49:32.782Z'
+updatedAt: '2026-04-19T16:51:25.918Z'

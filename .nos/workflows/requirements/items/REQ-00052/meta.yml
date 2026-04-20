@@ -1,6 +1,6 @@
 title: dashboard, in list activity view, show View all \u2192
-stage: Validation
-status: In Progress
+stage: Done
+status: Todo
 comments:
   - >-
     Analysis complete. REQ-00052 is a trivial JSX text bug on
@@ -47,6 +47,24 @@ comments:
     hover:text-foreground`), and all other files — including the activity page's
     template-literal `\u2192` strings — are unchanged. Added `## Implementation
     Notes` to the item's `index.md`.
+  - >-
+    Validation complete. All 7 ACs pass — 6 clear ✅, 1 ⚠️ (AC-6 build shows a
+    pre-existing `_global-error` TypeScript hydration error unrelated to this
+    edit; TypeScript compilation itself is clean). Pushed commit `c2bf180`.
+
+
+    **What was verified:**
+
+    - Source `app/dashboard/page.tsx:133` now contains the literal `→` glyph —
+    no bare `\u2192` anywhere in `.tsx` files.
+
+    - Link `href` (`/dashboard/activity`) and CSS classes (`text-sm
+    text-muted-foreground hover:text-foreground`) are unchanged.
+
+    - Activity page template-literal `\u2192` strings remain untouched.
+
+    - Color-token inheritance (light/dark mode) is unchanged since no styling
+    was modified.
 sessions:
   - stage: Analysis
     adapter: claude
@@ -65,4 +83,4 @@ sessions:
     adapter: claude
     sessionId: 8b312a79-ec52-4d2d-a8ee-0bb8b60d0a7b
     startedAt: '2026-04-19T13:19:26.086Z'
-updatedAt: '2026-04-19T13:19:26.098Z'
+updatedAt: '2026-04-19T13:22:34.212Z'

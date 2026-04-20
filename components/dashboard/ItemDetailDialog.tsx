@@ -11,6 +11,8 @@ import {
   commentRehypePlugins,
   commentRemarkPlugins,
 } from '@/lib/markdown-preview';
+import { getItemStatusStyle } from '@/lib/item-status-style';
+import { Select } from '@/components/ui/select';
 import { ItemStatus, Stage, WorkflowItem } from '@/types/workflow';
 import type { ActivityEntry } from '@/lib/activity-log';
 
@@ -332,66 +334,39 @@ export default function ItemDetailDialog({
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Stage
             </p>
-            <div className="flex flex-col gap-1">
-              {stages.map((s) => {
-                const active = s.name === stage;
-                return (
-                  <button
-                    key={s.name}
-                    type="button"
-                    onClick={() => setStage(s.name)}
-                    className={cn(
-                      'rounded-md border px-3 py-1.5 text-left text-sm transition-colors',
-                      active
-                        ? 'border-primary bg-primary/10 font-medium text-primary'
-                        : 'border-transparent hover:border-border hover:bg-background'
-                    )}
-                  >
-                    {s.name}
-                  </button>
-                );
-              })}
-            </div>
+            <Select
+              value={stage}
+              onValueChange={setStage}
+              options={stages.map((s) => ({ value: s.name, label: s.name }))}
+              aria-label="Stage"
+            />
           </div>
 
           <div className="flex flex-col gap-2">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Status
             </p>
-            <div className="flex flex-col gap-1">
-              {STATUSES.map((s) => {
-                const active = s === status;
-                return (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setStatus(s)}
-                    aria-pressed={active}
-                    className={cn(
-                      'flex items-center justify-between rounded-md border px-3 py-1.5 text-sm transition-colors',
-                      active
-                        ? 'border-primary bg-primary/10 font-medium'
-                        : 'border-transparent hover:border-border hover:bg-background'
-                    )}
-                  >
-                    <span>{s}</span>
-                    {active && (
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          'h-2 w-2 rounded-full shrink-0',
-                          s === 'Todo'        ? 'bg-muted-foreground' :
-                          s === 'In Progress' ? 'bg-primary' :
-                          s === 'Done'        ? 'bg-green-500 dark:bg-green-400' :
-                                                 'bg-destructive'
-                        )}
-                      />
-                    )}
-                    {active && <span className="sr-only">active</span>}
-                  </button>
-                );
-              })}
-            </div>
+            <Select
+              value={status}
+              onValueChange={(v) => setStatus(v as ItemStatus)}
+              options={STATUSES.map((s) => ({
+                value: s,
+                label: s,
+                adornment: (
+                  <span
+                    aria-hidden="true"
+                    className={cn('h-2 w-2 rounded-full shrink-0', getItemStatusStyle(s).dot)}
+                  />
+                ),
+              }))}
+              triggerAdornment={
+                <span
+                  aria-hidden="true"
+                  className={cn('h-2 w-2 rounded-full shrink-0', getItemStatusStyle(status).dot)}
+                />
+              }
+              aria-label="Status"
+            />
           </div>
         </aside>
       </div>

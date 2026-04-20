@@ -1,0 +1,73 @@
+title: Reorder the header of the workflow screen
+stage: Done
+status: Todo
+comments:
+  - >-
+    The analysis section was already written by a concurrent session (meta.yml
+    shows two sessions started ~5s apart). The existing `## Analysis` in
+    `index.md` already covers scope, feasibility, dependencies, and open
+    questions accurately — reorder is confined to `WorkflowItemsView.tsx` lines
+    ~103–172, no architectural risk, two open questions about spacer semantics
+    and mobile ordering. No further edits needed; I'm not going to duplicate or
+    overwrite a valid analysis.
+
+
+    A prior concurrent Analysis session had already appended a complete `##
+    Analysis` to REQ-00063/index.md covering scope (header reorder in
+    `WorkflowItemsView.tsx` only), feasibility (trivial JSX reorder, minor
+    mobile-wrap risk), dependencies (single file, no backend), and open
+    questions (flexible-vs-fixed spacer, mobile ordering). I verified the
+    content is accurate against the component source and deliberately did not
+    overwrite it.
+  - >-
+    Added a complete `## Specification` section to `REQ-00063/index.md` covering
+    three user stories, eight testable acceptance criteria (Given/When/Then),
+    technical constraints (single-file change, flex layout approach, no new
+    imports, TypeScript must pass), and explicit out-of-scope items. The open
+    questions from Analysis were resolved in the spec: spacer is flexible
+    (`justify-between`), and mobile stacking order preserves Add item first. The
+    document is now self-contained for an implementer to proceed without further
+    clarification.
+  - >-
+    The status was already `In Progress` from prior session. The implementation
+    is complete: header reordered in `WorkflowItemsView.tsx`, TypeScript passes,
+    and Implementation Notes added to `index.md`.
+
+
+    **Summary**: Reordered the workflow header controls per the spec: **Add
+    item** button is now leftmost, with flexible spacer (`sm:justify-between`)
+    separating it from the right cluster containing **Search → Kanban/List
+    toggle → Settings** in that order. All existing handlers and behaviors
+    preserved. TypeScript passes with zero errors.
+  - >-
+    Validated REQ-00063: all 8 acceptance criteria pass (✅). Verified against
+    `components/dashboard/WorkflowItemsView.tsx` lines 103–172 — Add item
+    leftmost, right cluster ordered Search → Kanban/List toggle → Settings,
+    `sm:justify-between` provides the flexible spacer, all handlers and variants
+    preserved, mobile DOM order correct. `tsc --noEmit` clean. Appended `##
+    Validation` section to `index.md` and committed as `29e9150`. No regressions
+    found; item ready to advance.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: f3861836-bc6d-4855-abf4-944864bad639
+    startedAt: '2026-04-19T16:45:34.374Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 83da1ba8-fbc5-4573-8fb5-37277ac543cc
+    startedAt: '2026-04-19T16:45:39.576Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 997cc15c-9639-4f04-9fb2-c5036ddcc501
+    startedAt: '2026-04-19T16:47:10.053Z'
+    agentId: david-engineer
+  - stage: Implementation
+    adapter: claude
+    sessionId: 4350d636-5ece-4458-9171-8a3472e74ecd
+    startedAt: '2026-04-19T16:49:10.277Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: c4262560-66c5-470f-bd45-a235f0d702c9
+    startedAt: '2026-04-19T16:51:10.788Z'
+updatedAt: '2026-04-19T16:52:41.236Z'

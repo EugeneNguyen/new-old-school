@@ -542,7 +542,7 @@ const STAGE_NAME_MAX_LENGTH = 64;
 
 export class StageError extends Error {
   constructor(
-    public readonly code: 'DUPLICATE' | 'NOT_FOUND' | 'HAS_ITEMS' | 'LAST_STAGE' | 'INVALID_NAME',
+    public readonly code: 'DUPLICATE' | 'NOT_FOUND' | 'HAS_ITEMS' | 'LAST_STAGE' | 'INVALID_NAME' | 'SET_MISMATCH',
     message: string,
     public readonly itemCount?: number
   ) {
@@ -610,6 +610,52 @@ export function deleteStage(workflowId: string, stageName: string): Stage[] {
   list.splice(idx, 1);
   atomicWriteFile(stagesPath, yaml.dump(list));
 
+  return readStages(workflowId);
+}
+
+export function reorderStages(workflowId: string, orderedNames: string[]): Stage[] {
+  if (!workflowExists(workflowId)) throw new StageError('NOT_FOUND', `Workflow '${workflowId}' not found`);
+
+  const stagesPath = path.join(workflowDir(workflowId), 'config', 'stages.yaml');
+  if (!fs.existsSync(stagesPath)) throw new StageError('NOT_FOUND', 'No stages found');
+
+  const raw = fs.readFileSync(stagesPath, 'utf-8');
+  const parsed = yaml.load(raw);
+  if (!Array.isArray(parsed)) throw new StageError('NOT_FOUND', 'No stages found');
+
+  const list = parsed as Array<Record<string, unknown>>;
+
+  // Validate: submitted names must exactly match current stage names
+  const currentNames = new Set(list.map((s) => String(s?.name ?? '')));
+  const submittedNames = new Set(orderedNames);
+
+  if (currentNames.size !== submittedNames.size) {
+    throw new StageError('SET_MISMATCH', 'Stage list changed — reload and retry');
+  }
+
+  for (const name of submittedNames) {
+    if (!currentNames.has(name)) {
+      throw new StageError('SET_MISMATCH', 'Stage list changed — reload and retry');
+    }
+  }
+
+  // Build new ordered list
+  const nameToStage = new Map<string, Record<string, unknown>>();
+  for (const stage of list) {
+    if (stage && typeof stage.name === 'string') {
+      nameToStage.set(stage.name, stage);
+    }
+  }
+
+  const newList: Array<Record<string, unknown>> = [];
+  for (const name of orderedNames) {
+    const stage = nameToStage.get(name);
+    if (stage) {
+      newList.push(stage);
+    }
+  }
+
+  atomicWriteFile(stagesPath, yaml.dump(newList));
   return readStages(workflowId);
 }
 

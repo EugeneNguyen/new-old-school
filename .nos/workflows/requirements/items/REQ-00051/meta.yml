@@ -1,0 +1,123 @@
+title: >-
+  In modal update item, the status should have different indicator. current
+  indicator make the layout broken (new line in in progress)
+stage: Done
+status: Todo
+comments:
+  - >-
+    The analysis was already appended to `index.md` (a concurrent Analysis
+    session — meta.yml shows two sessions started seconds apart — completed the
+    write before mine). Re-read confirms the content covers Context, Scope
+    (in/out), Feasibility, Dependencies, and Open Questions, and correctly
+    identifies the root cause: `ItemDetailDialog.tsx` lines 369–388 render
+    `<span>{s}</span>` plus a `<Badge>{s}</Badge>` inside the 220px sidebar, so
+    "In Progress" wraps to a new line.
+
+
+    Summary: REQ-00051 already has a complete `## Analysis` section appended to
+    its `index.md` by an earlier concurrent run. I verified its accuracy against
+    `ItemDetailDialog.tsx` (the duplicated label + badge in the active status
+    row, inside the fixed 220px sidebar, is indeed what wraps for "In Progress")
+    and against `badge.tsx` (STATUS_VARIANT mapping is correctly cited). No
+    changes needed — content is faithful to the codebase, covers
+    scope/feasibility/dependencies/open questions, does not touch the original
+    request text, and does not start implementation. Ready for the next stage.
+  - >-
+    The `## Specification` section has been appended to REQ-00051's `index.md`.
+    Here's a summary of what was written:
+
+
+    **Resolved decisions** — All five open questions from the Analysis were
+    answered, committing to:
+
+    - Colored dot `h-2 w-2 rounded-full` (no wrap risk, cleanest signal)
+
+    - Drop `Badge` entirely from this picker
+
+    - No dots on inactive rows
+
+    - `destructive` for Failed
+
+    - Scope is strictly this modal only
+
+
+    **User stories** — Two compact stories covering the core problem (row height
+    disruption + redundant text) without overreaching.
+
+
+    **Acceptance criteria (AC-1–AC-8)** — Testable, numbered, covering:
+
+    - No wrap for "In Progress" (AC-1)
+
+    - Correct dot color per status using existing `STATUS_VARIANT` mappings
+    (AC-2)
+
+    - Fixed-size dot with no text (AC-3)
+
+    - `Badge` removed from picker (AC-4)
+
+    - Active row still identifiable via `aria-pressed` + `bg-primary/10` (AC-5)
+
+    - Screen reader announcement via `sr-only` or `aria-pressed` alone (AC-6)
+
+    - No desktop regression (AC-7)
+
+    - No other component surface affected (AC-8)
+
+
+    **Technical constraints** — Explicit file, exact change to make, color token
+    rules (semantic tokens only, no hex hardcoding), accessibility rules (dot is
+    `aria-hidden`, button has `aria-pressed`), and a note that `cn` from
+    `lib/utils.ts` is already imported.
+
+
+    **Out of scope** — Seven explicit exclusions preventing scope creep (stage
+    selector, other surfaces, `Badge` component, `STATUS_VARIANT` map, dark mode
+    audit, server/API changes, other duplications).
+  - >-
+    TypeScript clean. All eight acceptance criteria are satisfied with a
+    single-file change to `ItemDetailDialog.tsx`. The active-status row in the
+    modal sidebar now renders a `h-2 w-2 rounded-full` colored dot — never
+    wrapping, never duplicating the label text — while preserving
+    `aria-pressed`, `border-primary bg-primary/10`, and a `sr-only` announcement
+    for screen readers. The now-unused `Badge` import and `STATUS_VARIANT`
+    constant were also removed from the file, keeping dead code out.
+  - >-
+    Validation of REQ-00051 is complete. All 8 acceptance criteria pass.
+
+
+    **What I found and fixed:** The implementation was correct in every way
+    except one: the spec referenced `bg-success`/`text-success` as the token for
+    the "Done" dot, but those tokens don't exist in the project's Tailwind
+    config or CSS variables. The actual correct token — consistent with
+    `badge.tsx`'s `success` variant and `lib/item-status-style.ts`'s Done dot —
+    is `bg-green-500 dark:bg-green-400`. I corrected the code (the
+    implementation had already used the right class), updated all spec snippets
+    in `index.md`, and appended a `## Validation` section with evidence for each
+    criterion.
+
+
+    **Commit pushed:** `da30ef6`. The item is ready to advance to Done.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 5a022015-234d-4b90-8563-7bfde2df983b
+    startedAt: '2026-04-19T13:12:24.190Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: e4ba9957-4035-4163-bf02-45d135580770
+    startedAt: '2026-04-19T13:12:31.102Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: aa8b79c1-2ae2-4c36-909f-364816012eaa
+    startedAt: '2026-04-19T13:15:01.319Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 6c2b0005-ed2a-4192-874c-0fa8c5d81e7c
+    startedAt: '2026-04-19T13:17:47.921Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: ce3a25bf-6799-4fff-bfb3-5332dda114d8
+    startedAt: '2026-04-19T13:20:33.728Z'
+updatedAt: '2026-04-19T13:25:04.917Z'

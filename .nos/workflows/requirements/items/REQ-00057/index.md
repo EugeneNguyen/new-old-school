@@ -108,6 +108,38 @@ desired
 - Any refactor that extracts the shared `customModel` + `resolveModel` pattern into a reusable hook or component. Copy the pattern inline to keep this change small; extraction can be filed separately if desired.
 - New automated tests. Manual verification in the dev server (select `Other`, type a value, save, reload, confirm persisted state) is sufficient for this fix.
 
+## Implementation Notes
+
+Implementation completed in `app/dashboard/settings/page.tsx` (DefaultAgentSettings component):
+
+- Added `Input` import from `@/components/ui/input`
+- Added `resolveModel(choice, customModel)` helper at line ~466 mirroring agents page
+- Added `customModel` state alongside `selectedModel`
+- Added `storedAdapterRef` and `storedModelRef` refs for dirty comparison
+- Updated `loadModels` to return the model list so caller can check membership
+- Updated load effect to detect stored-but-unlisted ids: if stored model not in loaded list, selects `OTHER_MODEL_SENTINEL` and pre-fills `customModel`
+- Updated `handleAdapterChange` to reset `customModel` when switching adapters
+- Updated `handleSave` to use `resolveModel()` for the payload
+- Updated `handleClear` to reset `customModel`
+- Updated `isDirty` to compare resolved model and guard empty custom input
+- Added conditional `<Input>` render when `selectedModel === OTHER_MODEL_SENTINEL` with `aria-label="Custom model id"` and placeholder matching agents page
+
+## Implementation Notes
+
+Implementation completed in `app/dashboard/settings/page.tsx` (DefaultAgentSettings component):
+
+- Added `Input` import from `@/components/ui/input`
+- Added `resolveModel(choice, customModel)` helper at line ~466 mirroring agents page
+- Added `customModel` state alongside `selectedModel`
+- Added `storedAdapterRef` and `storedModelRef` refs for dirty comparison
+- Updated `loadModels` to return the model list so caller can check membership
+- Updated load effect to detect stored-but-unlisted ids: if stored model not in loaded list, selects `OTHER_MODEL_SENTINEL` and pre-fills `customModel`
+- Updated `handleAdapterChange` to reset `customModel` when switching adapters
+- Updated `handleSave` to use `resolveModel()` for the payload
+- Updated `handleClear` to reset `customModel`
+- Updated `isDirty` to compare resolved model and guard empty custom input
+- Added conditional `<Input>` render when `selectedModel === OTHER_MODEL_SENTINEL` with `aria-label="Custom model id"` and placeholder matching agents page
+
 ## Validation
 
 **Overall verdict: ❌ FAIL — implementation is missing.** `index.md` has no `## Implementation Notes` section, and `app/dashboard/settings/page.tsx` (inspected at HEAD `b193291`) shows none of the required code changes. A grep of the file for `customModel|resolveModel|Input` returns zero matches. The `DefaultAgentSettings` component still renders only a `<select>` (lines 706–728) with no adjacent text input, `handleSave` still posts `body.model = selectedModel || null` (line 600) — which would persist the literal `__other__` sentinel if that option were chosen — and `isDirty` (line 653) still compares the raw `selectedModel` string.

@@ -1,0 +1,61 @@
+import { NextResponse } from 'next/server';
+import { addStage, workflowExists, StageError } from '@/lib/workflow-store';
+import { createErrorResponse } from '@/app/api/utils/errors';
+
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    if (!workflowExists(id)) {
+      return createErrorResponse(`Workflow '${id}' not found`, 'NotFound', 404);
+    }
+
+    const body = (await req.json()) as Record<string, unknown>;
+
+    if (body.name === undefined || body.name === null) {
+      return NextResponse.json({ error: 'Stage name is required' }, { status: 400 });
+    }
+    if (typeof body.name !== 'string' || !body.name.trim()) {
+      return NextResponse.json({ error: 'Stage name is required' }, { status: 400 });
+    }
+
+    const name = body.name as string;
+
+    const stageInput = {
+      name,
+      description:
+        typeof body.description === 'string' ? body.description : undefined,
+      prompt:
+        typeof body.prompt === 'string' && body.prompt ? body.prompt : undefined,
+      autoAdvanceOnComplete: body.autoAdvanceOnComplete === true ? true : undefined,
+      agentId:
+        typeof body.agentId === 'string' && body.agentId
+          ? body.agentId
+          : undefined,
+      maxDisplayItems:
+        typeof body.maxDisplayItems === 'number' &&
+        Number.isFinite(body.maxDisplayItems) &&
+        Number.isInteger(body.maxDisplayItems) &&
+        body.maxDisplayItems > 0
+          ? body.maxDisplayItems
+          : undefined,
+    };
+
+    const stages = addStage(id, stageInput);
+    return NextResponse.json({ stages }, { status: 201 });
+  } catch (error) {
+    if (error instanceof StageError) {
+      if (error.code === 'DUPLICATE') {
+        return NextResponse.json({ error: error.message }, { status: 409 });
+      }
+      if (error.code === 'INVALID_NAME') {
+        return NextResponse.json({ error: error.message }, { status: 400 });
+      }
+    }
+    console.error('Error creating workflow stage:', error);
+    return createErrorResponse('Failed to create stage');
+  }
+}

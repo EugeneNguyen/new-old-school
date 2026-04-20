@@ -1,6 +1,6 @@
 title: Add mechanism to add/remove workflow in frontend
-stage: Validation
-status: In Progress
+stage: Done
+status: Todo
 comments:
   - >-
     The analysis for REQ-00054 is complete. Here's what I found:
@@ -97,6 +97,18 @@ comments:
     No TypeScript errors in any new or modified files. `meta.yml` status is
     already `In Progress`, and `index.md` now has the `## Implementation Notes`
     section.
+  - >-
+    Validation summary for REQ-00054: 20/23 ACs ✅, 3 ⚠️ (AC-6 inline Card vs
+    modal dialog, AC-15 delete button lacks destructive styling, AC-22 live
+    browser retest blocked by unrelated turbopack cache error in
+    `lib/use-workflow-items.ts`). Evidence came from code review, `tsc --noEmit`
+    exit 0, and a direct `tsx` exercise of `createWorkflow`/`deleteWorkflow`
+    against `.nos/workflows/` — which confirmed exact `config.json` two-key
+    shape, `stages.yaml` as `[]\n`, no `items/` on create, duplicate rejection,
+    path-traversal rejection, and clean delete. The `## Validation` section and
+    follow-up list were appended to `index.md` and pushed to `main` (commit
+    `f9b2e7b`); the item stays in the Validate stage per the stage prompt
+    because 3 ACs are partial rather than fully passing.
 sessions:
   - stage: Analysis
     adapter: claude
@@ -115,4 +127,4 @@ sessions:
     adapter: claude
     sessionId: c3fd2400-c154-4cb2-968f-0df7da3df63f
     startedAt: '2026-04-19T15:27:07.092Z'
-updatedAt: '2026-04-19T15:27:07.095Z'
+updatedAt: '2026-04-19T15:32:16.522Z'

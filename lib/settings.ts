@@ -51,3 +51,46 @@ export function writeHeartbeatMs(ms: number): void {
 }
 
 export { DEFAULT_HEARTBEAT_MS };
+
+export interface DefaultAgentConfig {
+  adapter: string | null;
+  model: string | null;
+}
+
+export function readDefaultAgent(): DefaultAgentConfig {
+  const settings = readFileRaw();
+  const defaultAgent = settings.defaultAgent;
+  if (defaultAgent && typeof defaultAgent === 'object' && !Array.isArray(defaultAgent)) {
+    const obj = defaultAgent as Record<string, unknown>;
+    return {
+      adapter: typeof obj.adapter === 'string' ? obj.adapter : null,
+      model: typeof obj.model === 'string' ? obj.model : null,
+    };
+  }
+  return { adapter: null, model: null };
+}
+
+export function writeDefaultAgent(config: Partial<DefaultAgentConfig>): void {
+  const settings = readFileRaw();
+  const existing = settings.defaultAgent as Record<string, unknown> | undefined;
+  const current = existing && typeof existing === 'object' && !Array.isArray(existing)
+    ? (existing as Record<string, unknown>)
+    : {};
+  const updated: Record<string, unknown> = {};
+  if ('adapter' in config) {
+    updated.adapter = config.adapter;
+  } else {
+    updated.adapter = current.adapter ?? null;
+  }
+  if ('model' in config) {
+    updated.model = config.model;
+  } else {
+    updated.model = current.model ?? null;
+  }
+  settings.defaultAgent = updated;
+  const dumped = yaml.dump(settings);
+  if (Buffer.byteLength(dumped, 'utf-8') > MAX_BYTES) {
+    throw new Error('settings file exceeds 64 KB limit');
+  }
+  atomicWrite(dumped);
+}

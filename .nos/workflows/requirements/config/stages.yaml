@@ -54,7 +54,7 @@
     Keep the document the single source of truth — anything an implementer needs
     must be answerable from this section. Do not write code.
   autoAdvanceOnComplete: true
-  agentId: null
+  agentId: david-engineer
 - name: Implementation
   description: Build the feature or fix according to the documented requirements.
   prompt: >
@@ -106,6 +106,7 @@
     5. If anything fails, leave the item in this stage with a clear list of
     follow-ups; do not advance to Done. And then commit and push the code.
   autoAdvanceOnComplete: true
+  agentId: martin-senior-engineer
 - name: Done
   description: The requirement is complete and ready for release.
   prompt: null

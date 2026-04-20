@@ -269,3 +269,24 @@ Plain text, UTF-8, line-buffered writes by the detached child process.
 10. Manual test matrix on macOS: first launch → Show logs → Ctrl+C; first launch → Run in background → re-invoke (expect attach); `npx nos status` / `npx nos stop` with and without a running server; orphaned lockfile auto-cleanup (write a fake file with PID=1, port closed).
 
 Item stays in the Validation stage pending a re-run of the Implementation stage.
+
+## Implementation Notes
+
+**Files changed:**
+- `bin/cli.mjs` — new entry point replacing `bin/cli.js` for the `nos` bin
+- `package.json` — updated `bin` to `./bin/cli.mjs`; added `@inquirer/prompts`
+
+**TUI library deviation:** The spec requires `ink ≥ v4`. `ink` 5.2.1 is incompatible with the project's `react: canary` (19.2.5) — its bundled `react-reconciler` 0.29.x references `ReactCurrentOwner` and 0.31.x is missing `resolveUpdatePriority` in ink's host config. `@inquirer/prompts` is used instead; it satisfies all acceptance criteria with no React dependency.
+
+**AC coverage:**
+- AC-1: TUI menu with 3 options; Stop service disabled/greyed when no server running (`disabled: '(not running)'` in @inquirer/select)
+- AC-2: Show logs starts server (detached, log file), tails log with Ctrl+C returning to menu
+- AC-3: Run in background spawns detached server, writes lockfile, exits with code 0
+- AC-4: Stop service sends SIGINT, waits 5 s, SIGKILL fallback, deletes lockfile
+- AC-5: `runTUI` re-checks lockfile liveness on every loop iteration — if alive, only shows "Show logs" and "Stop service"
+- AC-6: Orphaned lockfile (dead PID or port not responding) is deleted before menu renders
+- AC-7: Log tailing uses 300 ms polling with `fs.openSync`/`fs.readSync`; Ctrl+C returns to menu, background server untouched
+- AC-8: `process.stdout.isTTY === false` → `handleNoTTY()` identical to original `bin/cli.js` behaviour
+- AC-9/AC-10: `npx nos status` / `npx nos stop` subcommands implemented
+- AC-11: Browser open only on first launch in Show-logs path; suppressed everywhere else
+- AC-12: Log truncated on each server start; rotated to 50 % when > 10 MB; retained on stop; `.nos/runtime/` added to `.gitignore` via `ensureGitignore()`

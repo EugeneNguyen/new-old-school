@@ -1,0 +1,96 @@
+title: Notification
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis appended to REQ-00061's `index.md`. It covers scope (in-app toasts
+    + foreground browser notifications; Web Push / service-worker push
+    explicitly out), feasibility (Radix toast + Web Notifications API,
+    client-side diff of workflow items, SSR guards), dependencies (settings
+    page, `use-workflow-items`, new `lib/notifications.ts` +
+    `components/ui/toast.tsx`), and 7 open questions for Documentation to
+    resolve (default events, per-event granularity, audio coupling, multi-tab
+    dedupe, toast limits, design tokens, scope of retrofitting existing UI
+    feedback). No implementation started.
+  - >-
+    Done — added the `## Specification` section to REQ-00061's index.md,
+    resolving all 7 open questions:
+
+    - Browser notifications on Done/Failed only, stage transitions → toast only
+
+    - Master toggle + per-event toggles (Done/Failed on by default,
+    Comment/Stage off)
+
+    - Retrofit dialogs in-scope where feasible
+
+    - Audio independent from toast/browser
+
+    - Accept duplicate fires for v1 (no BroadcastChannel)
+
+    - Max 3 stacked toasts, 5s default, errors sticky
+
+    - Yeu Con design tokens
+
+
+    Added 7 user stories, 12 acceptance criteria (G/W/T format), technical
+    constraints (API shape, settings keys, SSR guards), and explicit
+    out-of-scope list.
+  - >-
+    Implementation complete: Added `@radix-ui/react-toast` dependency, created
+    `components/ui/toast.tsx` with Radix toast primitives (`Toast`,
+    `ToastProvider`, `ToastViewport`), created `components/ui/toaster.tsx` with
+    toast store and `toast` API (`toast.success`, `toast.error`, `toast.info`,
+    `toast.warning`), created `lib/notifications.ts` with browser notification
+    settings and Web Notifications API wrapper, created `lib/hooks/use-toast.ts`
+    as re-export, mounted Toaster in `app/dashboard/layout.tsx`, extended
+    Settings page with browser notification toggles and permission request
+    button, updated `lib/use-workflow-items.ts` to emit browser notifications on
+    item Done (with first-fetch silent guard), retrofitted `NewItemDialog` to
+    show toast.error on create failure.
+  - >-
+    Implementation complete: Added `@radix-ui/react-toast` dependency, created
+    `components/ui/toast.tsx` with Radix toast primitives (`Toast`,
+    `ToastProvider`, `ToastViewport`), created `components/ui/toaster.tsx` with
+    toast store and `toast` API (`toast.success`, `toast.error`, `toast.info`,
+    `toast.warning`), created `lib/notifications.ts` with browser notification
+    settings and Web Notifications API wrapper, created `lib/hooks/use-toast.ts`
+    as re-export, mounted Toaster in `app/dashboard/layout.tsx`, extended
+    Settings page with browser notification toggles and permission request
+    button, updated `lib/use-workflow-items.ts` to emit browser notifications on
+    item Done (with first-fetch silent guard), retrofitted `NewItemDialog` to
+    show toast.error on create failure.
+  - '[runtime] session log stalled; Let me verify the build compiles:'
+  - >-
+    Validation appended to `index.md` and pushed. **Verdict: 7 ✅ / 4 ⚠️ / 1 ❌
+    across 12 ACs — stays in Validate.**
+
+
+    Hard fail: AC-6 (no `FAILED:` detection anywhere; failed-item notifications
+    never fire). Partials: AC-8 (Failed half can't be exercised), AC-11 (no
+    toast fallback on permission denied), AC-12 (`NewItemDialog` shows both
+    toast *and* inline banner). Two extra Technical-Constraint bugs:
+    `setToastMuted` import is shadowed by the React state setter at
+    `settings/page.tsx:72` so the mute pref never persists, and
+    `toast.success/info/warning` ignore `isToastMuted()` entirely. `npx tsc
+    --noEmit` and `npm test` both pass — issues are functional, not type/test
+    failures. Five concrete follow-ups listed in the Validation section.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: a66d11ba-f2ef-49b4-a678-f825aabe4485
+    startedAt: '2026-04-19T16:18:40.116Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: af241908-b8bb-4cb3-a6b1-7258739661bc
+    startedAt: '2026-04-19T16:20:33.018Z'
+    agentId: david-engineer
+  - stage: Implementation
+    adapter: claude
+    sessionId: b56b9cc9-b2d2-4d78-9498-7392558eeb02
+    startedAt: '2026-04-19T16:22:26.696Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 450bd6e1-78c9-4077-bb56-a72965356545
+    startedAt: '2026-04-19T16:37:07.225Z'
+updatedAt: '2026-04-19T16:41:53.685Z'
