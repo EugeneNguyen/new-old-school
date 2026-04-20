@@ -436,6 +436,51 @@ export function appendItemComment(
   return writeMeta(workflowId, itemId, meta, 'updated');
 }
 
+export function updateItemComment(
+  workflowId: string,
+  itemId: string,
+  index: number,
+  text: string
+): string | null {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+  const metaPath = path.join(itemDir(workflowId, itemId), META_FILE);
+  if (!fs.existsSync(metaPath)) return null;
+  const meta = (yaml.load(fs.readFileSync(metaPath, 'utf-8')) as Record<string, unknown>) ?? {};
+
+  const existing = Array.isArray(meta.comments)
+    ? (meta.comments as unknown[]).filter((c): c is string => typeof c === 'string')
+    : [];
+
+  if (index < 0 || index >= existing.length) return null;
+  existing[index] = trimmed;
+  meta.comments = existing;
+
+  const result = writeMeta(workflowId, itemId, meta, 'updated');
+  return result ? trimmed : null;
+}
+
+export function deleteItemComment(
+  workflowId: string,
+  itemId: string,
+  index: number
+): string[] | null {
+  const metaPath = path.join(itemDir(workflowId, itemId), META_FILE);
+  if (!fs.existsSync(metaPath)) return null;
+  const meta = (yaml.load(fs.readFileSync(metaPath, 'utf-8')) as Record<string, unknown>) ?? {};
+
+  const existing = Array.isArray(meta.comments)
+    ? (meta.comments as unknown[]).filter((c): c is string => typeof c === 'string')
+    : [];
+
+  if (index < 0 || index >= existing.length) return null;
+  existing.splice(index, 1);
+  meta.comments = existing;
+
+  const result = writeMeta(workflowId, itemId, meta, 'updated');
+  return result ? existing : null;
+}
+
 export function writeItemContent(
   workflowId: string,
   itemId: string,

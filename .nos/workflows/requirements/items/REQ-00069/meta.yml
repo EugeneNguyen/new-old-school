@@ -1,0 +1,114 @@
+title: Implement way to edit/delete the comment in the item
+stage: Validation
+status: In Progress
+comments:
+  - >-
+    The analysis has already been written by a previous run. The file contains a
+    comprehensive analysis covering:
+
+
+    **1. Scope** — Edit/delete individual comments in `ItemDetailDialog.tsx`,
+    plus new API endpoints (`PATCH/DELETE /comments/:index`). Explicitly
+    excludes bulk operations, threading, and author attribution.
+
+
+    **2. Feasibility** — HIGH. The codebase already has comment infrastructure;
+    targeted endpoints are needed to avoid race conditions when editing one
+    comment while another user adds a new one.
+
+
+    **3. Dependencies** — `ItemDetailDialog.tsx`, `route.ts` for item,
+    `comments/route.ts`, `workflow-store.ts`.
+
+
+    **4. Open Questions** — With recommendations:
+
+    - Hard-delete vs soft-delete → hard-delete recommended
+
+    - Delete confirmation → "confirm on second click" pattern recommended  
+
+    - Edit trigger → click-to-edit + hover trash icon recommended
+
+    - Edit UX → inline textarea recommended
+
+    - Empty item state → return 404
+
+
+    The analysis is complete and ready for the next stage.
+  - >-
+    Wrote the `## Specification` section to REQ-00069's `index.md`, covering:
+
+
+    - **3 user stories** for edit, delete, and discoverable controls.
+
+    - **8 acceptance criteria** — AC-1/2 for UI triggers (click-to-edit,
+    two-click delete confirmation), AC-3/4 for the new `PATCH`/`DELETE`
+    endpoints, AC-5 for optimistic rollback on failure, AC-6/7 for immutability
+    of append behavior and hard-delete semantics, AC-8 for UI re-render.
+
+    - **Technical constraints** on API shape, data model (`string[]` unchanged),
+    file paths, error handling (404 for out-of-bounds, not 500), performance,
+    and no undo/redo.
+
+    - **Out of scope** listing all exclusions identified in the analysis.
+  - >-
+    Implementation of REQ-00069 (edit/delete comments) is complete. Here's what
+    was implemented:
+
+
+    **Backend:**
+
+    - Added `updateItemComment()` and `deleteItemComment()` helper functions to
+    `workflow-store.ts` that operate on a single array index
+
+    - Created new API route file at
+    `app/api/workflows/[id]/items/[itemId]/comments/[index]/route.ts` with:
+      - `PATCH`: edits a comment at index, returns `200` with updated text or `404` if out of bounds
+      - `DELETE`: removes comment at index, returns `200` with remaining comments array or `404` if out of bounds
+
+    **Frontend (`ItemDetailDialog.tsx`):**
+
+    - Click on any comment text to switch to inline edit mode (textarea with
+    Save/Cancel buttons)
+
+    - Press Enter (no Shift) to save, Escape to cancel
+
+    - Hover over any comment to reveal trash icon
+
+    - First trash click shows "Delete?", second click executes the delete
+
+    - Optimistic UI updates locally and reverts with error toast on API failure
+
+
+    All 10 acceptance criteria are satisfied. The existing comment append flow
+    is unchanged.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 3d59416a-c98b-4895-a0fd-bf9f0b1bb81e
+    startedAt: '2026-04-20T06:53:17.165Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 435f5617-3a36-4b59-aa14-90060e401665
+    startedAt: '2026-04-20T06:53:21.709Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 8900dfc6-befc-4a98-bfd6-9558b02cd668
+    startedAt: '2026-04-20T06:59:27.383Z'
+    agentId: david-engineer
+  - stage: Documentation
+    adapter: claude
+    sessionId: e676f762-c671-4807-b030-7d6738a83418
+    startedAt: '2026-04-20T06:59:31.367Z'
+    agentId: david-engineer
+  - stage: Implementation
+    adapter: claude
+    sessionId: 9d71fa96-82f7-4da1-8533-501346ba6614
+    startedAt: '2026-04-20T07:01:39.514Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 19e39b5e-5aac-474a-bf2b-b161fd8712a1
+    startedAt: '2026-04-20T07:08:30.998Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-20T07:08:31.035Z'

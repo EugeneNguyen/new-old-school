@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, KeyboardEvent } from 'react';
 import dynamic from 'next/dynamic';
-import { X } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
 import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,6 +89,9 @@ export default function ItemDetailDialog({
   const [error, setError] = useState<string | null>(null);
   const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState('');
+  const [deleteConfirmIndex, setDeleteConfirmIndex] = useState<number | null>(null);
 
   const itemId = item?.id;
   const activityItemIdRef = useRef<string | null>(null);
@@ -102,6 +105,9 @@ export default function ItemDetailDialog({
     setNewComment('');
     setBody(item.body ?? '');
     setError(null);
+    setEditingIndex(null);
+    setEditingText('');
+    setDeleteConfirmIndex(null);
     setLoadingBody(true);
     fetch(
       `/api/workflows/${encodeURIComponent(workflowId)}/items/${encodeURIComponent(item.id)}/content`
@@ -217,6 +223,81 @@ export default function ItemDetailDialog({
     }
   }
 
+  function startEdit(index: number, text: string) {
+    setEditingIndex(index);
+    setEditingText(text);
+    setDeleteConfirmIndex(null);
+  }
+
+  function cancelEdit() {
+    setEditingIndex(null);
+    setEditingText('');
+  }
+
+  function handleEditKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      void saveEdit();
+    } else if (e.key === 'Escape') {
+      cancelEdit();
+    }
+  }
+
+  async function saveEdit() {
+    if (editingIndex === null) return;
+    const trimmed = editingText.trim();
+    if (!trimmed) {
+      cancelEdit();
+      return;
+    }
+    const prevComments = [...comments];
+    setComments((prev) => {
+      const next = [...prev];
+      next[editingIndex] = trimmed;
+      return next;
+    });
+    setEditingIndex(null);
+    setEditingText('');
+    try {
+      const res = await fetch(
+        `/api/workflows/${encodeURIComponent(workflowId)}/items/${encodeURIComponent(item!.id)}/comments/${editingIndex}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: trimmed }),
+        }
+      );
+      if (!res.ok) throw new Error(`Failed to update comment: ${res.status}`);
+    } catch {
+      setComments(prevComments);
+      setError('Failed to update comment');
+    }
+  }
+
+  function handleDeleteClick(index: number) {
+    if (deleteConfirmIndex === index) {
+      void deleteComment(index);
+    } else {
+      setDeleteConfirmIndex(index);
+    }
+  }
+
+  async function deleteComment(index: number) {
+    const prevComments = [...comments];
+    setComments((prev) => prev.filter((_, i) => i !== index));
+    setDeleteConfirmIndex(null);
+    try {
+      const res = await fetch(
+        `/api/workflows/${encodeURIComponent(workflowId)}/items/${encodeURIComponent(item!.id)}/comments/${index}`,
+        { method: 'DELETE' }
+      );
+      if (!res.ok) throw new Error(`Failed to delete comment: ${res.status}`);
+    } catch {
+      setComments(prevComments);
+      setError('Failed to update comment');
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange} className="max-w-4xl">
       <div className="flex items-start justify-between gap-2 border-b px-4 py-3">
@@ -277,17 +358,64 @@ export default function ItemDetailDialog({
               {comments.map((c, idx) => (
                 <div
                   key={idx}
-                  className="comment-markdown rounded-md border bg-secondary/40 px-3 py-2 text-sm"
+                  className="group relative rounded-md border bg-secondary/40 px-3 py-2 text-sm"
                 >
-                  {c.trim() ? (
-                    <MarkdownPreview
-                      source={c}
-                      remarkPlugins={commentRemarkPlugins}
-                      rehypePlugins={commentRehypePlugins}
-                      wrapperElement={{ 'data-color-mode': 'light' }}
-                      style={{ background: 'transparent' }}
-                    />
-                  ) : null}
+                  <div className="flex items-start gap-2">
+                    <div
+                      className={cn('min-w-0 flex-1', editingIndex === idx && 'hidden')}
+                      onClick={() => startEdit(idx, c)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          startEdit(idx, c);
+                        }
+                      }}
+                    >
+                      {c.trim() ? (
+                        <MarkdownPreview
+                          source={c}
+                          remarkPlugins={commentRemarkPlugins}
+                          rehypePlugins={commentRehypePlugins}
+                          wrapperElement={{ 'data-color-mode': 'light' }}
+                          style={{ background: 'transparent' }}
+                        />
+                      ) : null}
+                    </div>
+                    {editingIndex === idx && (
+                      <div className="min-w-0 flex-1">
+                        <textarea
+                          value={editingText}
+                          onChange={(e) => setEditingText(e.target.value)}
+                          onKeyDown={handleEditKeyDown}
+                          className="min-h-[40px] w-full rounded border border-input bg-background p-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          autoFocus
+                        />
+                        <div className="mt-1 flex items-center gap-1">
+                          <Button size="sm" onClick={() => void saveEdit()}>
+                            Save
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={cancelEdit}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteClick(idx)}
+                      className={cn(
+                        'mt-0.5 shrink-0 rounded px-1 py-0.5 text-xs transition-colors',
+                        deleteConfirmIndex === idx
+                          ? 'bg-destructive/20 text-destructive'
+                          : 'opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive'
+                      )}
+                      title={deleteConfirmIndex === idx ? 'Click again to confirm delete' : 'Delete comment'}
+                    >
+                      {deleteConfirmIndex === idx ? 'Delete?' : <Trash2 className="h-3 w-3" />}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
