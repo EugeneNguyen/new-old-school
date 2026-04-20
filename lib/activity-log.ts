@@ -10,6 +10,7 @@ export type ActivityActor = 'ui' | 'runtime' | `agent:${string}` | 'unknown';
 
 export type ActivityEventType =
   | 'item-created'
+  | 'routine-item-created'
   | 'title-changed'
   | 'stage-changed'
   | 'status-changed'
@@ -23,6 +24,7 @@ export interface ActivityEntry {
   actor: ActivityActor;
   data:
     | { kind: 'item-created'; title: string; stageId: string; status: string }
+    | { kind: 'routine-item-created'; title: string }
     | { kind: 'title-changed'; before: string; after: string }
     | { kind: 'stage-changed'; before: string; after: string }
     | { kind: 'status-changed'; before: string; after: string }
@@ -96,7 +98,7 @@ function paginate(entries: ActivityEntry[], opts: ReadActivityOpts): ActivityEnt
 export async function appendActivity(entry: ActivityEntry): Promise<void> {
   try {
     await fs.promises.appendFile(activityPath(entry.workflowId), JSON.stringify(entry) + '\n', { flag: 'a' });
-    workflowEvents.emit(WORKFLOW_EVENT, { type: 'item-activity', entry });
+    workflowEvents.emit(WORKFLOW_EVENT, { type: 'item-activity', entry, workspaceRoot: getProjectRoot() });
   } catch (err) {
     console.error('[activity-log] appendActivity failed:', err);
   }

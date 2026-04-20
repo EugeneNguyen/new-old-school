@@ -7,6 +7,7 @@ import {
 import { readHeartbeatMs } from '@/lib/settings';
 import { runWithProjectRoot, getProjectRoot } from '@/lib/project-root';
 import { listWorkspaces } from '@/lib/workspace-store';
+import { tickRoutines } from '@/lib/routine-scheduler';
 
 type TimerHandle = ReturnType<typeof setTimeout> | null;
 
@@ -56,13 +57,18 @@ async function sweepWorkspace(): Promise<void> {
 
 async function tick(): Promise<void> {
   const workspaces = listWorkspaces();
-  const roots = workspaces.length > 0
-    ? workspaces.map((w) => w.absolutePath)
-    : [getProjectRoot()];
+  const primaryRoot = getProjectRoot();
+  const workspaceRoots = workspaces.map((w) => w.absolutePath);
+  const allRoots = workspaceRoots.includes(primaryRoot)
+    ? workspaceRoots
+    : [primaryRoot, ...workspaceRoots];
 
-  for (const root of roots) {
+  for (const root of allRoots) {
     try {
-      await runWithProjectRoot(root, sweepWorkspace);
+      await runWithProjectRoot(root, async () => {
+        await sweepWorkspace();
+        await tickRoutines();
+      });
     } catch (err) {
       console.error(`[auto-advance] sweep failed for root=${root}`, err);
     }

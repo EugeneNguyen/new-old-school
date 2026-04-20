@@ -18,6 +18,7 @@ import KanbanBoard from './KanbanBoard';
 import ListView from './ListView';
 import NewItemDialog from './NewItemDialog';
 import StageDetailDialog from './StageDetailDialog';
+import RoutineSettingsDialog from './RoutineSettingsDialog';
 
 interface Props {
   workflowId: string;
@@ -71,6 +72,8 @@ export default function WorkflowItemsView({ workflowId, stages, initialItems, in
     onItemNotFound: handleItemNotFound,
   });
 
+  const [routineDialogOpen, setRoutineDialogOpen] = useState(false);
+
   // Clear the ?item= param once the auto-opened dialog is visible (AC-7)
   useEffect(() => {
     if (!initialOpenItemId) return;
@@ -88,11 +91,13 @@ export default function WorkflowItemsView({ workflowId, stages, initialItems, in
 
   const trimmedQuery = query.trim();
   const filteredItems = useMemo(() => {
-    if (!trimmedQuery) return items;
-    const q = trimmedQuery.toLowerCase();
-    return items.filter(
-      (item) => item.id.toLowerCase().includes(q) || item.title.toLowerCase().includes(q)
-    );
+    const base = trimmedQuery
+      ? items.filter((item) => {
+          const q = trimmedQuery.toLowerCase();
+          return item.id.toLowerCase().includes(q) || item.title.toLowerCase().includes(q);
+        })
+      : items;
+    return base.slice().sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : a.updatedAt > b.updatedAt ? -1 : 0));
   }, [items, trimmedQuery]);
 
   function updateViewMode(nextMode: WorkflowViewMode) {
@@ -103,7 +108,7 @@ export default function WorkflowItemsView({ workflowId, stages, initialItems, in
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Button size="sm" onClick={openNewItem} disabled={currentStages.length === 0}>
+        <Button size="sm" onClick={openNewItem} disabled={currentStages.length === 0} title={currentStages.length === 0 ? 'Create a stage first' : undefined}>
           Add item
         </Button>
         <div className="flex flex-wrap items-center gap-2">
@@ -168,6 +173,17 @@ export default function WorkflowItemsView({ workflowId, stages, initialItems, in
             <Settings className="mr-1.5 h-4 w-4" />
             Settings
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setRoutineDialogOpen(true)}
+          >
+            <svg className="mr-1.5 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            Routine
+          </Button>
         </div>
       </div>
 
@@ -193,7 +209,7 @@ export default function WorkflowItemsView({ workflowId, stages, initialItems, in
 
       {trimmedQuery && filteredItems.length === 0 && (
         <p className="text-sm text-muted-foreground">
-          No items match &ldquo;{trimmedQuery}&rdquo;
+          {items.length === 0 ? 'No items yet' : <>No items match &ldquo;{trimmedQuery}&rdquo;</>}
         </p>
       )}
 
@@ -240,6 +256,14 @@ export default function WorkflowItemsView({ workflowId, stages, initialItems, in
         stage={editStage}
         onSaved={handleStageSaved}
         onDeleted={handleStageDeleted}
+      />
+
+      <RoutineSettingsDialog
+        open={routineDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) setRoutineDialogOpen(false);
+        }}
+        workflowId={workflowId}
       />
     </div>
   );
