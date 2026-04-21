@@ -96,6 +96,7 @@
 | REQ-00085 | Show tool use in Claude Terminal (collapsible) | Feature request | ux-design.md | `components/terminal/SessionPanel.tsx` | Manual validation | Todo |
 | REQ-00086 | Fix status not changing to done after session ends | Bug report | system-architecture.md | `lib/auto-advance.ts` | Manual validation | Todo |
 | REQ-00087 | Create routine mode (auto-create item on cron) | Feature request | system-architecture.md | `lib/routine-scheduler.ts`, `lib/workflow-store.ts` | Manual validation | Todo |
+| REQ-00088 | Implement scaffolding function to init NOS in a new workspace, and also can update the updated version of NOS | Internal requirement | system-architecture.md (CLI), wbs-dictionary.md (1.7), glossary.md | `bin/cli.mjs`, `lib/scaffolding.mjs`, `lib/scaffolding.ts` (TS reference, not used at runtime) | `lib/scaffolding.test.ts` | Done |
 
 ---
 
