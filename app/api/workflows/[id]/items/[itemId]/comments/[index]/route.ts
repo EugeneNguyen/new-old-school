@@ -19,7 +19,12 @@ export async function PATCH(
         return createErrorResponse(`Invalid index '${index}'`, 'BadRequest', 400);
       }
 
-      const body = (await req.json()) as { text?: unknown };
+      let body: { text?: unknown };
+      try {
+        body = (await req.json()) as { text?: unknown };
+      } catch {
+        return createErrorResponse('Invalid JSON body', 'ValidationError', 400);
+      }
       if (typeof body.text !== 'string' || !body.text.trim()) {
         return createErrorResponse('"text" must be a non-empty string', 'BadRequest', 400);
       }

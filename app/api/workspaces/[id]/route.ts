@@ -42,5 +42,5 @@ export async function DELETE(
   const { id } = await params;
   const ok = deleteWorkspace(id);
   if (!ok) return createErrorResponse('Workspace not found', 'NotFound', 404);
-  return NextResponse.json({ ok: true });
+  return new Response(null, { status: 204 });
 }

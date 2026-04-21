@@ -1,3 +1,5 @@
+import { NextResponse } from 'next/server';
+
 export type ApiError = {
   error: string;
   message: string;
@@ -5,16 +7,14 @@ export type ApiError = {
   timestamp: string;
 };
 
-export function createErrorResponse(message: string, error = 'InternalServerError', code = 500) {
-  const response = {
-    error,
-    message,
-    code,
-    timestamp: new Date().toISOString(),
-  };
-
-  return new Response(JSON.stringify(response), {
-    status: code,
-    headers: { 'Content-Type': 'application/json' },
-  });
+export function createErrorResponse(message: string, error = 'InternalServerError', code = 500): NextResponse<ApiError> {
+  return NextResponse.json(
+    {
+      error,
+      message,
+      code,
+      timestamp: new Date().toISOString(),
+    },
+    { status: code },
+  );
 }

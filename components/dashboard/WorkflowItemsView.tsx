@@ -3,16 +3,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { LayoutGrid, List, Search, X, Settings, Plus } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   DEFAULT_WORKFLOW_VIEW_MODE,
   readWorkflowViewMode,
-  WorkflowViewMode,
+  type WorkflowViewMode,
   writeWorkflowViewMode,
 } from '@/lib/workflow-view-mode';
-import { useWorkflowItems } from '@/lib/use-workflow-items';
-import { Stage, WorkflowItem } from '@/types/workflow';
+import { useWorkflowItems } from '@/lib/hooks/use-workflow-items';
+import type { Stage, WorkflowItem } from '@/types/workflow';
 import { ItemDetailDialog } from './ItemDetailDialog';
 import { KanbanBoard } from './KanbanBoard';
 import { ListView } from './ListView';
@@ -147,9 +148,7 @@ export function WorkflowItemsView({ workflowId, stages, initialItems, initialOpe
               title="Kanban"
               aria-label="Kanban"
               onClick={() => updateViewMode('kanban')}
-              className={`inline-flex items-center justify-center rounded px-2 py-1.5 ${
-                viewMode === 'kanban' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
-              }`}
+              className={cn('inline-flex items-center justify-center rounded px-2 py-1.5', viewMode === 'kanban' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}
             >
               <LayoutGrid className="h-4 w-4" />
             </button>
@@ -159,9 +158,7 @@ export function WorkflowItemsView({ workflowId, stages, initialItems, initialOpe
               title="List"
               aria-label="List"
               onClick={() => updateViewMode('list')}
-              className={`inline-flex items-center justify-center rounded px-2 py-1.5 ${
-                viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
-              }`}
+              className={cn('inline-flex items-center justify-center rounded px-2 py-1.5', viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground')}
             >
               <List className="h-4 w-4" />
             </button>

@@ -1,5 +1,5 @@
 import skillsConfig from '@/config/skills.json';
-import { SkillDefinition } from '@/types/skill';
+import type { SkillDefinition } from '@/types/skill';
 
 export const SkillRegistry = {
   getAllSkills(): SkillDefinition[] {

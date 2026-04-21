@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import toolsConfig from '@/config/tools.json';
-import { ToolDefinition } from '@/types/tool';
+import type { ToolDefinition } from '@/types/tool';
 
 export const ToolRegistry = {
   getAllTools(): ToolDefinition[] {

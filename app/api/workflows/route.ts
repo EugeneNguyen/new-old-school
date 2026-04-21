@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { Workflow } from '@/types/workflow';
+import type { Workflow } from '@/types/workflow';
 import { getProjectRoot } from '@/lib/project-root';
 import { createWorkflow, workflowExists } from '@/lib/workflow-store';
 import { createErrorResponse } from '@/app/api/utils/errors';

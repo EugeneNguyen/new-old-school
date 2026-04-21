@@ -37,7 +37,12 @@ export async function PUT(
     if (!workflowExists(id)) {
       return createErrorResponse(`Workflow '${id}' not found`, 'NotFound', 404);
     }
-    const body = (await req.json()) as { body?: unknown };
+    let body: { body?: unknown };
+    try {
+      body = (await req.json()) as { body?: unknown };
+    } catch {
+      return createErrorResponse('Invalid JSON body', 'ValidationError', 400);
+    }
     if (typeof body.body !== 'string') {
       return createErrorResponse('"body" must be a string', 'BadRequest', 400);
     }

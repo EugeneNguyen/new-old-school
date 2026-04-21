@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import dynamic from 'next/dynamic';
 import { X, Trash2 } from 'lucide-react';
 import { Dialog } from '@/components/ui/dialog';
@@ -13,7 +13,7 @@ import {
 } from '@/lib/markdown-preview';
 import { getItemStatusStyle } from '@/lib/item-status-style';
 import { Select } from '@/components/ui/select';
-import { ItemStatus, Stage, WorkflowItem } from '@/types/workflow';
+import type { ItemStatus, Stage, WorkflowItem } from '@/types/workflow';
 import type { ActivityEntry } from '@/lib/activity-log';
 
 const ItemDescriptionEditor = dynamic(

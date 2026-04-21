@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { getItemStatusStyle } from '@/lib/item-status-style';
 import { Select } from '@/components/ui/select';
-import { Stage, WorkflowItem } from '@/types/workflow';
+import type { Stage, WorkflowItem } from '@/types/workflow';
 import { toast } from '@/lib/hooks/use-toast';
 
 const ItemDescriptionEditor = dynamic(() => import('./ItemDescriptionEditor').then(mod => mod.ItemDescriptionEditor), {

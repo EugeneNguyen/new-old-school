@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { cn } from '@/lib/utils';
 import type { SkillDefinition } from '@/types/skill';
 
 interface SlashPopupProps {
@@ -33,11 +34,11 @@ export function SlashPopup({ skills, activeIndex, onSelect }: SlashPopupProps) {
           role="option"
           aria-selected={index === activeIndex}
           onClick={() => onSelect(skill)}
-          className={`px-3 py-2 cursor-pointer text-sm font-mono ${
-            index === activeIndex
-              ? 'bg-muted text-foreground'
-              : 'text-muted-foreground hover:bg-muted/50'
-          } ${index > 0 ? 'border-t border-border/50' : ''}`}
+          className={cn(
+            'px-3 py-2 cursor-pointer text-sm font-mono',
+            index === activeIndex ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted/50',
+            index > 0 && 'border-t border-border/50',
+          )}
         >
           <span className="text-foreground font-medium">{skill.name}</span>
           <span className="ml-2 text-muted-foreground text-xs">{skill.description}</span>

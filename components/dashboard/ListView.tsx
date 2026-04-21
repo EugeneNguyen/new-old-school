@@ -4,7 +4,7 @@ import { memo, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { getItemStatusStyle } from '@/lib/item-status-style';
 import { formatRelativeUpdatedAt } from '@/lib/workflow-view-mode';
-import { Stage, WorkflowItem } from '@/types/workflow';
+import type { Stage, WorkflowItem } from '@/types/workflow';
 
 interface Props {
   stages: Stage[];

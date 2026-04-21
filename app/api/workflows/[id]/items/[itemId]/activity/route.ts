@@ -20,7 +20,7 @@ export async function GET(
       return createErrorResponse(`Item '${itemId}' not found`, 'NotFound', 404);
     }
     const url = new URL(req.url);
-    const limit = Number(url.searchParams.get('limit') ?? 200);
+    const limit = Math.max(1, Math.min(500, Number(url.searchParams.get('limit') ?? 200) || 200));
     const before = url.searchParams.get('before') ?? undefined;
     const entries = readItemActivity(id, itemId, { limit, before });
     return NextResponse.json({ entries });

@@ -6,7 +6,7 @@ import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { Agent, Stage, WorkflowItem } from '@/types/workflow';
+import type { Agent, Stage, WorkflowItem } from '@/types/workflow';
 
 interface Props {
   open: boolean;

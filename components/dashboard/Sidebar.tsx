@@ -7,7 +7,7 @@ import { ToolRegistry } from '@/lib/tool-registry';
 import { cn } from '@/lib/utils';
 import { useSidebar } from './SidebarContext';
 import { useEffect, useState } from 'react';
-import { Workflow } from '@/types/workflow';
+import type { Workflow } from '@/types/workflow';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Logo } from '@/components/ui/logo';

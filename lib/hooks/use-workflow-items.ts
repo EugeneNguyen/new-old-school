@@ -1,13 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useItemDoneSound } from './hooks/use-item-done-sound.ts';
+import { useItemDoneSound } from './use-item-done-sound.ts';
 import {
   notifyBrowser,
   isBrowserNotificationEnabled,
   isItemDoneNotificationEnabled,
-} from './notifications.ts';
-import type { ItemStatus, Stage, WorkflowItem } from '../types/workflow.ts';
+} from '../notifications.ts';
+import type { ItemStatus, Stage, WorkflowItem } from '../../types/workflow.ts';
 
 const SELF_ORIGINATION_TTL_MS = 5000;
 
@@ -269,7 +269,10 @@ export function useWorkflowItems({
       const previous = stages;
       setStages((prev) => {
         const nameToStage = new Map(prev.map((s) => [s.name, s] as const));
-        return orderedNames.map((name) => nameToStage.get(name)!).filter(Boolean);
+        return orderedNames.flatMap((name) => {
+          const s = nameToStage.get(name);
+          return s ? [s] : [];
+        });
       });
 
       try {

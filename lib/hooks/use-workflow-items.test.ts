@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mergeWorkflowItem, reconcileWorkflowItems } from './use-workflow-items.ts';
-import type { WorkflowItem } from '../types/workflow';
+import type { WorkflowItem } from '../../types/workflow';
 
 function item(overrides: Partial<WorkflowItem> = {}): WorkflowItem {
   return {

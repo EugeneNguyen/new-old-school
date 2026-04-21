@@ -10,7 +10,7 @@ export async function GET(req: Request) {
   return withWorkspace(async () => {
     try {
       const url = new URL(req.url);
-      const limit = Number(url.searchParams.get('limit') ?? 200);
+      const limit = Math.max(1, Math.min(500, Number(url.searchParams.get('limit') ?? 200) || 200));
       const before = url.searchParams.get('before') ?? undefined;
       const workflowIds = listWorkflows();
       const entries = readGlobalActivity(workflowIds, { limit, before });

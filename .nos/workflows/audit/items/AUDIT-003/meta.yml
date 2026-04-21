@@ -1,0 +1,67 @@
+title: today audit
+stage: Fix audit findings
+status: In Progress
+comments:
+  - >-
+    Good. All clean. Here is my summary:
+
+
+    **AUDIT-003 Standards Audit Summary:**
+
+
+    The NOS project runs on **Next.js 16.2.1-canary.45** (App Router), **React
+    19.2.5** (stable), **TypeScript 5** (strict mode now enabled), **Tailwind
+    CSS v3**, and uses the **Node.js built-in test runner**. The supporting
+    stack includes Radix UI primitives, class-variance-authority, lucide-react,
+    next-themes (dark mode), js-yaml, chokidar, and commander for the CLI.
+
+
+    I updated the existing standards document
+    (`docs/standards/project-standards.md`) and its README index with today's
+    audit findings. Two previously-open gaps were resolved since AUDIT-002:
+    **GAP-01** (TypeScript `strict: true` is now enabled) and **GAP-12**
+    (`Logo.tsx` renamed to `logo.tsx`). **GAP-10** moved to partially resolved
+    (React/React-DOM are now on stable 19.2.5, though Next.js remains on
+    canary). Three new gaps were identified: **GAP-13** (the `npm run lint`
+    script calls `next lint` which was removed in Next.js 16), **GAP-14** (React
+    Compiler is built-in to Next.js 16 but not yet enabled via `reactCompiler:
+    true`), and **GAP-15** (`next-themes` is directly imported but missing from
+    `package.json` as an explicit dependency). The highest-priority open items
+    remain GAP-03/GAP-13 (no linting infrastructure) and GAP-11 (`@types/react`
+    v18 mismatched with React 19, now more impactful with strict mode enabled).
+    The full gap inventory stands at 15 items: 2 resolved, 3 partially resolved,
+    10 open.
+  - >-
+    The AUDIT-003 codebase standards audit is complete. I systematically scanned
+    the codebase against all 10 sections of
+    `docs/standards/project-standards.md` and documented **15 findings** in the
+    item's `index.md`: **2 High** (missing input validation on `req.json()` in 6
+    API endpoints and untyped shell command input), **8 Medium** (missing
+    `import type` in ~13 files, missing explicit return types on ~50+ exports,
+    non-null assertion, unbounded `limit` params, incorrect HTTP status codes,
+    business logic in route handlers, inconsistent error responses, manual class
+    concatenation), and **5 Low** (sync `fs` in routes, 14 deprecated
+    `forwardRef` usages, misplaced hook files, and missing
+    `loading.tsx`/`error.tsx` in 8 dashboard sub-routes). The codebase is
+    notably clean on critical anti-patterns (`any`, `enum`, `@ts-ignore`, Pages
+    Router, `"use client"` misuse) but needs work on API input validation and
+    TypeScript type hygiene. All 7 previously-open gaps
+    (GAP-03/05/09/11/13/14/15) were reconfirmed as unresolved.
+sessions:
+  - stage: Update technology standard
+    adapter: claude
+    sessionId: ebc61c34-fc97-49ba-a7d3-63fc0fb93f12
+    startedAt: '2026-04-21T14:48:36.387Z'
+  - stage: Update technology standard
+    adapter: claude
+    sessionId: 3d602456-2151-4050-8601-e0c382cd20ee
+    startedAt: '2026-04-21T14:48:39.468Z'
+  - stage: Audit with the technology standard
+    adapter: claude
+    sessionId: 5cf4512b-9a17-441e-baf7-3a480766c934
+    startedAt: '2026-04-21T14:56:20.318Z'
+  - stage: Fix audit findings
+    adapter: claude
+    sessionId: 395924d4-a792-44ae-9ece-58b74ef06c49
+    startedAt: '2026-04-21T15:05:47.522Z'
+updatedAt: '2026-04-21T15:05:47.534Z'

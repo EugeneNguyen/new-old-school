@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { FastForward, MoreVertical, Sparkles, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getItemStatusStyle } from '@/lib/item-status-style';
-import { Agent, Stage, WorkflowItem } from '@/types/workflow';
+import type { Agent, Stage, WorkflowItem } from '@/types/workflow';
 
 interface Props {
   stages: Stage[];

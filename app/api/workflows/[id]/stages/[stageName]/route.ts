@@ -17,7 +17,12 @@ export async function PATCH(
       return createErrorResponse(`Workflow '${id}' not found`, 'NotFound', 404);
     }
 
-    const body = (await req.json()) as Record<string, unknown>;
+    let body: Record<string, unknown>;
+    try {
+      body = (await req.json()) as Record<string, unknown>;
+    } catch {
+      return createErrorResponse('Invalid JSON body', 'ValidationError', 400);
+    }
     const patch: StagePatch = {};
 
     if (body.name !== undefined) {

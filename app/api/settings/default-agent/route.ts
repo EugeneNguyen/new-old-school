@@ -76,7 +76,7 @@ export async function PATCH(req: Request) {
     return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return createErrorResponse(message);
   }
   });
 }

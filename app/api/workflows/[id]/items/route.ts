@@ -26,7 +26,12 @@ export async function POST(
       );
     }
 
-    const body = (await req.json()) as Record<string, unknown>;
+    let body: Record<string, unknown>;
+    try {
+      body = (await req.json()) as Record<string, unknown>;
+    } catch {
+      return createErrorResponse('Invalid JSON body', 'ValidationError', 400);
+    }
     if (typeof body.title !== 'string' || !body.title.trim()) {
       return createErrorResponse('"title" must be a non-empty string', 'BadRequest', 400);
     }
@@ -57,7 +62,7 @@ export async function POST(
       actor,
     });
     if (!created) {
-      return createErrorResponse('Failed to create item', 'BadRequest', 400);
+      return createErrorResponse('Failed to create item');
     }
     const afterPipeline = await triggerStagePipeline(id, created.id);
     return NextResponse.json(afterPipeline ?? created, { status: 201 });

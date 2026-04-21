@@ -21,10 +21,16 @@ const ALLOWED_COMMANDS = new Set([
 export async function POST(request: NextRequest) {
   return withWorkspace(async () => {
   try {
-    const { command } = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return createErrorResponse('Invalid JSON body', 'ValidationError', 400);
+    }
 
-    if (!command) {
-      return createErrorResponse('Command is required', 'BadRequest', 400);
+    const command = (body as Record<string, unknown>)?.command;
+    if (typeof command !== 'string' || !command.trim()) {
+      return createErrorResponse('"command" must be a non-empty string', 'BadRequest', 400);
     }
 
     // Basic safety check: only allow commands starting with whitelisted ones

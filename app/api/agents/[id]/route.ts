@@ -109,18 +109,15 @@ export async function DELETE(
       return createErrorResponse(`Agent '${id}' not found`, 'NotFound', 404);
     }
     const references = failure.references;
-    return new Response(
-      JSON.stringify({
+    return NextResponse.json(
+      {
         error: 'Conflict',
         message: `Agent '${id}' is referenced by ${references.length} stage(s)`,
         code: 409,
         timestamp: new Date().toISOString(),
         references,
-      }),
-      {
-        status: 409,
-        headers: { 'Content-Type': 'application/json' },
-      }
+      },
+      { status: 409 },
     );
   } catch (error) {
     console.error('Error deleting agent:', error);
