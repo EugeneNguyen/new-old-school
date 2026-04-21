@@ -1,0 +1,76 @@
+title: (routine) 2026-04-22 00:00
+stage: Fix doc audit findings
+status: In Progress
+comments:
+  - >-
+    **Standards audit complete for AUDIT-004.**
+
+
+    The tech stack is unchanged from AUDIT-003: Next.js 16.2.1-canary.45 (App
+    Router), React 19.2.5, TypeScript 5 strict mode, Tailwind CSS 3, Radix UI,
+    and supporting libraries. All 15 identified gaps remain in their prior
+    states (5 resolved, 1 partial, 9 open). Key finding: `@types/react@18.3.28`
+    is still installed despite `package.json` specifying `^19.0.0` (GAP-11).
+    Documentation has been updated: added
+    `docs/standards/documentation-standards.md` with Markdown conventions, code
+    example formatting, Mermaid diagram standards, and gap summary templates;
+    updated the "Last audited" date to 2026-04-22; and added an AUDIT-004
+    summary note to the gap tracking. The next stage (Check naming convention)
+    should focus on verifying file/class/variable naming consistency across the
+    codebase, particularly for the new `lib/scaffolding.*` files added since the
+    last audit.
+  - >-
+    The naming convention audit is complete. All 17 findings across files,
+    functions, variables, components, and types are compliant. The
+    `lib/scaffolding.*` files follow all documented conventions: kebab-case file
+    names, camelCase functions, PascalCase types, named exports, no enums, no
+    `forwardRef`, no `any` types, and no `@ts-ignore` in source code. GAP-05
+    (synchronous `fs`) is confirmed consistent across all store files — a known
+    open gap, not a new violation. GAP-08 (test coverage) improved slightly with
+    `scaffolding.test.ts` (11 test cases) but store functions remain uncovered.
+    The codebase is broadly compliant with documented naming standards.
+  - >-
+    All 17 audit findings across the naming convention audit (AUDIT-004) are
+    **Compliant** — no source-code changes were required. The Fix Log section
+    was added to `index.md` recording all findings as `✅ Fixed (already
+    compliant)`, with only GAP-05 (synchronous `fs` API) deferred as a known
+    open gap tracked in `project-standards.md`. The audit covered file naming
+    (`scaffolding.ts`, `scaffolding.mjs`, `scaffolding.test.ts`),
+    function/variable naming (camelCase), type naming (PascalCase), exports
+    (named), anti-patterns (no enums, no `forwardRef`, no `any`, no
+    `@ts-ignore`), and all UI/API conventions. The commit `90a340c` finalizes
+    the fix log. **The codebase is now fully compliant with documented naming
+    conventions.**
+  - >-
+    [runtime] session log stalled; Now let me read all requirements items to
+    gather the full context.
+  - >-
+    [runtime] session log stalled; Now let me read all the remaining standards
+    and requirements items in parallel:
+sessions:
+  - stage: Update technology standard
+    adapter: claude
+    sessionId: 98d6c85c-5a8e-4879-a47d-b2ff0acc4ff0
+    startedAt: '2026-04-21T17:00:09.641Z'
+  - stage: Audit with the technology standard
+    adapter: claude
+    sessionId: 3b7796c7-46ec-49f7-836a-7d01b6d1ec58
+    startedAt: '2026-04-21T17:04:34.327Z'
+  - stage: Fix audit findings
+    adapter: claude
+    sessionId: 1b315f58-ef1f-4e2c-9d7b-f37079b9266e
+    startedAt: '2026-04-21T17:08:58.808Z'
+  - stage: Update documentation standard
+    adapter: claude
+    sessionId: 9ba3a0a5-ade7-46b0-8a58-e2298b5a5624
+    startedAt: '2026-04-21T17:10:22.346Z'
+  - stage: Audit with the doc standard
+    adapter: claude
+    sessionId: f277eee3-b15b-44ed-b014-1f8df864b9e1
+    startedAt: '2026-04-21T17:13:16.457Z'
+  - stage: Fix doc audit findings
+    adapter: claude
+    sessionId: a237e921-06c7-41fb-8ad7-de29e62d1edb
+    startedAt: '2026-04-21T17:17:26.380Z'
+updatedAt: '2026-04-21T17:17:26.392Z'
+origin: routine
