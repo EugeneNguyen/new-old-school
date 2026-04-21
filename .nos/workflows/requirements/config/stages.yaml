@@ -1,7 +1,7 @@
 - name: Backlog
   description: Analyze the requirement scope, feasibility, and dependencies.
   prompt: null
-  autoAdvanceOnComplete: null
+  autoAdvanceOnComplete: true
   agentId: null
 - name: Analysis
   description: Analyze the requirement scope, feasibility, and dependencies.
@@ -36,21 +36,40 @@
     been analyzed.
 
 
-    Read the item's `index.md` (including the `## Analysis` section) and produce
-    a `## Specification` section containing:
+    **Before writing the spec, gather context:**
+
+    1. Read the item's `index.md` (including the `## Analysis` section) and
+    `meta.yml`.
+
+    2. Read the existing documentation standards in `docs/standards/` — at
+    minimum the WBS, WBS dictionary, RTM, system architecture, and glossary.
+    Your specification must trace cleanly into the RTM and map to WBS packages.
+    Use the glossary's ubiquitous language when naming entities and concepts.
+
+
+    Produce a `## Specification` section containing:
 
     1. **User stories** — in `As a <role>, I want <capability>, so that
     <benefit>` form.
 
     2. **Acceptance criteria** — testable, numbered, Given/When/Then where
-    useful.
+    useful. Each criterion should map to a test in the test plan.
 
     3. **Technical constraints** — APIs, data shapes, file paths, performance or
-    compatibility limits.
+    compatibility limits. Reference the corresponding doc standard artifact
+    (e.g. "API shape per `docs/standards/api-reference.md`").
 
     4. **Out of scope** — explicit non-goals to prevent scope creep.
 
+    5. **RTM entry** — document the requirement's RTM row: ID, title, source,
+    design artifact, implementation files (to be filled after implementation),
+    and test coverage (to be filled after validation).
 
+    6. **WBS mapping** — identify which WBS package(s) this requirement belongs
+    to and which deliverables it affects.
+
+
+    Update the item's `index.md` by appending the `## Specification` section.
     Keep the document the single source of truth — anything an implementer needs
     must be answerable from this section. Do not write code.
   autoAdvanceOnComplete: true
@@ -62,9 +81,25 @@
     finalized.
 
 
+    **Before implementing, gather context:**
+
+    1. Read the item's `index.md` and `meta.yml`.
+
+    2. Read the relevant documentation standards in `docs/standards/` that
+    apply to this requirement:
+       - **Database changes** — `docs/standards/database-design.md`
+       - **UI components** — `docs/standards/ui-design.md`
+       - **UX interactions** — `docs/standards/ux-design.md`
+       - **API endpoints** — `docs/standards/api-reference.md`
+       - **User flows** — `docs/standards/user-journey.md`
+       - **Architecture decisions** — `docs/standards/adr/` (relevant ADRs)
+       - **Error handling** — `docs/standards/error-handling-strategy.md`
+       - **Security** — `docs/standards/security-design.md`
+
+
     Workflow:
 
-    1. Re-read `index.md` — treat the spec as authoritative; if you find gaps,
+    1. Treat the spec in `index.md` as authoritative; if you find gaps,
     stop and flag them rather than guessing.
 
     2. Plan the changes (files to touch, order of edits) before editing.
@@ -72,11 +107,12 @@
     3. Implement only what the acceptance criteria require — no scope creep, no
     speculative refactors.
 
-    4. Follow existing project conventions (see `CLAUDE.md`).
+    4. Follow existing project conventions (see `CLAUDE.md`) and the
+    documentation standards listed above.
 
-    5. Update `meta.yml` `status` to `In Progress` when you start and leave a
-    brief `## Implementation Notes` section in `index.md` summarizing the
-    changes and any deviations.
+    5. Update `meta.yml` `status` to `In Progress` when you start and update
+    the item's `index.md` by appending a brief `## Implementation Notes` section
+    summarizing the changes and any deviations from the documented standards.
 
 
     Do not mark the stage complete until every acceptance criterion is
@@ -89,22 +125,42 @@
     You are validating a completed implementation against its specification.
 
 
+    **Before validating, gather context:**
+
+    1. Read the item's `index.md` (including `## Specification` and
+    `## Implementation Notes`) and `meta.yml`.
+
+    2. Read the documentation standards in `docs/standards/` to verify the
+    implementation aligns with the documented design:
+       - **RTM** — `docs/standards/rtm.md` (confirm implementation files are
+         recorded)
+       - **Database** — `docs/standards/database-design.md` (confirm schema)
+       - **UI/UX** — `docs/standards/ui-design.md` and `docs/standards/ux-design.md`
+       - **API** — `docs/standards/api-reference.md` (confirm endpoint shape)
+       - **Test plan** — `docs/standards/test-plan.md` (confirm coverage targets met)
+       - **Security** — `docs/standards/security-design.md` (confirm auth/authz)
+       - **Performance** — `docs/standards/performance-budget.md` (confirm SLOs)
+
+
     Steps:
 
-    1. Read the `## Specification` and `## Implementation Notes` sections of
-    `index.md`.
-
-    2. For each acceptance criterion, verify it is met — by reading the changed
+    1. For each acceptance criterion, verify it is met — by reading the changed
     code, running tests, exercising the UI, or whatever evidence is appropriate.
 
-    3. Check for regressions in adjacent functionality and for missed edge
+    2. Check for regressions in adjacent functionality and for missed edge
     cases.
 
-    4. Append a `## Validation` section to `index.md` listing each criterion
-    with a ✅ pass / ❌ fail / ⚠️ partial verdict and the evidence used.
+    3. Check that implementation files are listed in the RTM entry for this
+    requirement.
+
+    4. Update the item's `index.md` by appending a `## Validation` section
+    listing each criterion with a ✅ pass / ❌ fail / ⚠️ partial verdict and the
+    evidence used.
 
     5. If anything fails, leave the item in this stage with a clear list of
-    follow-ups; do not advance to Done. And then commit and push the code.
+    follow-ups; do not advance to Done. If all pass, update the RTM
+    (`docs/standards/rtm.md`) with the implementation files and test coverage.
+    Then commit and push the code.
   autoAdvanceOnComplete: true
   agentId: martin-senior-engineer
 - name: Done

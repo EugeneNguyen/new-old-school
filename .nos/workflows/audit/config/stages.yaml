@@ -101,8 +101,8 @@
 
 
     4. **Update the report** — In the item's `index.md`, add a `## Fix Log`
-    section listing each finding as `u2705 Fixed`, `u23f8 Deferred (reason)`, or
-    `u274c Skipped (reason)`.
+    section listing each finding as `✅ Fixed`, `⏸ Deferred (reason)`, or `❌
+    Skipped (reason)`.
 
 
     5. **Commit** — Stage and commit all changed files with a message
@@ -115,21 +115,35 @@
   agentId: null
 - name: Update documentation standard
   description: >-
-    Create or update project documentation artifacts: WBS, WBS dictionary,
-    requirement traceability matrix, database design, UI design, UX design,
-    and user journey.
+    Create or update all project documentation artifacts: WBS, WBS dictionary,
+    RTM, database design, UI/UX design, user journey, system architecture, ADRs,
+    API reference, test plan, security design, performance budget, deployment
+    design, error handling strategy, and glossary.
   prompt: >
     You are updating the project's documentation standard artifacts.
 
 
-    Read the item's `index.md` and `meta.yml` to understand the project context.
+    **Before writing any artifact, gather context from two sources:**
+
+    1. This audit item's `index.md` and `meta.yml`.
+
+    2. The requirements workflow — read every item under
+    `.nos/workflows/requirements/items/`. For each item, read its `index.md`
+    (which contains the original request, `## Analysis`, `## Specification`, `##
+    Implementation Notes`, and `## Validation` sections) and `meta.yml` (for
+    stage and status). Use the full set of requirements — their scope,
+    acceptance criteria, technical constraints, implementation details, and
+    validation outcomes — as the primary source of truth when populating the
+    documentation artifacts below.
+
+
     Then create or update the following documentation artifacts in
-    `docs/standards/`:
+    `docs/standards/`. For each, check if the file exists and update rather than
+    overwrite from scratch where possible.
 
 
     1. **WBS (Work Breakdown Structure)** — Decompose the project deliverables
-    into a hierarchical tree of work packages. Save as
-    `docs/standards/wbs.md`.
+    into a hierarchical tree of work packages. Save as `docs/standards/wbs.md`.
 
 
     2. **WBS Dictionary** — For each WBS work package, document: ID, name,
@@ -153,18 +167,62 @@
     `docs/standards/ui-design.md`.
 
 
-    6. **UX Design** — Document interaction patterns, error handling conventions,
-    loading states, accessibility requirements (WCAG level), and form validation
-    rules. Save as `docs/standards/ux-design.md`.
+    6. **UX Design** — Document interaction patterns, error handling
+    conventions, loading states, accessibility requirements (WCAG level), and
+    form validation rules. Save as `docs/standards/ux-design.md`.
 
 
-    7. **User Journey** — Map the primary user journeys through the application:
-    entry points, key steps, decision points, and exit states. Use Mermaid
-    flowcharts. Save as `docs/standards/user-journey.md`.
+    7. **User Journey** — Map the primary user journeys: entry points, key
+    steps, decision points, and exit states. Use Mermaid flowcharts. Save as
+    `docs/standards/user-journey.md`.
 
 
-    For each artifact, check whether an existing file already exists and update
-    it rather than overwriting from scratch where possible.
+    8. **System Architecture** — Document the high-level architecture: component
+    diagram, data flow, deployment topology, and integration points. Use Mermaid
+    C4 or component diagrams. Save as `docs/standards/system-architecture.md`.
+
+
+    9. **Architecture Decision Records (ADR)** — For each significant
+    architectural decision, record: context, decision, consequences, and
+    alternatives considered. Save as `docs/standards/adr/ADR-NNN-title.md` (one
+    file per decision). Create an index at `docs/standards/adr/README.md`.
+
+
+    10. **API Reference** — Catalog all API endpoints: path, method, auth
+    requirements, request/response shapes, error codes, and example payloads.
+    Save as `docs/standards/api-reference.md`.
+
+
+    11. **Test Plan / Test Strategy** — Document testing levels (unit,
+    integration, e2e), coverage targets, tooling, test data strategy, and
+    explicit exclusions. Save as `docs/standards/test-plan.md`.
+
+
+    12. **Security Design / Threat Model** — Document the auth/authz model, data
+    protection approach, OWASP top-10 mitigations, and known attack surfaces.
+    Save as `docs/standards/security-design.md`.
+
+
+    13. **Performance Budget** — Define Lighthouse score targets, Core Web
+    Vitals thresholds, bundle size limits, and API response time SLOs. Save as
+    `docs/standards/performance-budget.md`.
+
+
+    14. **Deployment & Infrastructure Design** — Document environments
+    (dev/staging/prod), CI/CD pipeline steps, hosting platform, env vars
+    required, and rollback procedure. Save as
+    `docs/standards/deployment-design.md`.
+
+
+    15. **Error Handling & Logging Strategy** — Define the error taxonomy, log
+    levels, what gets surfaced to users vs. logged silently, alerting
+    thresholds, and correlation ID conventions. Save as
+    `docs/standards/error-handling-strategy.md`.
+
+
+    16. **Glossary / Domain Model** — Define the ubiquitous language: key domain
+    terms, entities, and relationships in plain English. Save as
+    `docs/standards/glossary.md`.
 
 
     End with a one-paragraph summary listing which artifacts were created,
@@ -173,19 +231,32 @@
   agentId: null
 - name: Audit with the doc standard
   description: >-
-    Audit the project against the documentation standard artifacts and flag
-    gaps or inconsistencies.
+    Audit the project against the documentation standard artifacts and flag gaps
+    or inconsistencies.
   prompt: >
     You are auditing the project against the documentation standard artifacts
     produced in the previous stage.
+
+
+    **Before auditing, gather context from two sources:**
+
+    1. All artifacts in `docs/standards/`.
+
+    2. The requirements workflow — read every item under
+    `.nos/workflows/requirements/items/`. For each item, read its `index.md` and
+    `meta.yml` to understand what was required, specified, built, and validated.
+    Use this as ground truth when checking whether documentation artifacts
+    accurately reflect the actual state of the project.
 
 
     Steps:
 
 
     1. **Read the documentation standards** — Load all artifacts in
-    `docs/standards/`: WBS, WBS dictionary, RTM, database design, UI design,
-    UX design, and user journey.
+    `docs/standards/`: WBS, WBS dictionary, RTM, database design, UI design, UX
+    design, user journey, system architecture, ADRs, API reference, test plan,
+    security design, performance budget, deployment design, error handling
+    strategy, and glossary.
 
 
     2. **Scan the project** — Systematically compare the documentation against
@@ -196,6 +267,14 @@
        - UX flows that deviate from documented interaction patterns or accessibility rules
        - User journeys that are broken, missing, or undocumented
        - WBS work packages that have no corresponding implementation evidence
+       - Architecture decisions made in code not captured in an ADR
+       - API endpoints in the codebase not listed in the API reference
+       - Test coverage below targets defined in the test plan
+       - Security risks or auth patterns not addressed in the security design
+       - Bundle sizes or response times exceeding the performance budget
+       - Deployment steps or env vars not documented in the deployment design
+       - Error or log patterns inconsistent with the error handling strategy
+       - Domain terms used in code or docs not defined in the glossary
 
 
     3. **Document findings** — Record each gap in the item's `index.md` under a
@@ -211,13 +290,15 @@
     findings by severity and an overall compliance verdict.
 
 
-    End with a one-paragraph summary of findings and overall documentation health.
+    End with a one-paragraph summary of findings and overall documentation
+    health.
   autoAdvanceOnComplete: true
   agentId: null
 - name: Fix doc audit findings
   description: Resolve all gaps and inconsistencies found in the documentation audit.
   prompt: >
-    You are fixing documentation gaps identified in the previous doc audit stage.
+    You are fixing documentation gaps identified in the previous doc audit
+    stage.
 
 
     Steps:
@@ -228,20 +309,19 @@
     gap, and the expected state for each finding.
 
 
-    2. **Plan before editing** — Group findings by artifact and severity. Address
-    `High` severity issues first, then `Medium`, then `Low`. Note any findings
-    that require decisions beyond documentation (e.g. missing implementation) —
-    mark those as deferred.
+    2. **Plan before editing** — Group findings by artifact and severity.
+    Address `High` severity issues first, then `Medium`, then `Low`. Note any
+    findings that require decisions beyond documentation (e.g. missing
+    implementation) — mark those as deferred.
 
 
-    3. **Apply fixes** — Update the relevant files in `docs/standards/` to
-    close each gap. Do not introduce scope creep — fix only what the audit
-    flagged.
+    3. **Apply fixes** — Update the relevant files in `docs/standards/` to close
+    each gap. Do not introduce scope creep — fix only what the audit flagged.
 
 
     4. **Update the report** — In the item's `index.md`, add a `## Doc Fix Log`
-    section listing each finding as `u2705 Fixed`, `u23f8 Deferred (reason)`, or
-    `u274c Skipped (reason)`.
+    section listing each finding as `✅ Fixed`, `⏸ Deferred (reason)`, or `❌
+    Skipped (reason)`.
 
 
     5. **Commit** — Stage and commit all changed files with a message
@@ -253,6 +333,8 @@
   autoAdvanceOnComplete: true
   agentId: null
 - name: Done
-  description: ''
+  description: null
   prompt: null
-  autoAdvanceOnComplete: null
+  autoAdvanceOnComplete: false
+  agentId: null
+  maxDisplayItems: 10
