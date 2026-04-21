@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ToolRegistry } from '@/lib/tool-registry';
 import { Button } from '@/components/ui/button';
-import { Logo } from '@/components/ui/Logo';
+import { Logo } from '@/components/ui/logo';
 
 export default function HomePage() {
   const tools = ToolRegistry.getAllTools();

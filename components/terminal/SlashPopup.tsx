@@ -9,7 +9,7 @@ interface SlashPopupProps {
   onSelect: (skill: SkillDefinition) => void;
 }
 
-export default function SlashPopup({ skills, activeIndex, onSelect }: SlashPopupProps) {
+export function SlashPopup({ skills, activeIndex, onSelect }: SlashPopupProps) {
   const listRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {

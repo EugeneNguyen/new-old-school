@@ -24,7 +24,7 @@ interface ChatMessage {
   content: string;
 }
 
-export default function ChatWidget() {
+export function ChatWidget() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -263,8 +263,7 @@ export default function ChatWidget() {
         <Card
           role="dialog"
           aria-label="Chat"
-          className="w-96 shadow-2xl border border-border bg-background flex flex-col overflow-hidden"
-          style={{ maxHeight: '70vh' }}
+          className="w-96 max-h-[70vh] shadow-2xl border border-border bg-background flex flex-col overflow-hidden"
         >
           <CardHeader className="p-3 border-b flex flex-row items-center justify-between gap-2 space-y-0 shrink-0">
             <div className="flex items-center gap-2 min-w-0">
@@ -312,8 +311,8 @@ export default function ChatWidget() {
             </div>
           </CardHeader>
 
-          <CardContent className="p-0 flex-1 min-h-0 flex flex-col" style={{ minHeight: 0 }}>
-            <ScrollArea ref={scrollRef} className="flex-1 min-h-0" style={{ minHeight: '8rem' }}>
+          <CardContent className="p-0 flex-1 min-h-0 flex flex-col">
+            <ScrollArea ref={scrollRef} className="flex-1 min-h-0 min-h-32">
               <div className="p-3 space-y-3 text-sm">
                 {messages.length === 0 && hasDefaultAgent === false && (
                   <p className="text-muted-foreground text-xs">

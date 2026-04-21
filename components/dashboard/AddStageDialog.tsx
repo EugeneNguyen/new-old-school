@@ -14,7 +14,7 @@ interface Props {
   onCreated: (next: { stages: Stage[]; items: WorkflowItem[] }) => void;
 }
 
-export default function AddStageDialog({ open, onOpenChange, workflowId, onCreated }: Props) {
+export function AddStageDialog({ open, onOpenChange, workflowId, onCreated }: Props) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [prompt, setPrompt] = useState('');

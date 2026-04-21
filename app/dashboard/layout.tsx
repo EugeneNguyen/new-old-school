@@ -1,8 +1,8 @@
 import React from 'react';
-import Sidebar from '@/components/dashboard/Sidebar';
+import { Sidebar } from '@/components/dashboard/Sidebar';
 import { SidebarProvider } from '@/components/dashboard/SidebarContext';
 import { Toaster } from '@/components/ui/toaster';
-import ChatWidget from '@/components/dashboard/ChatWidget';
+import { ChatWidget } from '@/components/dashboard/ChatWidget';
 
 export default function DashboardLayout({
   children,

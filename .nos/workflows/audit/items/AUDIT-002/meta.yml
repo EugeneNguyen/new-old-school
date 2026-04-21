@@ -1,0 +1,31 @@
+title: Update today
+stage: Fix audit findings
+status: In Progress
+comments:
+  - >-
+    [runtime] session log stalled; The document already has some AUDIT-002
+    updates merged in. Let me now do a comprehensive update — refreshing the
+    audit date, updating gaps that have been resolved, adding new gaps found,
+    and incorporating the latest standards research (Tailwind v4.2, React 19
+    forwardRef, Next.js 16).
+  - >-
+    [runtime] session log stalled; All scanning complete. Now writing the full
+    audit findings to the item's `index.md`.
+sessions:
+  - stage: Update technology standard
+    adapter: claude
+    sessionId: 547068de-76b4-4ad2-853c-23108b85920c
+    startedAt: '2026-04-21T08:08:45.093Z'
+  - stage: Update technology standard
+    adapter: claude
+    sessionId: 7544ba73-67db-468f-9ec3-37050e1ba439
+    startedAt: '2026-04-21T08:08:48.087Z'
+  - stage: Audit with the technology standard
+    adapter: claude
+    sessionId: dd1c2dba-fd93-4658-ab5d-480107f5b790
+    startedAt: '2026-04-21T08:13:58.855Z'
+  - stage: Fix audit findings
+    adapter: claude
+    sessionId: 72764808-7ace-416b-b71b-34803d4a1f52
+    startedAt: '2026-04-21T08:18:54.108Z'
+updatedAt: '2026-04-21T08:18:54.120Z'

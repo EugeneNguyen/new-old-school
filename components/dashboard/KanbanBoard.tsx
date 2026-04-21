@@ -14,7 +14,7 @@ interface Props {
   onOpenStage: (stage: Stage) => void;
 }
 
-export default function KanbanBoard({ stages, items, onOpenItem, onMoveItem, onOpenStage }: Props) {
+export function KanbanBoard({ stages, items, onOpenItem, onMoveItem, onOpenStage }: Props) {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);

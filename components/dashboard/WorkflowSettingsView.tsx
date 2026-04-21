@@ -2,12 +2,12 @@
 
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowUp, ArrowDown, ChevronLeft, Plus, Settings, Trash2 } from 'lucide-react';
+import { ArrowUp, ArrowDown, ChevronLeft, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Stage, WorkflowItem } from '@/types/workflow';
-import AddStageDialog from './AddStageDialog';
-import StageDetailDialog from './StageDetailDialog';
+import { AddStageDialog } from './AddStageDialog';
+import { StageDetailDialog } from './StageDetailDialog';
 
 interface Props {
   workflowId: string;
@@ -20,7 +20,7 @@ function getItemCount(items: WorkflowItem[], stageName: string): number {
   return items.filter((item) => item.stage === stageName).length;
 }
 
-export default function WorkflowSettingsView({
+export function WorkflowSettingsView({
   workflowId,
   workflowName,
   stages,
@@ -188,7 +188,6 @@ export default function WorkflowSettingsView({
           </div>
           {currentStages.map((stage, index) => {
             const itemCount = getItemCount(currentItems, stage.name);
-            const canDelete = itemCount === 0;
             return (
               <div
                 key={stage.name}

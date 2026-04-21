@@ -32,7 +32,7 @@ interface Props {
   ariaLabelledBy?: string;
 }
 
-export default function ItemDescriptionEditor({
+export function ItemDescriptionEditor({
   markdown,
   onChange,
   readOnly,

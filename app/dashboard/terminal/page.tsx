@@ -7,14 +7,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { MessageSquare, Send, Plus, Loader2, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import SessionPanel from '@/components/terminal/SessionPanel';
+import { SessionPanel } from '@/components/terminal/SessionPanel';
 import type { SessionSummary, SessionHistory } from '@/types/session';
 import type { InteractiveQuestion } from '@/types/question';
 import type { ToolUseBlock } from '@/types/tool';
 import { useSlashComplete } from '@/hooks/useSlashComplete';
-import SlashPopup from '@/components/terminal/SlashPopup';
-import QuestionCard from '@/components/terminal/QuestionCard';
-import ToolUseCard from '@/components/terminal/ToolUseCard';
+import { SlashPopup } from '@/components/terminal/SlashPopup';
+import { QuestionCard } from '@/components/terminal/QuestionCard';
+import { ToolUseCard } from '@/components/terminal/ToolUseCard';
 
 function generateId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {

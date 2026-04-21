@@ -9,7 +9,7 @@ interface ToolUseCardProps {
   tool: ToolUseBlock;
 }
 
-function summarizeInput(input: Record<string, any>): string {
+function summarizeInput(input: Record<string, unknown>): string {
   const entries = Object.entries(input);
   if (entries.length === 0) return '(no parameters)';
 
@@ -24,7 +24,7 @@ function summarizeInput(input: Record<string, any>): string {
   return entries.length > 2 ? summary + '...' : summary;
 }
 
-export default function ToolUseCard({ tool }: ToolUseCardProps) {
+export function ToolUseCard({ tool }: ToolUseCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   const inputStr = JSON.stringify(tool.input, null, 2);

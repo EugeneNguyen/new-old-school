@@ -17,7 +17,7 @@ import { ItemStatus, Stage, WorkflowItem } from '@/types/workflow';
 import type { ActivityEntry } from '@/lib/activity-log';
 
 const ItemDescriptionEditor = dynamic(
-  () => import('./ItemDescriptionEditor'),
+  () => import('./ItemDescriptionEditor').then(mod => mod.ItemDescriptionEditor),
   { ssr: false }
 );
 const MarkdownPreview = dynamic(() => import('@uiw/react-markdown-preview'), {
@@ -69,7 +69,7 @@ function formatActor(actor: string): string {
   return actor;
 }
 
-export default function ItemDetailDialog({
+export function ItemDetailDialog({
   open,
   onOpenChange,
   workflowId,
@@ -380,7 +380,7 @@ export default function ItemDetailDialog({
                           remarkPlugins={commentRemarkPlugins}
                           rehypePlugins={commentRehypePlugins}
                           wrapperElement={{ 'data-color-mode': 'light' }}
-                          style={{ background: 'transparent' }}
+                          className="!bg-transparent"
                         />
                       ) : null}
                     </div>

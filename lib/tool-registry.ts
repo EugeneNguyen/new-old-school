@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import toolsConfig from '@/config/tools.json';
 import { ToolDefinition } from '@/types/tool';
@@ -12,7 +13,7 @@ export const ToolRegistry = {
   },
 
   getIcon(iconName: string) {
-    const IconComponent = (LucideIcons as any)[iconName];
+    const IconComponent = (LucideIcons as Record<string, unknown>)[iconName] as LucideIcon | undefined;
     return IconComponent || LucideIcons.HelpCircle;
   }
 };

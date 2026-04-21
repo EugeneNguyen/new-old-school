@@ -8,9 +8,9 @@ import { cn } from '@/lib/utils';
 import { useSidebar } from './SidebarContext';
 import { useEffect, useState } from 'react';
 import { Workflow } from '@/types/workflow';
-import WorkspaceSwitcher from './WorkspaceSwitcher';
+import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { Logo } from '@/components/ui/Logo';
+import { Logo } from '@/components/ui/logo';
 
 function isActive(href: string, pathname: string | null): boolean {
   if (!pathname) return false;
@@ -18,7 +18,7 @@ function isActive(href: string, pathname: string | null): boolean {
   return pathname === href || pathname.startsWith(href + '/');
 }
 
-export default function Sidebar() {
+export function Sidebar() {
   const tools = ToolRegistry.getAllTools();
   const { collapsed, toggleSidebar } = useSidebar();
   const pathname = usePathname();

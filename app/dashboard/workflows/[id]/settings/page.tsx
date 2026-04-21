@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { readWorkflowDetail } from '@/lib/workflow-store';
 import { withWorkspace } from '@/lib/workspace-context';
-import WorkflowSettingsView from '@/components/dashboard/WorkflowSettingsView';
+import { WorkflowSettingsView } from '@/components/dashboard/WorkflowSettingsView';
 
 export default async function WorkflowSettingsPage({
   params,

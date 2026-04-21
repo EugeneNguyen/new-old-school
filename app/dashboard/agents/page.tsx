@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import type { Agent } from '@/types/workflow';
 
 const ItemDescriptionEditor = dynamic(
-  () => import('@/components/dashboard/ItemDescriptionEditor'),
+  () => import('@/components/dashboard/ItemDescriptionEditor').then(mod => mod.ItemDescriptionEditor),
   { ssr: false }
 );
 

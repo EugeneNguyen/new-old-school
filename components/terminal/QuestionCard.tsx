@@ -17,7 +17,7 @@ interface QuestionCardProps {
   onAnswer: (selectedLabels: string[]) => void;
 }
 
-export default function QuestionCard({
+export function QuestionCard({
   header,
   question,
   options,

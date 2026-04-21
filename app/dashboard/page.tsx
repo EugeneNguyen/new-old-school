@@ -9,6 +9,13 @@ import { RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ActivityEntry } from '@/lib/activity-log';
 
+interface SystemStatus {
+  status: string;
+  timestamp: string;
+  version: string;
+  message: string;
+}
+
 function formatRelativeTs(ts: string): string {
   const diff = Date.now() - new Date(ts).getTime();
   if (diff < 60_000) return 'just now';
@@ -29,8 +36,8 @@ function formatSummary(entry: ActivityEntry): string {
   }
 }
 
-export default function DashboardPage() {
-  const [data, setData] = useState<any>(null);
+export function DashboardPage() {
+  const [data, setData] = useState<SystemStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recentActivity, setRecentActivity] = useState<ActivityEntry[]>([]);
@@ -157,3 +164,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+export default DashboardPage;

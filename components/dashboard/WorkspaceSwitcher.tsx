@@ -15,7 +15,7 @@ function readCookie(name: string): string | null {
   return match ? decodeURIComponent(match.slice(name.length + 1)) : null;
 }
 
-export default function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
+export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
   const router = useRouter();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);

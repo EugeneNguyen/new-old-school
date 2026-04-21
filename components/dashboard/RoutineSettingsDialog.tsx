@@ -18,7 +18,7 @@ interface Props {
   workflowId: string;
 }
 
-export default function RoutineSettingsDialog({
+export function RoutineSettingsDialog({
   open,
   onOpenChange,
   workflowId,

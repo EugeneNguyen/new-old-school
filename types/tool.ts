@@ -11,7 +11,7 @@ export interface ToolDefinition {
 export interface ToolUseBlock {
   id: string;
   name: string;
-  input: Record<string, any>;
+  input: Record<string, unknown>;
   result?: string | null;
   status: 'pending' | 'completed' | 'failed';
 }

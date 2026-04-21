@@ -79,7 +79,7 @@ const ListRow = memo(function ListRow({
   );
 });
 
-export default function ListView({ stages, items, onOpenItem }: Props) {
+export function ListView({ stages, items, onOpenItem }: Props) {
   const groupedStages = useMemo<GroupedStage[]>(() => {
     return stages.map((stage) => ({
       stage,

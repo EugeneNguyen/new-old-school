@@ -13,12 +13,12 @@ import {
 } from '@/lib/workflow-view-mode';
 import { useWorkflowItems } from '@/lib/use-workflow-items';
 import { Stage, WorkflowItem } from '@/types/workflow';
-import ItemDetailDialog from './ItemDetailDialog';
-import KanbanBoard from './KanbanBoard';
-import ListView from './ListView';
-import NewItemDialog from './NewItemDialog';
-import StageDetailDialog from './StageDetailDialog';
-import RoutineSettingsDialog from './RoutineSettingsDialog';
+import { ItemDetailDialog } from './ItemDetailDialog';
+import { KanbanBoard } from './KanbanBoard';
+import { ListView } from './ListView';
+import { NewItemDialog } from './NewItemDialog';
+import { StageDetailDialog } from './StageDetailDialog';
+import { RoutineSettingsDialog } from './RoutineSettingsDialog';
 
 interface Props {
   workflowId: string;
@@ -27,7 +27,7 @@ interface Props {
   initialOpenItemId?: string | null;
 }
 
-export default function WorkflowItemsView({ workflowId, stages, initialItems, initialOpenItemId }: Props) {
+export function WorkflowItemsView({ workflowId, stages, initialItems, initialOpenItemId }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const [viewMode, setViewMode] = useState<WorkflowViewMode>(DEFAULT_WORKFLOW_VIEW_MODE);
@@ -62,7 +62,6 @@ export default function WorkflowItemsView({ workflowId, stages, initialItems, in
     handleItemSaved,
     handleItemCreated,
     handleStageSaved,
-    handleStageCreated,
     handleStageDeleted,
   } = useWorkflowItems({
     workflowId,

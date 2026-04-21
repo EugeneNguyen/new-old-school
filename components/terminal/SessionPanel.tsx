@@ -53,7 +53,7 @@ interface SessionPanelProps {
   isLoading: boolean;
 }
 
-export default function SessionPanel({
+export function SessionPanel({
   sessions,
   activeSessionId,
   onSelectSession,

@@ -17,7 +17,7 @@ interface Props {
   onDeleted: (next: { stages: Stage[] }) => void;
 }
 
-export default function StageDetailDialog({
+export function StageDetailDialog({
   open,
   onOpenChange,
   workflowId,
