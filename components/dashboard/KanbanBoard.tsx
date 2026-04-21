@@ -41,6 +41,14 @@ export default function KanbanBoard({ stages, items, onOpenItem, onMoveItem, onO
     };
   }, []);
 
+  if (stages.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-muted-foreground">
+        No stages defined for this workflow. Configure stages in your workflow settings.
+      </div>
+    );
+  }
+
   return (
     <div className="flex gap-4 overflow-x-auto pb-4">
       {stages.map((stage) => {

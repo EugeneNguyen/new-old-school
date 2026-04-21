@@ -1,0 +1,122 @@
+title: >-
+  if workflow have no stages, still show add item, search, kanban/list and
+  setting
+stage: Done
+status: Todo
+comments:
+  - >-
+    I generated a Socratic brainstorming session for REQ-00075, exploring the
+    requirement that when a workflow has no stages, the UI should still show add
+    item, search, kanban/list, and setting controls. I wrote 18 questions across
+    5 categories: Clarify (probing what exactly should be visible and how
+    kanban/list should behave), Probe Assumptions (challenging assumptions about
+    continued usability and stage-less item creation), Find Reasons and Evidence
+    (understanding why workflows exist without stages), Explore Alternatives
+    (auto-creating default stages, setup wizards, status fallback), and Explore
+    Implications (downstream effects on item-stage relationships, stage deletion
+    handling). The brainstorming is now appended to the item's `index.md`.
+  - >-
+    Analysis complete. I appended a `## Analysis` section to
+    `REQ-00075/index.md` covering:
+
+
+    1. **Scope** — in scope (kanban/list empty states, Add Item button fix,
+    search/settings visibility, null `stageId` handling) and explicitly out of
+    scope (auto-creating default stages, status fallback, stage deletion safety,
+    schema changes)
+
+
+    2. **Feasibility** — High. The primary fix is in `WorkflowItemsView.tsx:106`
+    (`disabled={currentStages.length === 0}`). Risks include null-reference
+    errors from unassigned items, kanban rendering zero columns, and the
+    NewItemDialog stage picker failing when no stages exist. Key unknown:
+    whether the API accepts `stageId: null` on item creation.
+
+
+    3. **Dependencies** — Direct: `WorkflowItemsView`, `KanbanBoard`,
+    `ListView`, `NewItemDialog`, and the item query/API layer. Indirect: stage
+    deletion flow and search implementation.
+
+
+    4. **Open Questions** — 8 items needing resolution: kanban fallback
+    behavior, "Add Item" interaction with null stage, API contract for
+    stage-less items, item retention after stage deletion, settings panel
+    accessibility, view mode toggle behavior, search empty state copy, and
+    auto-navigation to settings.
+  - >-
+    Specification written and appended to `REQ-00075/index.md`. 
+
+
+    The spec covers 4 user stories, 9 testable acceptance criteria
+    (Given/When/Then), 9 technical constraints with exact file paths and line
+    numbers from the code audit, and 7 explicit out-of-scope items. The key
+    finding that shaped the spec: the root cause is **not just** the disabled
+    Add Item button at `WorkflowItemsView.tsx:106` — it's the top-level gate at
+    `page.tsx:31` that replaces the entire `WorkflowItemsView` with a static
+    empty-state `div` when `stages.length === 0`, hiding all four controls. The
+    spec addresses both layers plus downstream concerns in KanbanBoard,
+    ListView, NewItemDialog, and the API route.
+  - >-
+    Implementation complete for REQ-00075. Here's a summary of what was done:
+
+
+    **5 files changed** (the ones this requirement touches):
+
+
+    1. **`page.tsx`** — Removed the conditional gate that replaced
+    `WorkflowItemsView` with a static empty div when stages = 0. The full
+    toolbar (add item, search, kanban/list toggle, settings) now always renders.
+
+
+    2. **`WorkflowItemsView.tsx`** — Add Item button stays disabled with a
+    `"Create a stage first"` tooltip when no stages exist. Search empty-state
+    message is context-aware.
+
+
+    3. **`KanbanBoard.tsx`** — Added empty-state card ("No stages yet — add a
+    stage in workflow settings") when `stages.length === 0`.
+
+
+    4. **`ListView.tsx`** — Added two empty-state branches: (a) "No items yet —
+    add a stage to get started" when both stages and items are empty, (b) a flat
+    ungrouped list for orphaned items when stages were deleted.
+
+
+    5. **`NewItemDialog.tsx`** — Stage picker gracefully shows "No stages
+    available" instead of an empty dropdown when stages = 0.
+
+
+    **API guards (`route.ts`, `workflow-store.ts`) were intentionally kept** as
+    defense-in-depth since the UI prevents item creation when no stages exist.
+    TypeScript compiles clean.
+  - >-
+    Validation complete. All 9 acceptance criteria pass, all 8 technical
+    constraints verified, and TypeScript compiles clean. Results committed and
+    pushed (`f7907ab`).
+sessions:
+  - stage: Brainstorming
+    adapter: claude
+    sessionId: 19de4508-dcbc-49ea-ae0e-b24061da0776
+    startedAt: '2026-04-20T11:29:14.170Z'
+  - stage: Brainstorming
+    adapter: claude
+    sessionId: 965832b3-bec1-4f04-975b-33e161fe60f0
+    startedAt: '2026-04-20T11:29:20.538Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 209e0f04-a094-475f-982d-d013e4a80c91
+    startedAt: '2026-04-20T11:31:43.626Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: d476926c-25bf-4e21-841e-4be0495c1087
+    startedAt: '2026-04-20T11:35:22.888Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 0504020f-238c-4d2b-88bc-fb53c951d8ef
+    startedAt: '2026-04-20T11:39:32.064Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 322b17dd-2a2d-4060-a4ac-90c5b4db8184
+    startedAt: '2026-04-20T11:43:26.201Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-20T11:46:12.147Z'

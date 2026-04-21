@@ -1,0 +1,101 @@
+title: stage column order by last update time, desc
+stage: Done
+status: Todo
+comments:
+  - >-
+    [runtime] session log stalled; Now I have a complete understanding of the
+    bug. The issue is clear: the `EventEmitter` is a **process-wide singleton**
+    and events don't carry a `workspaceId`. When the auto-advance sweeper (which
+    iterates all workspaces) updates an item's meta, it emits events on the
+    shared emitter. The SSE listener filters by `workflowId` but NOT by
+    workspace — and since workflow IDs like `requirements` are the same name
+    across workspaces, events from workspace A leak into SSE streams serving
+    workspace B.
+
+
+    Now I'll write the brainstorming content to the item's `index.md`.
+  - >-
+    Analysis appended to `index.md`. Here's what I did:
+
+
+    I explored the full event pipeline — `WorkflowEvent` type, both SSE
+    endpoints, the auto-advance sweeper, and the chokidar watcher system — and
+    wrote a structured analysis covering:
+
+
+    1. **Scope** — Five in-scope changes (add `workspaceRoot` to event type, tag
+    at emit sites, filter in both SSE listeners, qualify watcher map key) and
+    five explicit exclusions (no API URL restructuring, no emitter splitting, no
+    client-side filtering, no `ActivityEntry` format change, no
+    multi-workspace-per-browser).
+
+
+    2. **Feasibility** — Rated high. The fix is additive: `getProjectRoot()` is
+    already available at every emit and listen site. Two risks flagged:
+    verifying watcher glob correctness and default-workspace fallback behavior.
+    No spike needed.
+
+
+    3. **Dependencies** — Five files to modify (`workflow-events.ts`,
+    `workflow-store.ts`, `activity-log.ts`, both SSE route handlers), four to
+    verify but not change (`workspace-context.ts`, `auto-advance-sweeper.ts`,
+    `auto-advance.ts`, `use-workflow-items.ts`). No external dependencies.
+
+
+    4. **Open questions** — Three items: whether to strip `workspaceRoot` from
+    browser-bound payloads, whether `acquireWatcher` should take an explicit
+    root parameter, and whether the mismatched item title needs correction.
+  - >-
+    Specification written to `REQ-00079/index.md`. The specification covers
+    workspace-siloed SSE events with 3 user stories (developer isolation,
+    multi-workspace correctness, connection-order independence), 8 testable
+    acceptance criteria in Given/When/Then form, 9 technical constraints (event
+    type shape, emit-site tagging, SSE listener filtering, watcher map key
+    qualification, file change matrix, HMR/single-process compatibility), and 6
+    explicit out-of-scope items. The spec is fully derived from the preceding
+    brainstorming and analysis sections, and provides implementers with
+    everything needed — event payload structure, server-side filtering logic,
+    watcher key format, and the exact files to modify and verify — without
+    writing any code.
+  - >-
+    All changes compile cleanly. Implementation complete.
+
+
+    I implemented workspace-siloed SSE events across 4 files: added
+    `workspaceRoot` to the `WorkflowEvent` type and all emit functions,
+    qualified the chokidar watcher map key by `${workspaceRoot}:${workflowId}`,
+    and added server-side workspace filtering (with `workspaceRoot` stripped
+    before serialization) in both SSE endpoints. Each workspace's browser now
+    only receives events originating from its own workspace root, and each
+    workspace gets its own file watcher pointing at its own directory — fixing
+    both the phantom-item leak and the watcher-sharing bug.
+  - >-
+    All 8 acceptance criteria verified and a `## Validation` section appended to
+    `REQ-00079/index.md`. Every criterion passes: `workspaceRoot` is added to
+    all `WorkflowEvent` variants and stripped before serialisation; both SSE
+    endpoints filter by workspace root; the chokidar watcher map is keyed by
+    `${workspaceRoot}:${workflowId}` so each workspace gets its own watcher;
+    `ActivityEntry` on-disk format is unchanged; TypeScript compiles clean.
+sessions:
+  - stage: Brainstorming
+    adapter: claude
+    sessionId: 951f6cda-020c-4226-acb4-4919eddc89b8
+    startedAt: '2026-04-20T13:46:21.053Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 38db25df-f441-4ce6-84f4-3d9f16bf2ae2
+    startedAt: '2026-04-20T13:51:26.936Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: dc3f1bc9-2758-42d4-bba6-1d998f081160
+    startedAt: '2026-04-20T13:56:28.885Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: e5f869d0-a080-4a3f-994c-e8e3bebebcd8
+    startedAt: '2026-04-20T13:58:30.745Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 2d1f6e47-0332-4e6e-b264-b210fa0d87c6
+    startedAt: '2026-04-20T14:02:43.865Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-20T14:05:07.172Z'

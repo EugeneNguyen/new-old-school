@@ -1,0 +1,92 @@
+title: the sidemenu footer is now layout broken. maybe remove the copyright part
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis complete for REQ-00083. The sidebar footer layout is broken because
+    the recently added ThemeToggle component (a 3-button radio group ~110px
+    wide) was placed alongside the copyright text and collapse button in a
+    footer that only has ~224px of usable width. The combined content overflows
+    horizontally. The user's instinct to remove the copyright text is the
+    simplest fix, though the collapsed-sidebar state also needs attention since
+    even the ThemeToggle alone is too wide for the 64px collapsed sidebar. Three
+    open questions were flagged: whether copyright needs to live somewhere else,
+    how to handle the ThemeToggle in collapsed mode, and whether the
+    ThemeToggle's sidebar placement is permanent. No implementation was started
+    — the analysis is appended to the item's `index.md`.
+  - >-
+    Specification complete for REQ-00083. I added a formal `## Specification`
+    section with three user stories (user, implementer, product owner
+    perspectives), six numbered acceptance criteria covering both expanded and
+    collapsed sidebar states, detailed technical constraints (pixel
+    measurements, Tailwind classes, component widths), and explicit out-of-scope
+    items to prevent scope creep. The specification resolves the ambiguity
+    around copyright removal (making it the primary fix), clearly identifies the
+    collapsed-state challenge for the ThemeToggle, and provides implementers
+    with measurable criteria for success including accessibility and
+    cross-browser requirements. The item is now ready for implementation.
+  - >-
+    All acceptance criteria have been implemented and verified:
+
+
+    **Summary of Changes:**
+
+
+    1. **Removed copyright text** (`© 2026 New Old-school`) entirely from the
+    sidebar footer, freeing ~160px of horizontal space.
+
+    2. **Hidden ThemeToggle in collapsed mode** with conditional rendering
+    (`{!collapsed && <ThemeToggle />}`), ensuring only the collapse button
+    appears when sidebar is collapsed.
+
+    3. **Simplified footer layout** by removing the wrapper div, now using
+    direct flexbox with `flex items-center justify-between` for proper alignment
+    in both expanded and collapsed states.
+
+
+    **Verification:**
+
+    - Expanded state: ThemeToggle (~110px) + collapse button (~28px) = ~138px,
+    comfortably fits in 224px usable width ✓
+
+    - Collapsed state: Only collapse button shown and centered, no overflow in
+    32px usable width ✓
+
+    - Accessibility preserved: ThemeToggle ARIA attributes (`role="radio"`,
+    `aria-checked`, `aria-label`) remain intact ✓
+
+    - No browser-specific code; uses only Tailwind utilities ✓
+
+
+    The implementation satisfies all six acceptance criteria. The sidebar footer
+    now renders without horizontal overflow in both expanded and collapsed
+    states, with the copyright text removed and theme toggle intelligently
+    hidden when space is constrained.
+  - >-
+    Validation complete. All six acceptance criteria for REQ-00083 pass:
+    copyright text is gone, ThemeToggle is correctly hidden in collapsed mode
+    and fits in expanded mode, accessibility ARIA attributes are intact, and
+    only Tailwind utilities are used (cross-browser safe). The `## Validation`
+    section has been appended to `index.md` with per-criterion evidence. No
+    follow-ups required.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 493ff5b4-539a-44ed-9541-31a6f89e8f02
+    startedAt: '2026-04-21T03:58:34.718Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 047bd788-37ef-4be3-82b2-3c8e7a43470a
+    startedAt: '2026-04-21T04:00:16.762Z'
+    agentId: david-engineer
+  - stage: Implementation
+    adapter: claude
+    sessionId: 235433bb-05eb-41e4-b975-a30abb01e961
+    startedAt: '2026-04-21T04:01:55.041Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 497cacd9-c63c-4df8-9213-90bc7869d4d4
+    startedAt: '2026-04-21T04:03:33.670Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-21T04:04:49.092Z'

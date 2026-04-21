@@ -1,0 +1,138 @@
+title: >-
+  The chatwidget is too high, it should stick to the bottom of screen and not be
+  impacted when it scroll
+stage: Done
+status: Todo
+comments:
+  - >-
+    Socratic brainstorming questions have been appended to `REQ-00071/index.md`
+    under a `## Brainstorming` section, grouped into five categories:
+
+
+    - **Clarify** — interrogates the exact meaning of "too high," the desired
+    `bottom` value, and whether the issue is FAB position, panel position, or
+    scroll behavior
+
+    - **Probe Assumptions** — questions whether this is truly a vertical
+    positioning problem or a z-index layering issue, and whether it affects all
+    screen sizes equally
+
+    - **Find Reasons and Evidence** — asks for the user feedback or change
+    history that prompted this requirement
+
+    - **Explore Alternatives** — considers simpler CSS fixes, upstream layout
+    fixes, z-index fixes, and user preference toggles
+
+    - **Explore Implications** — surfaces risks around mobile browser address
+    bars, toast collision, accessibility, and shared positioning tokens
+  - >-
+    ## Analysis Complete
+
+
+    Analyzed REQ-00071 covering the chat widget bottom positioning fix. The
+    scope is a single Tailwind class change in `ChatWidget.tsx:261` (`bottom-24`
+    → `bottom-6`/`bottom-0`). Scroll independence is already implemented via
+    `position: fixed`. Found no z-index conflicts with toast (`z-[100]` vs
+    `z-50`), but flagged mobile browser address bar as the main risk — recommend
+    `bottom-6` over `bottom-0`. No API, routing, or external service changes.
+    Four open questions flagged for the author: exact target bottom value,
+    responsive behavior, whether the scroll requirement is already satisfied,
+    and whether a shared bottom-spacing token should be introduced.
+    Implementation is trivial — one className swap.
+  - >-
+    The `## Specification` section was already present in the file — it had been
+    added by a concurrent process. The document is complete and well-structured
+    as-is. I'll surface that back to the user.
+
+
+    The specification for REQ-00071 covers all four required areas:
+
+
+    **User Stories (3)** — As a user… I want… so that… form covering FAB
+    reachability, scroll independence, and mobile browser chrome safety.
+
+
+    **Acceptance Criteria (5)** — Given/When/Then clauses that are testable:
+    scroll-fixed FAB, correct panel anchor, `bottom-6` on mobile, `bottom-6` on
+    desktop, z-index layering preserved relative to toast.
+
+
+    **Technical Constraints** — File (`ChatWidget.tsx:261`), Tailwind unit
+    meaning, preservation of `position: fixed`, preservation of `z-50`,
+    preservation of `maxHeight: '70vh'`, no API/routing/external-service
+    changes, browser compatibility requirement.
+
+
+    **Out of Scope (6)** — Internal scroll changes, z-index restructuring, chat
+    API/messaging changes, user-configurable position preferences, responsive
+    breakpoints, shared design token introduction, toast positioning changes.
+
+
+    The specification is ready for the next stage. Implementation is a single
+    className swap: `bottom-24` → `bottom-6` on the outer wrapper div.
+  - >-
+    Changed `bottom-24` (6rem) to `bottom-6` (1.5rem) on the ChatWidget outer
+    wrapper div in `components/dashboard/ChatWidget.tsx:261`. The `position:
+    fixed` class was already present and ensures scroll independence — no change
+    needed there. The `z-50` and `maxHeight: '70vh'` were already correct and
+    preserved. Added an `## Implementation Notes` section to `index.md`
+    documenting the single className change.
+  - >-
+    All five acceptance criteria for REQ-00071 pass validation. Here's the
+    summary:
+
+
+    **What was done:** Verified the implementation in `ChatWidget.tsx:261`
+    against each of the five Given/When/Then acceptance criteria in the spec.
+    The `bottom-24` → `bottom-6` change is correctly applied in the code. The
+    `fixed` class (which ensures scroll independence) was already present and is
+    preserved. The `z-50` and `maxHeight: '70vh'` are both preserved. No
+    regressions found. A `## Validation` table was appended to
+    `REQ-00071/index.md` and both files were committed.
+
+
+    **Verdicts:**
+
+    - AC1 (scroll-fixed FAB): ✅ Pass — `fixed` class confirmed on wrapper
+
+    - AC2 (panel anchored with `maxHeight: '70vh'`): ✅ Pass — panel is a child
+    of the wrapper, `maxHeight` confirmed at line 267
+
+    - AC3 (mobile `bottom-6`): ✅ Pass — no breakpoint override, single value
+    applies to all viewports
+
+    - AC4 (desktop `bottom-6`): ✅ Pass — same as AC3, uniform across all sizes
+
+    - AC5 (z-50 layering preserved): ✅ Pass — `z-50` in className, toast
+    unchanged
+
+
+    **Nothing failed** — no follow-up items remain. The implementation is
+    complete and correct.
+sessions:
+  - stage: Brainstorming
+    adapter: claude
+    sessionId: e34956f7-2968-4ec7-a01b-c9b85df7c8b2
+    startedAt: '2026-04-20T07:51:06.885Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 896235d2-cd39-402f-a786-6e92d735d2af
+    startedAt: '2026-04-20T08:12:46.156Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 8c07fd29-d3c7-4e27-b560-b614985a2b0b
+    startedAt: '2026-04-20T09:20:11.581Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 24df5881-b81c-40b7-be78-2ae571dbddde
+    startedAt: '2026-04-20T09:20:15.198Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: e0815d85-e54e-4c74-93a7-8656e9ce3347
+    startedAt: '2026-04-20T09:22:39.156Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: aaea5a18-b1ec-4ef3-9901-d4c137e90822
+    startedAt: '2026-04-20T09:24:02.032Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-20T09:26:17.871Z'

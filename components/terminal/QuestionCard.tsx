@@ -55,16 +55,16 @@ export default function QuestionCard({
   };
 
   return (
-    <div className="bg-zinc-900 border border-zinc-700 rounded-md p-4 space-y-3 max-w-lg">
+    <div className="bg-card border border-border rounded-md p-4 space-y-3 max-w-lg">
       <div className="flex items-start gap-2">
         <HelpCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
         <div className="space-y-1">
           {header && (
-            <span className="text-xs font-bold text-zinc-400 uppercase">
+            <span className="text-xs font-bold text-muted-foreground uppercase">
               {header}
             </span>
           )}
-          <p className="text-sm text-zinc-200">{question}</p>
+          <p className="text-sm text-foreground">{question}</p>
         </div>
       </div>
 
@@ -80,14 +80,14 @@ export default function QuestionCard({
             onChange={(e) => setFreeformText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && submitFreeform()}
             placeholder="Type your answer..."
-            className="bg-zinc-800 border-zinc-600 text-zinc-200 text-sm h-8"
+            className="bg-muted border-border text-foreground text-sm h-8"
             disabled={disabled}
           />
           <Button
             size="sm"
             onClick={submitFreeform}
             disabled={disabled || !freeformText.trim()}
-            className="bg-zinc-700 hover:bg-zinc-600 text-zinc-200 h-8"
+            className="bg-secondary hover:bg-secondary/80 text-secondary-foreground h-8"
           >
             <Send className="w-3 h-3" />
           </Button>
@@ -103,23 +103,23 @@ export default function QuestionCard({
                 'flex items-center gap-2 w-full text-left px-3 py-2 rounded text-sm transition-colors',
                 'border',
                 selected.has(opt.label)
-                  ? 'bg-blue-900/40 border-blue-600 text-blue-200'
-                  : 'bg-zinc-800 border-zinc-600 text-zinc-300 hover:bg-zinc-700',
+                  ? 'bg-primary/20 border-primary text-primary-foreground'
+                  : 'bg-muted border-border text-foreground hover:bg-muted/80',
                 disabled && 'opacity-50 cursor-not-allowed'
               )}
             >
               <div className={cn(
                 'w-4 h-4 rounded border flex items-center justify-center flex-shrink-0',
                 selected.has(opt.label)
-                  ? 'bg-blue-500 border-blue-500'
-                  : 'border-zinc-500'
+                  ? 'bg-primary border-primary'
+                  : 'border-muted-foreground'
               )}>
-                {selected.has(opt.label) && <Check className="w-3 h-3 text-white" />}
+                {selected.has(opt.label) && <Check className="w-3 h-3 text-primary-foreground" />}
               </div>
               <div>
                 <span className="font-medium">{opt.label}</span>
                 {opt.description && (
-                  <span className="text-zinc-500 ml-2">{opt.description}</span>
+                  <span className="text-muted-foreground ml-2">{opt.description}</span>
                 )}
               </div>
             </button>
@@ -128,7 +128,7 @@ export default function QuestionCard({
             size="sm"
             onClick={submitMultiSelect}
             disabled={disabled || selected.size === 0}
-            className="bg-blue-600 hover:bg-blue-500 text-white mt-1"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground mt-1"
           >
             Submit ({selected.size} selected)
           </Button>
@@ -143,8 +143,8 @@ export default function QuestionCard({
               title={opt.description}
               className={cn(
                 'px-3 py-2 rounded text-sm font-medium transition-colors',
-                'bg-zinc-800 border border-zinc-600 text-zinc-200',
-                'hover:bg-zinc-700 hover:border-zinc-500',
+                'bg-muted border border-border text-foreground',
+                'hover:bg-muted/80 hover:border-muted-foreground',
                 disabled && 'opacity-50 cursor-not-allowed'
               )}
             >

@@ -38,6 +38,10 @@ A workflow is a configurable stage pipeline. Each workflow has its own stages, a
 
 For details on workflows structure and configuration, see [workflows/CLAUDE.md](workflows/CLAUDE.md).
 
+## Agent Constraints
+
+Agents MUST NOT manually update an item's `stage` field. Stage transitions are automated by the NOS runtime heartbeat sweeper. An agent may only update an item's `stage` when explicitly instructed to do so by the system prompt or stage prompt.
+
 ## Maintenance
 
 This document describes stable structural concepts. When adding or removing subdirectories, update this guide to reflect the change. No single owner is assigned — contributors are expected to update it alongside structural changes, similar to a README convention.

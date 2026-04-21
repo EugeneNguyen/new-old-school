@@ -1,0 +1,58 @@
+title: >-
+  the item in the stage columns should be order by last updated time, from
+  newest to oldest
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis complete for REQ-00080. The requirement asks for stage-column items
+    to be sorted newest-first by `updatedAt`. The `ListView` already does this
+    correctly, but the `KanbanBoard` applies no sort at all — items appear in
+    filesystem (alphabetical ID) order. The fix is straightforward: apply the
+    same `.sort()` call either locally in `KanbanBoard.tsx` or upstream in
+    `WorkflowItemsView.tsx`. No risks, no external dependencies, and the data
+    model already guarantees the `updatedAt` field is present on every item.
+  - >-
+    Specification written for REQ-00080. It defines two user stories (project
+    manager seeing newest items first, developer expecting consistent order
+    across views), five testable acceptance criteria covering normal rendering,
+    re-render after updates, ListView regression, filtered results, and capped
+    columns, plus technical constraints recommending Option B (upstream sort in
+    `WorkflowItemsView`) with exact file locations and sort expression, and four
+    explicit out-of-scope boundaries.
+  - >-
+    Implementation complete. I applied Option B (upstream sort): the
+    `filteredItems` memo in `WorkflowItemsView.tsx` now sorts by `updatedAt`
+    descending before passing items to either view, and the duplicate sorts in
+    `ListView.tsx` were removed. `KanbanBoard` now inherits correct sort order
+    without any local changes. TypeScript compiles cleanly with no errors.
+  - >-
+    All five acceptance criteria pass. The upstream sort in
+    `WorkflowItemsView.tsx:97` correctly feeds both `KanbanBoard` and `ListView`
+    with pre-sorted items; `ListView`'s duplicate sort was cleanly removed;
+    `maxDisplayItems` slicing now shows the most-recently-updated items;
+    TypeScript compiles with zero errors; no regressions in drag-and-drop, stage
+    counts, or expand/collapse. Validation section appended to `index.md`.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 568cfd90-e01b-4926-9ecc-c8c56d15d067
+    startedAt: '2026-04-20T14:12:29.884Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 75299dcc-b3da-4756-97c6-e7a1fcd3fb29
+    startedAt: '2026-04-20T14:12:32.593Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: ce81bc47-92e6-4a7f-b2b0-79f9f2f7370d
+    startedAt: '2026-04-20T14:15:57.288Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 94410299-8f3d-41d4-91b1-c28f62343f08
+    startedAt: '2026-04-20T14:17:35.432Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 87278f99-fd35-41cb-a4b7-aa29314cb731
+    startedAt: '2026-04-20T14:19:59.226Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-20T14:22:15.124Z'

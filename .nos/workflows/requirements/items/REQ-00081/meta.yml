@@ -1,8 +1,8 @@
 title: >-
   create routine mode: a workflow that will create an item automatically at a
   cron time
-stage: Validation
-status: In Progress
+stage: Done
+status: Todo
 comments:
   - >-
     Analysis complete. I appended an `## Analysis` section to REQ-00081's
@@ -70,6 +70,30 @@ comments:
     - Stage pipeline triggered for routine items
 
     - `routine-item-created` activity logged
+  - >-
+    Validation complete. Here's what I found and fixed:
+
+
+    **Critical bug fixed (AC-2):** `lib/routine-scheduler.ts:116` used
+    `CronExpressionParser.parse(cron, { currentDate: now }).next()` which always
+    returns a future occurrence, so `scheduledTime > now` was always `true` and
+    routine items were **never created**. Changed to `.prev()` which returns the
+    most recent past occurrence, allowing the `lastFiredAt` deduplication check
+    to work correctly.
+
+
+    **Partial compliance (AC-8):** The client-side `isValidCronFormat()`
+    function in `RoutineSettingsDialog.tsx:192` only checks for 5
+    whitespace-separated fields instead of actually parsing with `cron-parser`
+    as the spec required. Server-side validation is correct and errors surface
+    to the user, so this is functional but weaker than specified. Documented as
+    a follow-up in the validation section.
+
+
+    All other 9 criteria (config persistence, `origin: routine` in meta.yml,
+    stage pipeline trigger, deduplication, restart resilience, no-stages guard,
+    disabled-mode guard, activity logging) pass. Bug fix and validation section
+    committed and pushed.
 sessions:
   - stage: Analysis
     adapter: claude
@@ -93,4 +117,4 @@ sessions:
     sessionId: 6ce83135-1b23-455e-b50e-957fd9eda71c
     startedAt: '2026-04-20T16:12:49.593Z'
     agentId: martin-senior-engineer
-updatedAt: '2026-04-20T16:12:49.595Z'
+updatedAt: '2026-04-20T16:17:53.824Z'

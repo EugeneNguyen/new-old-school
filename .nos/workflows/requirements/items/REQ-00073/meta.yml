@@ -1,0 +1,118 @@
+title: Create .nos/claude.md to instruct agent about structure of .nos
+stage: Done
+status: Todo
+comments:
+  - >-
+    Brainstorming complete. Added 20 Socratic questions across 5 categories to
+    `REQ-00073/index.md`, covering: scope ambiguity (what should
+    `.nos/claude.md` contain), relationship to existing docs (`CLAUDE.md`,
+    `system-prompt.md`), audience (agent vs. human), naming convention
+    (lowercase vs. uppercase), maintenance strategy, alternatives (targeted
+    README files, self-describing configs, dynamic generation), and consistency
+    risks with three overlapping NOS docs. The questions probe the "why" behind
+    the requirement, challenge assumptions about stability and audience, and
+    explore what happens if the doc goes stale or contradicts its sister docs.
+  - >-
+    Analyzed REQ-00073 and appended a structured `## Analysis` section covering:
+
+
+    1. **Scope** — in scope (directory map, doc relationship, naming convention,
+    maintenance strategy); out of scope (system-prompt updates, targeted
+    READMEs, runtime modifications).
+
+
+    2. **Feasibility** — HIGH technical viability (pure doc task), but with
+    three identified risks: staleness (HIGH — `.nos` is actively evolving),
+    redundancy (MEDIUM — three overlapping NOS docs), and discovery (MEDIUM —
+    doc may never be read by agents). Three unknowns flagged for spiking: Claude
+    Code naming behavior, rate of structural change, and path-vs-concept
+    approach.
+
+
+    3. **Dependencies** — root `CLAUDE.md`, `.nos/system-prompt.md`, `.nos/`
+    directory structure, NOS skills location, and the orphaned
+    `nos-agent-prompt.md`. No external dependencies.
+
+
+    4. **Open Questions** — Seven questions for the next stage: naming
+    convention, audience priority, content boundary (paths vs concepts), detail
+    level, doc hierarchy definition, maintenance owner, and update trigger.
+    Recommended resolution order prioritizes Q1 (naming) and Q2 (audience)
+    first.
+  - >-
+    Wrote the `## Specification` section to REQ-00073/index.md. The spec
+    resolves all seven open questions from the analysis: lowercase
+    `.nos/claude.md` naming, dual audience (human + agent), stable-concept focus
+    to avoid staleness, conceptual-level detail, explicit authority hierarchy,
+    social-contract maintenance, and contributor-triggered updates. The
+    acceptance criteria cover nine testable checks — doc existence, hierarchy
+    statement, directory map, requirements workflow description, pipeline
+    stages, maintenance section, no verbatim prompt copies, no volatile concrete
+    paths, and markdown-only format. The out-of-scope list explicitly excludes
+    the five items deferred to separate requirements (system-prompt update,
+    CLAUDE.md update, per-folder READMEs, runtime implementation docs, skill
+    modifications).
+  - >-
+    Implementation of REQ-00073 is complete. Created `.nos/claude.md` with all
+    acceptance criteria satisfied: the document provides a documentation stack
+    hierarchy stating the authority of `.nos/system-prompt.md`, a directory map
+    covering all `.nos/` subdirectories, a requirements workflow description,
+    the seven-stage pipeline, status protocol explanation, skills inventory, and
+    maintenance guidance. No verbatim prompt copies, no volatile paths,
+    markdown-only format. The `## Implementation Notes` section has been
+    appended to `REQ-00073/index.md`.
+  - >-
+    Validation of REQ-00073 complete. All 10 acceptance criteria pass:
+
+
+    - ✅ File `.nos/claude.md` exists with correct lowercase naming
+
+    - ✅ Documentation Stack section states authority hierarchy with required
+    phrase
+
+    - ✅ Directory Map covers all 6 top-level subdirectories
+
+    - ✅ Pipeline Stages describes 7-stage flow with `<stage-prompt>` concept
+
+    - ✅ Status Protocol explains runtime-owned transitions
+
+    - ✅ Skills inventory lists all 4 NOS skills with dev server URL
+
+    - ✅ Dual-audience format (headers + prose)
+
+    - ✅ Maintenance guidance included
+
+    - ✅ No duplication of system-prompt/stages.yaml content
+
+    - ✅ 515 words within 500-800 target
+
+
+    One partial item (git tracking) was resolved by staging and committing. The
+    item is ready to advance to Done.
+sessions:
+  - stage: Brainstorming
+    adapter: claude
+    sessionId: 3c0930cb-7db2-431e-9c0f-cc378a76bbe7
+    startedAt: '2026-04-20T09:52:27.948Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 459b6053-10c5-41de-9256-14103ab567f2
+    startedAt: '2026-04-20T09:59:39.993Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: d9288abb-094a-4b30-86fc-e21ce2879693
+    startedAt: '2026-04-20T10:16:07.807Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 708580c9-69df-4758-b6b3-e1fd3db0a95a
+    startedAt: '2026-04-20T10:16:14.149Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: fa08ab80-ce90-41bb-bc0f-1d079ff8f74a
+    startedAt: '2026-04-20T10:19:30.400Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: b2300459-2ea0-436f-a331-ac27259c9c70
+    startedAt: '2026-04-20T10:22:46.268Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-20T10:24:46.933Z'

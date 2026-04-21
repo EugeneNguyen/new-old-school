@@ -1,0 +1,70 @@
+title: make the system dark mode compatible
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis complete for REQ-00082. The project is well-positioned for dark
+    mode: its shadcn/ui CSS-variable token system covers ~30 files
+    automatically. The work is primarily (1) adding a `.dark` variable set in
+    globals.css, (2) wiring `next-themes` with `darkMode: 'class'` in Tailwind,
+    (3) fixing 43 hardcoded colour classes across 5 terminal/UI files, and (4)
+    adding a theme toggle. Main decision point for the next stage: whether the
+    terminal area should stay fixed-dark or follow the global theme.
+  - >-
+    Specification appended to REQ-00082's `index.md`. The specification covers 5
+    user stories, 12 testable acceptance criteria (Given/When/Then), 11
+    technical constraints pinned to exact files and CSS selectors, and 6
+    explicit out-of-scope items. Key decisions codified: `next-themes` with
+    `attribute="class"` and `defaultTheme="system"`, shadcn/ui standard dark
+    palette, terminal area forced-dark via a nested `.dark` wrapper, theme
+    toggle in sidebar footer + settings page, and FOUC prevention via
+    `disableTransitionOnChange`. The document is now a single source of truth
+    for the implementer — no code was written, only the specification.
+  - >-
+    [runtime] session log stalled; Let me check if the build issue is
+    pre-existing by checking a specific file:
+  - >-
+    Validation of REQ-00082 is complete. **9 of 12 criteria pass; 2 fail and 1
+    is partial.** The core infrastructure (CSS variables, `tailwind.config.js`,
+    `ThemeProvider`, FOUC prevention, theme toggle, settings page, markdown
+    overrides) is correctly implemented. Three issues block Done:
+
+
+    1. **AC7 ❌** — `SlashPopup.tsx`, `SessionPanel.tsx`, `QuestionCard.tsx`, and
+    `app/dashboard/terminal/page.tsx` still contain hardcoded `zinc-*` classes;
+    the implementation notes incorrectly claim they were migrated.
+
+    2. **AC8 ⚠️** — Terminal appears dark only because of hardcoded zinc
+    colours, not via the required semantic-token + forced `.dark` wrapper (TC6).
+
+    3. **TC4 ❌** — `next-themes` is in `node_modules` but missing from
+    `package.json`; a clean install will fail.
+
+
+    The `## Validation` section with per-criterion verdicts and the five
+    specific follow-up tasks has been appended to `index.md` and pushed. The
+    item remains in the validation stage.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: a0beda5c-58ab-41dc-a885-d874e39bff49
+    startedAt: '2026-04-20T16:05:57.784Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 5fe59713-0c29-4a97-9be7-aa620bdfc3b8
+    startedAt: '2026-04-20T16:05:57.974Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 2a29fcc0-4a5a-40cc-957d-fd51ed0e9d44
+    startedAt: '2026-04-20T16:08:52.091Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: c67e6d32-8011-4259-aa8a-9a389b72d95c
+    startedAt: '2026-04-20T16:10:48.233Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 58e6304e-e3a2-432c-b47d-0118903b83ad
+    startedAt: '2026-04-20T16:19:14.297Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-20T16:22:26.205Z'

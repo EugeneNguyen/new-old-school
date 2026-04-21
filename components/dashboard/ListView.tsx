@@ -90,6 +90,14 @@ export default function ListView({ stages, items, onOpenItem }: Props) {
     }));
   }, [items, stages]);
 
+  if (stages.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-muted-foreground">
+        No stages defined for this workflow. Configure stages in your workflow settings.
+      </div>
+    );
+  }
+
   if (items.length === 0) {
     return (
       <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">

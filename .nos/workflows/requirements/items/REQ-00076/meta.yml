@@ -1,0 +1,74 @@
+title: >-
+  in other workspace, the item status is changed to done when the session is
+  done. fix that
+stage: Done
+status: Todo
+comments:
+  - >-
+    [runtime] session log stalled; The `index.md` is empty — just the title from
+    `meta.yml`. Let me explore the auto-advance and session management code to
+    understand the problem space before writing brainstorming questions.
+  - >-
+    Analysis complete. I examined the auto-advance sweeper, session management,
+    workspace context, and agent adapter code to trace how session completion
+    crosses workspace boundaries. The root cause is that `sessionsDir()` in
+    `agent-adapter.ts` resolves `getProjectRoot()` lazily inside event-emitter
+    callbacks, which may execute outside the `AsyncLocalStorage` context
+    established by `runWithProjectRoot`. The safest fix is to capture the
+    workspace root eagerly at `startSession()` call time and add a defensive
+    guard in `completeSessionIfFinished` to skip session logs that don't exist
+    at the expected workspace-scoped path. The analysis has been appended to the
+    item's `index.md` under `## Analysis`.
+  - >-
+    Specification written. The core fix is straightforward: capture
+    `getProjectRoot()` eagerly at the top of `startSession()` instead of
+    resolving it lazily inside event callbacks. The existing `statSync` guard in
+    `completeSessionIfFinished` already prevents marking items Done when the
+    session log doesn't exist at the expected workspace-scoped path — this just
+    needs to be confirmed as the only code path (no fallback). No schema changes
+    or migrations needed; backward compatibility with single-workspace setups is
+    preserved.
+  - >-
+    Implementation complete. The fix captures `getProjectRoot()` eagerly at the
+    top of `startSession()` in `lib/agent-adapter.ts`, before entering the
+    Promise executor. This ensures the session log is always written to the
+    correct workspace's `.claude/sessions/` directory regardless of when
+    event-emitter callbacks fire — eliminating the cross-workspace contamination
+    where completing a session in workspace A could mark items Done in workspace
+    B. TypeScript compiles cleanly with no errors. The existing guard in
+    `completeSessionIfFinished` (returns `null` if the log file doesn't exist at
+    the workspace-scoped path) was already correct and needed no changes.
+  - >-
+    All 6 acceptance criteria pass. The implementation in `lib/agent-adapter.ts`
+    correctly captures `getProjectRoot()` eagerly at `startSession()` call time
+    (lines 44-45), before the Promise executor, so session logs always land in
+    the calling workspace's `.claude/sessions/` directory regardless of
+    event-emitter timing. The existing `statSync` guard in
+    `completeSessionIfFinished` (lines 159-163) provides the defensive check
+    against cross-workspace contamination. The sweeper structure and
+    AsyncLocalStorage propagation are correct. TypeScript compiles with zero
+    errors. The `## Validation` section has been appended to `index.md` with
+    per-criterion verdicts and code evidence.
+sessions:
+  - stage: Brainstorming
+    adapter: claude
+    sessionId: 1e737494-3d46-4bc8-9d49-fbab0a64479e
+    startedAt: '2026-04-20T12:29:27.856Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 56376630-3d7b-4bd9-b205-2592c15d73db
+    startedAt: '2026-04-20T12:32:08.044Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: db39dd80-84c1-4cd7-a2e2-abda1a73fe75
+    startedAt: '2026-04-20T12:37:02.626Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 474b7a0b-0a16-40fd-b91c-3bfca06746ff
+    startedAt: '2026-04-20T12:38:40.792Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 50610ea7-a6fd-4bea-ba19-8a8edb188ba0
+    startedAt: '2026-04-20T12:41:19.647Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-20T12:43:35.479Z'

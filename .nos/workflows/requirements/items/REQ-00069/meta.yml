@@ -1,6 +1,6 @@
 title: Implement way to edit/delete the comment in the item
-stage: Validation
-status: In Progress
+stage: Done
+status: Todo
 comments:
   - >-
     The analysis has already been written by a previous run. The file contains a
@@ -82,6 +82,21 @@ comments:
 
     All 10 acceptance criteria are satisfied. The existing comment append flow
     is unchanged.
+  - |-
+    Validation complete. All 10 acceptance criteria pass:
+
+    - **AC-1** ✅ Click-to-edit triggers textarea with Save/Cancel
+    - **AC-2** ✅ PATCH call + optimistic rollback on failure
+    - **AC-3** ✅ Escape cancels, resets on dialog open
+    - **AC-4** ✅ Two-click delete ("Delete?" confirm)
+    - **AC-5** ✅ Hard-delete via array splice
+    - **AC-6** ✅ Edit replaces in place, no append
+    - **AC-7** ✅ State-driven re-render on save/delete
+    - **AC-8** ✅ 404 with "No comment at index N" for out-of-bounds
+    - **AC-9** ✅ PATCH/DELETE at `/comments/:index`
+    - **AC-10** ✅ Add-comment flow unchanged
+
+    TypeScript compiles clean, 22 tests pass. Committed and pushed to `main`.
 sessions:
   - stage: Analysis
     adapter: claude
@@ -111,4 +126,4 @@ sessions:
     sessionId: 19e39b5e-5aac-474a-bf2b-b161fd8712a1
     startedAt: '2026-04-20T07:08:30.998Z'
     agentId: martin-senior-engineer
-updatedAt: '2026-04-20T07:08:31.035Z'
+updatedAt: '2026-04-20T16:17:53.718Z'

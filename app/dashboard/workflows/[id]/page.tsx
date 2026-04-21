@@ -28,19 +28,12 @@ export default async function WorkflowPage({
         </p>
       </div>
 
-      {detail.stages.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-          No stages defined for this workflow. Configure stages in{' '}
-          <code className="font-mono text-xs">.nos/workflows/{detail.id}/config/stages.yaml</code>.
-        </div>
-      ) : (
-        <WorkflowItemsView
-          workflowId={detail.id}
-          stages={detail.stages}
-          initialItems={detail.items}
-          initialOpenItemId={itemParam}
-        />
-      )}
+      <WorkflowItemsView
+        workflowId={detail.id}
+        stages={detail.stages}
+        initialItems={detail.items}
+        initialOpenItemId={itemParam}
+      />
     </div>
   );
 }

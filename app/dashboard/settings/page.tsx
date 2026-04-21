@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { cn } from '@/lib/utils';
 import { useItemDoneSound } from '@/lib/hooks/use-item-done-sound';
 import {
@@ -28,9 +29,10 @@ const AUDIO_DONE_KEY = 'nos.notifications.audio.itemDone';
 
 const MAX_BYTES = 65536;
 
-type TabId = 'system-prompt' | 'heartbeat' | 'notifications' | 'adapter';
+type TabId = 'appearance' | 'system-prompt' | 'heartbeat' | 'notifications' | 'adapter';
 
 const TABS: { id: TabId; label: string }[] = [
+  { id: 'appearance', label: 'Appearance' },
   { id: 'system-prompt', label: 'System Prompt' },
   { id: 'heartbeat', label: 'Heartbeat Config' },
   { id: 'notifications', label: 'Notifications' },
@@ -361,6 +363,29 @@ export default function SettingsPage() {
             {t.label}
           </button>
         ))}
+      </div>
+
+      <div
+        role="tabpanel"
+        id="panel-appearance"
+        aria-labelledby="tab-appearance"
+        hidden={activeTab !== 'appearance'}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>Appearance</CardTitle>
+            <CardDescription>
+              Choose how the dashboard looks. Light follows the light palette, dark follows
+              the dark palette, and system uses your OS preference.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium">Theme</span>
+              <ThemeToggle />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div

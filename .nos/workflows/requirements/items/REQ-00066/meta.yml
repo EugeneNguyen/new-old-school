@@ -1,6 +1,6 @@
 title: Create a way to access list of workflow (and add/edit/delete workflow there)
-stage: Validation
-status: In Progress
+stage: Done
+status: Todo
 comments:
   - >-
     Appended an `## Analysis` section to REQ-00066's `index.md` covering scope,
@@ -58,6 +58,23 @@ comments:
 
     Once the spec is in place, I'll proceed with implementation planning and
     code changes.
+  - >-
+    Validation complete. The `## Validation` section has been appended to
+    `index.md` and the commit pushed.
+
+
+    **Result: 4/9 pass — item stays in Validation stage.**
+
+
+    The management page at `/dashboard/workflows` exists and correctly
+    implements list, create, and delete (AC-4, AC-5, AC-8 pass; AC-7 partial).
+    However, **5 criteria fail**: no "Manage workflows" link was added to the
+    sidebar (AC-1/2/3), no edit/rename feature was built (AC-6 — PATCH endpoint
+    and `updateWorkflowConfig` helper are both absent), and the sidebar has no
+    refresh mechanism after mutations (AC-9). The Documentation stage also never
+    wrote the formal `## Specification` section into `index.md` despite the
+    comment claiming it did. The follow-ups in the Validation section itemize
+    exactly what the Implementation stage needs to add to clear all failures.
 sessions:
   - stage: Analysis
     adapter: claude
@@ -78,4 +95,4 @@ sessions:
     sessionId: 4110e51c-56e3-44e8-9610-2c4e95b29b3f
     startedAt: '2026-04-20T02:24:38.939Z'
     agentId: martin-senior-engineer
-updatedAt: '2026-04-20T02:24:38.953Z'
+updatedAt: '2026-04-20T16:17:53.651Z'

@@ -1,0 +1,100 @@
+title: >-
+  In other workspace (PersonalBranding), the item start the claude, change to in
+  progress, but when the claude finished, it not change to done
+stage: Done
+status: Todo
+comments:
+  - >-
+    [runtime] session log stalled; Now I have a complete picture. Let me write
+    the brainstorming section. The bug is: in another workspace
+    (PersonalBranding), items get started (set to "In Progress") but never
+    transition to "Done" when the Claude session finishes. The core mechanism
+    for completion is `completeSessionIfFinished` which checks for idle session
+    log files in `.claude/sessions/`.
+  - >-
+    Analysis complete. I appended an `## Analysis` section to REQ-00077's
+    `index.md` covering scope, feasibility, dependencies, and open questions.
+
+
+    **Summary:** The bug is that items in non-primary workspaces
+    (PersonalBranding) get stuck at "In Progress" because
+    `completeSessionIfFinished` cannot find the session log file. The most
+    likely root cause is a path mismatch — either `AsyncLocalStorage` context
+    isn't propagating correctly to `sessionsDir()` during the sweeper tick, or
+    `child.unref()` in the adapter causes the log file to be incomplete/absent.
+    The key diagnostic step is verifying where the session log file physically
+    resides after the Claude session completes. No implementation changes were
+    made — only analysis was appended.
+  - >-
+    Specification written. I appended a `## Specification` section to
+    REQ-00077's `index.md` with 2 user stories, 6 testable acceptance criteria
+    (using Given/When/Then), 8 technical constraints grounded in the actual
+    source code paths, and 6 explicit out-of-scope items to prevent scope creep.
+    The spec focuses on ensuring `getProjectRoot()` resolves consistently across
+    session creation and completion detection for non-primary workspaces, plus
+    adding observability (logging) when the silent `statSync` failure occurs. No
+    code changes were made — only specification was authored.
+  - >-
+    Implementation complete. Here's a summary of the changes:
+
+
+    **`lib/auto-advance-sweeper.ts`** — Fixed `tick()` to always include the
+    primary project root in the sweep loop. Previously, once workspaces were
+    registered, the primary project was excluded entirely, causing its items to
+    never transition to Done.
+
+
+    **`lib/auto-advance.ts`** — Three improvements to
+    `completeSessionIfFinished`:
+
+    1. Replaced the silently-failing `statSync` catch with a `console.warn` that
+    logs the resolved root path, session ID, and item ID (AC4).
+
+    2. Added `MAX_SESSION_DURATION_MS` (30 min) force-completion — if the log
+    file can't be found but the session has been running longer than the max,
+    the item is forced Done with a diagnostic comment (AC5).
+
+    3. Inlined path resolution with an explicit `getProjectRoot()` capture,
+    removing the unused `sessionsDir()` helper and making the resolved root
+    visible in logs for debugging (AC2/AC3).
+
+
+    All acceptance criteria are satisfied and TypeScript compiles cleanly.
+  - >-
+    Validation complete. All 6 acceptance criteria pass: `tick()` in
+    `auto-advance-sweeper.ts` now always includes the primary root (AC1),
+    session log write and lookup paths both resolve via `getProjectRoot()`
+    inside the same `runWithProjectRoot` scope (AC2/AC3), `statSync` failures
+    emit `console.warn` with full diagnostic context instead of silently
+    returning null (AC4), `MAX_SESSION_DURATION_MS` (30min) force-completes
+    stuck sessions (AC5), and stalled-log detection with `[runtime] session log
+    stalled` prefix is preserved end-to-end for non-primary workspaces now that
+    path resolution is fixed (AC6). No regressions found in primary workspace
+    behavior. Validation section appended to `index.md` and pushed.
+sessions:
+  - stage: Brainstorming
+    adapter: claude
+    sessionId: aa97006d-14e4-4ce7-bf54-5091eb940227
+    startedAt: '2026-04-20T13:31:15.680Z'
+  - stage: Brainstorming
+    adapter: claude
+    sessionId: 45993795-03f7-4aa9-b157-8e7127006d5b
+    startedAt: '2026-04-20T13:31:16.055Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: f11ed6c5-3f4a-448e-a059-a7a3476d3f61
+    startedAt: '2026-04-20T13:33:24.517Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 5cf8feba-c724-4bdd-a903-733ea4f03456
+    startedAt: '2026-04-20T13:36:33.723Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 6e8b43b2-0004-4961-bcee-dbd9cd178c0f
+    startedAt: '2026-04-20T13:38:12.090Z'
+  - stage: Validation
+    adapter: claude
+    sessionId: 7a8833be-f12b-4f43-b138-b0629b0493ec
+    startedAt: '2026-04-20T13:43:08.599Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-20T13:45:24.554Z'
