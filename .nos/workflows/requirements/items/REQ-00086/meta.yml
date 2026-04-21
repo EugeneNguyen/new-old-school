@@ -1,0 +1,105 @@
+title: In Claude Terminal, also show the tool use (maybe collapsible)
+stage: Validation
+status: In Progress
+comments:
+  - >-
+    Analysis complete for REQ-00086. I appended an `## Analysis` section to the
+    item's `index.md` covering scope (display tool-use blocks with collapsible
+    UI, both live and replayed), feasibility (high — the data is already in the
+    stream but silently dropped at line 142–177), dependencies (terminal page,
+    session history parser, new type definitions, no new libraries), and five
+    open questions around default expand state, filtering, result pairing,
+    session replay fidelity, and styling. The core implementation is
+    straightforward: capture `tool_use`/`tool_result` blocks already present in
+    the CLI stream, add a `toolUses` field to `ChatMessage`, and render a
+    collapsible `<ToolUseCard>` component using existing toggle patterns.
+  - >-
+    Specification section added to REQ-00086. I've documented three user stories
+    (developers want visibility into tool calls, collapsibility, and session
+    replay), eight acceptance criteria covering capture, display, result
+    synchronization, truncation, and performance, eight technical constraints
+    detailing the interface changes and implementation approach, and six
+    out-of-scope items that clarify v1 boundaries. The specification is concrete
+    enough for an implementer to begin work while leaving the five open design
+    questions to be resolved during the implementation stage.
+  - >-
+    Excellent! I have successfully implemented the tool-use visibility feature
+    for the Claude Terminal. Here's what was completed:
+
+
+    ## Implementation Summary
+
+
+    ### Files Created/Modified
+
+
+    1. **types/tool.ts** — Added `ToolUseBlock` interface with `id`, `name`,
+    `input`, `result`, and `status` fields
+
+    2. **types/session.ts** — Extended `SessionHistoryMessage` to include
+    optional `toolUses` array
+
+    3. **app/dashboard/terminal/page.tsx**:
+       - Extended `ChatMessage` interface with `toolUses` field
+       - Updated `processStream()` to capture non-AskUserQuestion tool-use blocks
+       - Added `tool_result` event handling with tool_use_id matching
+       - Updated message rendering to display tool-use cards
+    4. **components/terminal/ToolUseCard.tsx** — New collapsible component
+    showing:
+       - Tool name as header
+       - One-line input summary (when collapsed)
+       - Full input JSON and result (when expanded)
+       - "Pending" indicator for incomplete results
+       - Truncation with "show more" for payloads >5000 chars
+    5. **app/api/claude/sessions/route.ts** — Updated `parseSessionHistory()` to
+    extract and pair tool-use/tool-result blocks from stored events
+
+
+    ### Acceptance Criteria Met
+
+
+    ✅ **Tool-use capture**: CLI stream tool-use blocks captured in
+    `ChatMessage.toolUses`  
+
+    ✅ **Tool information display**: Each card shows name, input summary, and
+    result  
+
+    ✅ **Collapsible UI**: Cards collapsed by default with toggle expansion  
+
+    ✅ **Tool result synchronization**: tool_result matched to tool_use via
+    `tool_use_id`  
+
+    ✅ **Pending state handling**: "Waiting for result..." message shown until
+    result arrives  
+
+    ✅ **Large payload truncation**: >5000 char inputs/outputs truncated with
+    expandable button  
+
+    ✅ **Session history inclusion**: Replayed sessions show full tool timeline  
+
+    ✅ **Performance**: Efficient rendering with no virtualization needed for
+    v1  
+
+
+    Implementation complete with TypeScript validation passing.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: eaadff39-dbf5-4892-9e6a-508577115c4c
+    startedAt: '2026-04-21T04:10:14.777Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: ab8bc3a8-e288-4300-98d2-b1f423d8facc
+    startedAt: '2026-04-21T04:13:29.705Z'
+    agentId: david-engineer
+  - stage: Implementation
+    adapter: claude
+    sessionId: 3111dbba-bc37-4425-af57-ab4cac6615f5
+    startedAt: '2026-04-21T04:14:53.686Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 04da56c4-9b59-4c52-8e0c-4ccbfcd31077
+    startedAt: '2026-04-21T04:18:25.307Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-21T04:18:25.320Z'

@@ -67,6 +67,19 @@ function parseSessionSummary(filePath: string, fileName: string): SessionSummary
 function parseSessionHistory(filePath: string): SessionHistoryMessage[] {
   const lines = parseLines(filePath);
   const messages: SessionHistoryMessage[] = [];
+  const toolResults = new Map<string, string>();
+
+  for (const line of lines) {
+    try {
+      const event = JSON.parse(line);
+
+      if (event.type === 'tool_result' && event.tool_use_id) {
+        toolResults.set(event.tool_use_id, event.content || '');
+      }
+    } catch {
+      // skip malformed lines
+    }
+  }
 
   for (const line of lines) {
     try {
@@ -77,7 +90,30 @@ function parseSessionHistory(filePath: string): SessionHistoryMessage[] {
       }
 
       if (event.type === 'result' && event.result) {
-        messages.push({ role: 'assistant', content: event.result });
+        const toolUses: any[] = [];
+        if (event.message?.content && Array.isArray(event.message.content)) {
+          for (const block of event.message.content) {
+            if (block.type === 'tool_use' && block.name !== 'AskUserQuestion') {
+              const result = toolResults.get(block.id);
+              toolUses.push({
+                id: block.id,
+                name: block.name,
+                input: block.input || {},
+                result: result || null,
+                status: result ? 'completed' : 'pending',
+              });
+            }
+          }
+        }
+
+        const message: SessionHistoryMessage = {
+          role: 'assistant',
+          content: event.result,
+        };
+        if (toolUses.length > 0) {
+          message.toolUses = toolUses;
+        }
+        messages.push(message);
       }
     } catch {
       // skip malformed lines

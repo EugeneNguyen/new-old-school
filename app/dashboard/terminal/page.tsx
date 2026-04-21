@@ -10,9 +10,11 @@ import { cn } from '@/lib/utils';
 import SessionPanel from '@/components/terminal/SessionPanel';
 import type { SessionSummary, SessionHistory } from '@/types/session';
 import type { InteractiveQuestion } from '@/types/question';
+import type { ToolUseBlock } from '@/types/tool';
 import { useSlashComplete } from '@/hooks/useSlashComplete';
 import SlashPopup from '@/components/terminal/SlashPopup';
 import QuestionCard from '@/components/terminal/QuestionCard';
+import ToolUseCard from '@/components/terminal/ToolUseCard';
 
 function generateId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -32,6 +34,7 @@ interface ChatMessage {
   interactiveQuestions?: InteractiveQuestion[];
   questionsAnswered?: boolean;
   answeredWith?: string[];
+  toolUses?: ToolUseBlock[];
 }
 
 export default function ClaudeTerminal() {
@@ -149,33 +152,69 @@ export default function ClaudeTerminal() {
                 );
               }
 
-              if (block.type === 'tool_use' && block.name === 'AskUserQuestion') {
-                const input = block.input as {
-                  questions: Array<{
-                    question: string;
-                    header?: string;
-                    options?: Array<{ label: string; description?: string }>;
-                    multiSelect?: boolean;
-                  }>;
-                };
-                const questions: InteractiveQuestion[] = input.questions.map(
-                  (q: { question: string; header?: string; options?: Array<{ label: string; description?: string }>; multiSelect?: boolean }) => ({
-                    toolUseId: block.id,
-                    header: q.header,
-                    question: q.question,
-                    options: q.options || [],
-                    multiSelect: q.multiSelect ?? false,
-                  })
-                );
-                setMessages(prev =>
-                  prev.map(m =>
-                    m.id === assistantId
-                      ? { ...m, interactiveQuestions: [...(m.interactiveQuestions || []), ...questions] }
-                      : m
-                  )
-                );
+              if (block.type === 'tool_use') {
+                if (block.name === 'AskUserQuestion') {
+                  const input = block.input as {
+                    questions: Array<{
+                      question: string;
+                      header?: string;
+                      options?: Array<{ label: string; description?: string }>;
+                      multiSelect?: boolean;
+                    }>;
+                  };
+                  const questions: InteractiveQuestion[] = input.questions.map(
+                    (q: { question: string; header?: string; options?: Array<{ label: string; description?: string }>; multiSelect?: boolean }) => ({
+                      toolUseId: block.id,
+                      header: q.header,
+                      question: q.question,
+                      options: q.options || [],
+                      multiSelect: q.multiSelect ?? false,
+                    })
+                  );
+                  setMessages(prev =>
+                    prev.map(m =>
+                      m.id === assistantId
+                        ? { ...m, interactiveQuestions: [...(m.interactiveQuestions || []), ...questions] }
+                        : m
+                    )
+                  );
+                } else {
+                  const toolUse: ToolUseBlock = {
+                    id: block.id,
+                    name: block.name,
+                    input: block.input || {},
+                    result: undefined,
+                    status: 'pending',
+                  };
+                  setMessages(prev =>
+                    prev.map(m =>
+                      m.id === assistantId
+                        ? { ...m, toolUses: [...(m.toolUses || []), toolUse] }
+                        : m
+                    )
+                  );
+                }
               }
             }
+          }
+
+          if (event.type === 'tool_result') {
+            const toolUseId = event.tool_use_id;
+            const result = event.content || '';
+            setMessages(prev =>
+              prev.map(m =>
+                m.id === assistantId && m.toolUses
+                  ? {
+                      ...m,
+                      toolUses: m.toolUses.map(tool =>
+                        tool.id === toolUseId
+                          ? { ...tool, result, status: 'completed' }
+                          : tool
+                      ),
+                    }
+                  : m
+              )
+            );
           }
 
           if (event.type === 'result') {
@@ -236,12 +275,16 @@ export default function ClaudeTerminal() {
         });
 
         for (const msg of history.messages) {
-          loaded.push({
+          const chatMsg: ChatMessage = {
             id: generateId(),
             role: msg.role,
             content: msg.content,
             timestamp: '',
-          });
+          };
+          if (msg.toolUses && msg.toolUses.length > 0) {
+            chatMsg.toolUses = msg.toolUses;
+          }
+          loaded.push(chatMsg);
         }
       }
 
@@ -442,10 +485,10 @@ export default function ClaudeTerminal() {
   }, [sendPrompt]);
 
   return (
-    <div className="h-full flex flex-col min-h-0">
+    <div className="dark h-full flex flex-col min-h-0">
       <div className="flex items-center justify-between px-8 pt-8 pb-4 shrink-0">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Claude Terminal</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Claude Terminal</h1>
           <p className="text-muted-foreground">
             Chat with Claude Code directly from your dashboard.
           </p>
@@ -469,12 +512,12 @@ export default function ClaudeTerminal() {
           isLoading={isLoadingSessions}
         />
 
-        <Card className="flex-1 min-h-0 h-full flex flex-col bg-zinc-950 text-zinc-100 border-zinc-800 overflow-hidden">
-          <CardHeader className="border-b border-zinc-800 bg-zinc-900/50 shrink-0">
+        <Card className="flex-1 min-h-0 h-full flex flex-col bg-card text-foreground border-border overflow-hidden">
+          <CardHeader className="border-b border-border bg-muted/50 shrink-0">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-zinc-400" />
-                <CardTitle className="text-sm font-medium">
+                <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-foreground">
                   claude {sessionId ? `— session ${sessionId.slice(0, 8)}` : '— new session'}
                 </CardTitle>
               </div>
@@ -487,7 +530,7 @@ export default function ClaudeTerminal() {
                   title={copiedCommand ? 'Copied!' : 'Copy resume command'}
                   aria-label={copiedCommand ? 'Copied resume command' : 'Copy resume command'}
                   className={cn(
-                    "h-7 gap-1.5 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800",
+                    "h-7 gap-1.5 text-muted-foreground hover:text-foreground hover:bg-muted",
                     copiedCommand && "text-green-400 hover:text-green-400"
                   )}
                 >
@@ -501,21 +544,21 @@ export default function ClaudeTerminal() {
             <ScrollArea ref={scrollRef} className="flex-1 min-h-0 h-full w-full">
               <div className="p-4 space-y-4 font-mono text-sm">
                 {messages.length === 0 && (
-                  <div className="text-zinc-500 italic">
+                  <div className="text-muted-foreground italic">
                     Start a conversation with Claude. Your messages will be sent via the Claude Code CLI.
                   </div>
                 )}
                 {messages.map((msg) => (
                   <div key={msg.id} className="space-y-1">
                     {msg.role === 'system' ? (
-                      <div className="text-zinc-600 italic text-xs py-2">
+                      <div className="text-muted-foreground/60 italic text-xs py-2">
                         {msg.content}
                       </div>
                     ) : (
                       <>
-                        <div className="flex items-center gap-2 text-zinc-400">
+                        <div className="flex items-center gap-2 text-muted-foreground">
                           {msg.timestamp && (
-                            <span className="text-zinc-600 text-xs">[{msg.timestamp}]</span>
+                            <span className="text-muted-foreground/60 text-xs">[{msg.timestamp}]</span>
                           )}
                           <span className={cn(
                             "text-xs font-bold uppercase",
@@ -526,10 +569,20 @@ export default function ClaudeTerminal() {
                         </div>
                         <pre className={cn(
                           "pl-4 py-1 rounded whitespace-pre-wrap break-words",
-                          msg.role === 'user' ? 'text-zinc-200' : 'text-zinc-300'
+                          msg.role === 'user' ? 'text-foreground' : 'text-muted-foreground'
                         )}>
                           {msg.content || (isThinking && msg.role === 'assistant' ? '' : msg.content)}
                         </pre>
+                        {msg.toolUses && msg.toolUses.length > 0 && (
+                          <div className="pl-4 pt-2 space-y-2">
+                            {msg.toolUses.map((tool, idx) => (
+                              <ToolUseCard
+                                key={`${msg.id}-tool-${idx}`}
+                                tool={tool}
+                              />
+                            ))}
+                          </div>
+                        )}
                         {msg.interactiveQuestions && msg.interactiveQuestions.length > 0 && (
                           <div className="pl-4 pt-2 space-y-3">
                             {msg.interactiveQuestions.map((q, idx) => (
@@ -547,7 +600,7 @@ export default function ClaudeTerminal() {
                           </div>
                         )}
                         {isThinking && msg.role === 'assistant' && !msg.content && !msg.interactiveQuestions && msg.id === messages[messages.length - 1]?.id && (
-                          <div className="pl-4 flex items-center gap-2 text-zinc-500">
+                          <div className="pl-4 flex items-center gap-2 text-muted-foreground">
                             <Loader2 className="w-3 h-3 animate-spin" />
                             <span className="text-xs">Claude is thinking...</span>
                           </div>
@@ -558,7 +611,7 @@ export default function ClaudeTerminal() {
                 ))}
               </div>
             </ScrollArea>
-            <form onSubmit={sendMessage} className="p-4 border-t border-zinc-800 flex gap-2 shrink-0">
+            <form onSubmit={sendMessage} className="p-4 border-t border-border flex gap-2 shrink-0">
               <div className="flex-1 relative">
                 {slashOpen && (
                   <SlashPopup
@@ -574,7 +627,7 @@ export default function ClaudeTerminal() {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Ask Claude something..."
-                  className="bg-zinc-900 border-zinc-700 text-zinc-100 pl-7 focus:ring-zinc-600"
+                  className="bg-muted border-border text-foreground pl-7 focus:ring-ring"
                   disabled={isThinking}
                   role="combobox"
                   aria-expanded={slashOpen}
@@ -590,7 +643,7 @@ export default function ClaudeTerminal() {
               <Button
                 type="submit"
                 disabled={isThinking || !input.trim()}
-                className="bg-zinc-100 text-zinc-900 hover:bg-zinc-200"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {isThinking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </Button>

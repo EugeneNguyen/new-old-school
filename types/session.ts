@@ -8,9 +8,12 @@ export interface SessionSummary {
   isRunning: boolean;
 }
 
+import type { ToolUseBlock } from './tool';
+
 export interface SessionHistoryMessage {
   role: 'user' | 'assistant';
   content: string;
+  toolUses?: ToolUseBlock[];
 }
 
 export interface SessionHistory {
