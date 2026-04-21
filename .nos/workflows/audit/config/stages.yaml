@@ -1,0 +1,123 @@
+- name: Backlog
+  description: ''
+  prompt: null
+  autoAdvanceOnComplete: null
+- name: Update technology standard
+  description: >-
+    Research the current standard for the tech stack and update the
+    documentation.
+  prompt: >
+    You are performing a standards audit for this project.
+
+
+    Steps:
+
+    1. **Identify the tech stack** — Read `package.json`, config files, and key
+    source files to determine the languages, frameworks, libraries, and tools in
+    use (e.g. Next.js, TypeScript, Tailwind, testing frameworks).
+
+
+    2. **Research current standards** — For each major technology identified,
+    look up the latest best-practice standards: official style guides,
+    recommended patterns, deprecated APIs, and community conventions. Focus on
+    what is current as of today.
+
+
+    3. **Document or update** — Find or create a standards document for this
+    project (`docs/standards/`). For each technology, write or update a section
+    covering: recommended patterns, anti-patterns to avoid, version-specific
+    notes, and any project-specific conventions already in use.
+
+
+    4. **Flag gaps** — If the codebase deviates from the current standard, note
+    each gap explicitly so the next stage (Check naming convention) can address
+    them.
+
+
+    End with a one-paragraph summary of the tech stack identified and the
+    standards documented or updated.
+  autoAdvanceOnComplete: true
+  agentId: null
+- name: Audit with the technology standard
+  description: >-
+    Audit the codebase against the documented technology standards and flag
+    violations.
+  prompt: >
+    You are auditing the codebase against the technology standards documented in
+    the previous stage.
+
+
+    Steps:
+
+    1. **Read the standards** — Load `docs/standards/` to understand the
+    expected patterns, naming conventions, anti-patterns, and version-specific
+    rules for each technology in use.
+
+
+    2. **Scan the codebase** — Systematically review source files for deviations
+    from the documented standards. Focus on:
+       - Naming conventions (files, variables, functions, components, types)
+       - Deprecated APIs or patterns that should be replaced
+       - Anti-patterns explicitly called out in the standards document
+       - Structural conventions (folder layout, module boundaries, export styles)
+
+
+    3. **Document findings** — For each violation found, record it in the item's
+    `index.md` under a `## Audit Findings` section with:
+       - File path and line reference
+       - The standard violated
+       - The current (wrong) pattern and the expected (correct) pattern
+       - Severity: `High` (correctness/security), `Medium` (maintainability),
+         `Low` (style)
+
+
+    4. **Summarise** — Add a `## Summary` section with a count of findings by
+    severity and a short overall assessment (compliant / minor issues / needs
+    work).
+
+
+    End with a one-paragraph summary of findings and whether the codebase is
+    broadly compliant with the documented standards.
+  autoAdvanceOnComplete: true
+  agentId: null
+- name: Fix audit findings
+  description: Implement fixes for all violations identified in the audit report.
+  prompt: >
+    You are fixing codebase violations identified in the previous audit stage.
+
+
+    Steps:
+
+    1. **Read the audit report** — Load the item's `index.md` and review every
+    entry under `## Audit Findings`. Understand the standard violated, the
+    current pattern, and the expected pattern for each finding.
+
+
+    2. **Plan before editing** — Group findings by file and severity. Fix `High`
+    severity issues first, then `Medium`, then `Low`. Note any findings that are
+    too risky to auto-fix (e.g. require a larger refactor) — mark those as
+    deferred rather than skipping silently.
+
+
+    3. **Apply fixes** — Edit each file to bring it in line with the documented
+    standard. Follow existing project conventions (see `CLAUDE.md`). Do not
+    introduce scope creep — fix only what the audit flagged.
+
+
+    4. **Update the report** — In the item's `index.md`, add a `## Fix Log`
+    section listing each finding as `u2705 Fixed`, `u23f8 Deferred (reason)`, or
+    `u274c Skipped (reason)`.
+
+
+    5. **Commit** — Stage and commit all changed files with a message
+    summarising the audit fixes applied.
+
+
+    End with a one-paragraph summary of what was fixed, what was deferred, and
+    whether the codebase is now compliant.
+  autoAdvanceOnComplete: true
+  agentId: null
+- name: Done
+  description: ''
+  prompt: null
+  autoAdvanceOnComplete: null

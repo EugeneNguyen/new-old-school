@@ -1,0 +1,41 @@
+title: (routine) 2026-04-21 00:00
+stage: Fix audit findings
+status: In Progress
+comments:
+  - >-
+    [runtime] session log stalled; Now I have enough information to create the
+    standards document. Let me create it.
+  - >-
+    The audit is complete. I systematically reviewed the codebase against the
+    standards in `docs/standards/project-standards.md` and documented 13
+    findings in the item's `index.md`. The codebase is structurally sound — App
+    Router is used correctly, icon usage is consistent, `cn()` utility is
+    properly applied, and the store pattern is largely followed. However, there
+    are two high-severity areas: dashboard pages using `useEffect` for data
+    fetching instead of Server Components, and direct filesystem access in API
+    routes bypassing the store layer. Medium-severity issues include widespread
+    `any` usage in catch blocks, inconsistent error response formatting across 7
+    API routes, raw Tailwind color classes bypassing design tokens, and missing
+    `loading.tsx`/`error.tsx` files. The overall assessment is **Needs Work**,
+    with the top remediation priorities being Server Component migration for
+    data fetching, store delegation for filesystem access, and standardizing
+    error responses.
+sessions:
+  - stage: Update technology standard
+    adapter: claude
+    sessionId: fb028517-1318-45e9-9d09-a10ff3024407
+    startedAt: '2026-04-21T07:33:45.675Z'
+  - stage: Update technology standard
+    adapter: claude
+    sessionId: e3ed61c7-94ba-4e38-9943-7c2dd772d188
+    startedAt: '2026-04-21T07:33:46.456Z'
+  - stage: Audit with the technology standard
+    adapter: claude
+    sessionId: 7b69f6a9-ca15-46c3-887c-45d255855652
+    startedAt: '2026-04-21T07:36:56.215Z'
+  - stage: Fix audit findings
+    adapter: claude
+    sessionId: 88e9f7d0-1c26-4ec6-8afa-f83f53caacac
+    startedAt: '2026-04-21T07:43:37.063Z'
+updatedAt: '2026-04-21T07:43:37.066Z'
+origin: routine

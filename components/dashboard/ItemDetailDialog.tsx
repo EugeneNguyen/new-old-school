@@ -160,7 +160,8 @@ export default function ItemDetailDialog({
       const payload = parsed as { type?: string; entry?: ActivityEntry };
       if (payload.type !== 'item-activity' || !payload.entry) return;
       if (payload.entry.itemId !== activityItemIdRef.current) return;
-      setActivity((prev) => [payload.entry!, ...prev]);
+      const entry = payload.entry;
+      setActivity((prev) => [entry, ...prev]);
     };
     source.addEventListener('message', onMessage);
     return () => {
@@ -260,7 +261,7 @@ export default function ItemDetailDialog({
     setEditingText('');
     try {
       const res = await fetch(
-        `/api/workflows/${encodeURIComponent(workflowId)}/items/${encodeURIComponent(item!.id)}/comments/${editingIndex}`,
+        `/api/workflows/${encodeURIComponent(workflowId)}/items/${encodeURIComponent(item?.id ?? '')}/comments/${editingIndex}`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -288,7 +289,7 @@ export default function ItemDetailDialog({
     setDeleteConfirmIndex(null);
     try {
       const res = await fetch(
-        `/api/workflows/${encodeURIComponent(workflowId)}/items/${encodeURIComponent(item!.id)}/comments/${index}`,
+        `/api/workflows/${encodeURIComponent(workflowId)}/items/${encodeURIComponent(item?.id ?? '')}/comments/${index}`,
         { method: 'DELETE' }
       );
       if (!res.ok) throw new Error(`Failed to delete comment: ${res.status}`);

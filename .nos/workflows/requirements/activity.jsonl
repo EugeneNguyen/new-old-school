@@ -333,3 +333,21 @@
 {"ts":"2026-04-21T04:21:26.682Z","workflowId":"requirements","itemId":"REQ-00086","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"In Progress","after":"Done"}}
 {"ts":"2026-04-21T04:21:26.684Z","workflowId":"requirements","itemId":"REQ-00086","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Validation","after":"Done"}}
 {"ts":"2026-04-21T04:21:26.684Z","workflowId":"requirements","itemId":"REQ-00086","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}
+{"ts":"2026-04-21T04:55:47.838Z","workflowId":"requirements","itemId":"REQ-00087","type":"item-created","actor":"ui","data":{"kind":"item-created","title":"the add item, kanban, list, setting, changed them into the icon only","stageId":"Backlog","status":"Todo"}}
+{"ts":"2026-04-21T04:55:49.583Z","workflowId":"requirements","itemId":"REQ-00087","type":"stage-changed","actor":"ui","data":{"kind":"stage-changed","before":"Backlog","after":"Analysis"}}
+{"ts":"2026-04-21T04:55:57.431Z","workflowId":"requirements","itemId":"REQ-00087","type":"status-changed","actor":"unknown","data":{"kind":"status-changed","before":"Todo","after":"In Progress"}}
+{"ts":"2026-04-21T04:58:19.873Z","workflowId":"requirements","itemId":"REQ-00087","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"In Progress","after":"Done"}}
+{"ts":"2026-04-21T04:58:19.878Z","workflowId":"requirements","itemId":"REQ-00087","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Analysis","after":"Documentation"}}
+{"ts":"2026-04-21T04:58:19.878Z","workflowId":"requirements","itemId":"REQ-00087","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}
+{"ts":"2026-04-21T04:58:27.325Z","workflowId":"requirements","itemId":"REQ-00087","type":"status-changed","actor":"unknown","data":{"kind":"status-changed","before":"Todo","after":"In Progress"}}
+{"ts":"2026-04-21T04:59:58.035Z","workflowId":"requirements","itemId":"REQ-00087","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"In Progress","after":"Done"}}
+{"ts":"2026-04-21T04:59:58.040Z","workflowId":"requirements","itemId":"REQ-00087","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Documentation","after":"Implementation"}}
+{"ts":"2026-04-21T04:59:58.040Z","workflowId":"requirements","itemId":"REQ-00087","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}
+{"ts":"2026-04-21T05:00:05.883Z","workflowId":"requirements","itemId":"REQ-00087","type":"status-changed","actor":"unknown","data":{"kind":"status-changed","before":"Todo","after":"In Progress"}}
+{"ts":"2026-04-21T05:01:36.628Z","workflowId":"requirements","itemId":"REQ-00087","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"In Progress","after":"Done"}}
+{"ts":"2026-04-21T05:01:36.633Z","workflowId":"requirements","itemId":"REQ-00087","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Implementation","after":"Validation"}}
+{"ts":"2026-04-21T05:01:36.633Z","workflowId":"requirements","itemId":"REQ-00087","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}
+{"ts":"2026-04-21T05:01:44.472Z","workflowId":"requirements","itemId":"REQ-00087","type":"status-changed","actor":"unknown","data":{"kind":"status-changed","before":"Todo","after":"In Progress"}}
+{"ts":"2026-04-21T05:03:00.109Z","workflowId":"requirements","itemId":"REQ-00087","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"In Progress","after":"Done"}}
+{"ts":"2026-04-21T05:03:00.114Z","workflowId":"requirements","itemId":"REQ-00087","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Validation","after":"Done"}}
+{"ts":"2026-04-21T05:03:00.114Z","workflowId":"requirements","itemId":"REQ-00087","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}

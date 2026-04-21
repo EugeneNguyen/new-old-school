@@ -159,8 +159,9 @@ export async function GET(request: NextRequest) {
     sessions.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
     return NextResponse.json(sessions);
-  } catch (err: any) {
-    return createErrorResponse(err.message || 'Failed to list sessions', 'InternalServerError', 500);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to list sessions';
+    return createErrorResponse(message, 'InternalServerError', 500);
   }
   });
 }

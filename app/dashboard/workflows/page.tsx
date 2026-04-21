@@ -260,7 +260,7 @@ export default function WorkflowsPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        setEditForm({ name: wf.name, idPrefix: (wf as any).idPrefix ?? '' });
+                        setEditForm({ name: wf.name, idPrefix: wf.idPrefix ?? '' });
                         setEditError(null);
                         setEditingId(wf.id);
                       }}

@@ -2,6 +2,7 @@ import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import remarkBreaks from 'remark-breaks';
 import type { Schema } from 'hast-util-sanitize';
 import type { Plugin, PluggableList } from 'unified';
+import type { Root, RootContent } from 'mdast';
 
 type AttrList = NonNullable<Schema['attributes']>[string];
 
@@ -26,19 +27,18 @@ function leadingTagName(html: string): string | null {
 // literal `<` and `>` characters reach the renderer as text and React never sees
 // an unknown element. Allowlisted HTML and `<script>`/`<style>` (later stripped
 // with their children) flow through untouched.
-const escapeDisallowedHtml: Plugin<[], any> = () => (tree: any) => {
-  const walk = (parent: any) => {
-    if (!parent || !Array.isArray(parent.children)) return;
+const escapeDisallowedHtml: Plugin<[], Root> = () => (tree: Root) => {
+  const walk = (parent: { children: (RootContent | { type: string; value: string })[] }) => {
     for (let i = 0; i < parent.children.length; i++) {
       const node = parent.children[i];
-      if (node.type === 'html' && typeof node.value === 'string') {
+      if (node.type === 'html' && 'value' in node && typeof node.value === 'string') {
         const tag = leadingTagName(node.value);
         if (tag && !STRIP_TAGS.has(tag) && !ALLOWED_TAGS.has(tag)) {
           parent.children[i] = { type: 'text', value: node.value };
           continue;
         }
       }
-      if (node && Array.isArray(node.children)) walk(node);
+      if ('children' in node && Array.isArray(node.children)) walk(node as { children: RootContent[] });
     }
   };
   walk(tree);

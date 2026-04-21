@@ -47,8 +47,9 @@ export async function POST(request: NextRequest) {
       stdout,
       status: 'success',
     });
-  } catch (err: any) {
-    return createErrorResponse(err.message || 'Execution failed', 'InternalServerError', 500);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Execution failed';
+    return createErrorResponse(message, 'InternalServerError', 500);
   }
   });
 }

@@ -18,10 +18,10 @@ export async function POST(
     const body = (await req.json()) as Record<string, unknown>;
 
     if (body.name === undefined || body.name === null) {
-      return NextResponse.json({ error: 'Stage name is required' }, { status: 400 });
+      return createErrorResponse('Stage name is required', 'ValidationError', 400);
     }
     if (typeof body.name !== 'string' || !body.name.trim()) {
-      return NextResponse.json({ error: 'Stage name is required' }, { status: 400 });
+      return createErrorResponse('Stage name is required', 'ValidationError', 400);
     }
 
     const name = body.name as string;
@@ -51,10 +51,10 @@ export async function POST(
   } catch (error) {
     if (error instanceof StageError) {
       if (error.code === 'DUPLICATE') {
-        return NextResponse.json({ error: error.message }, { status: 409 });
+        return createErrorResponse(error.message, 'ConflictError', 409);
       }
       if (error.code === 'INVALID_NAME') {
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        return createErrorResponse(error.message, 'ValidationError', 400);
       }
     }
     console.error('Error creating workflow stage:', error);

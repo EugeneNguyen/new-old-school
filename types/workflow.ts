@@ -1,6 +1,7 @@
 export interface Workflow {
   id: string;
   name: string;
+  idPrefix: string;
 }
 
 export interface Stage {

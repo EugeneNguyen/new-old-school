@@ -34,7 +34,7 @@ export async function PUT(
     } catch (error) {
       if (error instanceof StageError) {
         if (error.code === 'SET_MISMATCH') {
-          return NextResponse.json({ error: error.message }, { status: 409 });
+          return createErrorResponse(error.message, 'ConflictError', 409);
         }
         if (error.code === 'NOT_FOUND') {
           return createErrorResponse(error.message, 'NotFound', 404);

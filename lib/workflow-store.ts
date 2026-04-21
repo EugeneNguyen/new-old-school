@@ -152,7 +152,7 @@ export function readStages(id: string): Stage[] {
     if (!entry || typeof entry !== 'object') return [];
     const s = entry as Record<string, unknown>;
     if (typeof s.name !== 'string' || !s.name.trim()) return [];
-    if (typeof s.description !== 'string') return [];
+    if (typeof s.description !== 'string' && s.description !== null) return [];
     if (typeof s.prompt !== 'string' && s.prompt !== null) return [];
     if (typeof s.autoAdvanceOnComplete !== 'boolean' && s.autoAdvanceOnComplete !== null) return [];
     if (s.agentId !== undefined && s.agentId !== null && typeof s.agentId !== 'string') return [];
@@ -167,7 +167,7 @@ export function readStages(id: string): Stage[] {
 
     const stage: Stage = {
       name,
-      description: s.description,
+      description: typeof s.description === 'string' ? s.description : '',
       prompt: typeof s.prompt === 'string' ? s.prompt : null,
       autoAdvanceOnComplete:
         typeof s.autoAdvanceOnComplete === 'boolean' ? s.autoAdvanceOnComplete : null,

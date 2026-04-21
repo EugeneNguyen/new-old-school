@@ -39,7 +39,8 @@ export async function GET() {
           const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
           workflows.push({
             id: folder,
-            name: config.name || folder
+            name: config.name || folder,
+            idPrefix: config.idPrefix || ''
           });
         } catch (e) {
           console.error(`Error parsing config.json for workflow ${folder}:`, e);
@@ -50,7 +51,7 @@ export async function GET() {
     return NextResponse.json(workflows);
   } catch (error) {
     console.error('Error fetching workflows:', error);
-    return NextResponse.json({ error: 'Failed to fetch workflows' }, { status: 500 });
+    return createErrorResponse('Failed to fetch workflows');
   }
   });
 }
@@ -98,6 +99,6 @@ export async function POST(req: Request) {
     return createErrorResponse('Failed to create workflow', 'InternalError', 500);
   }
 
-  return NextResponse.json({ id: rawId, name: rawName }, { status: 201 });
+  return NextResponse.json({ id: rawId, name: rawName, idPrefix: rawPrefix }, { status: 201 });
   });
 }

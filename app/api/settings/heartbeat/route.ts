@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readHeartbeatMs, writeHeartbeatMs } from '@/lib/settings';
 import { rescheduleHeartbeat } from '@/lib/auto-advance-sweeper';
+import { createErrorResponse } from '@/app/api/utils/errors';
 import { withWorkspace } from '@/lib/workspace-context';
 
 export const runtime = 'nodejs';
@@ -12,7 +13,7 @@ export async function GET() {
       return NextResponse.json({ intervalMs });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      return NextResponse.json({ error: message }, { status: 500 });
+      return createErrorResponse(message);
     }
   });
 }
@@ -23,7 +24,7 @@ export async function PUT(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'intervalMs must be a finite non-negative integer' }, { status: 400 });
+    return createErrorResponse('intervalMs must be a finite non-negative integer', 'ValidationError', 400);
   }
 
   const intervalMs = (body as { intervalMs?: unknown } | null)?.intervalMs;
@@ -33,10 +34,7 @@ export async function PUT(req: Request) {
     !Number.isInteger(intervalMs) ||
     intervalMs < 0
   ) {
-    return NextResponse.json(
-      { error: 'intervalMs must be a finite non-negative integer' },
-      { status: 400 }
-    );
+    return createErrorResponse('intervalMs must be a finite non-negative integer', 'ValidationError', 400);
   }
 
   try {

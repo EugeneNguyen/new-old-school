@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readDefaultAgent, writeDefaultAgent, type DefaultAgentConfig } from '@/lib/settings';
 import { hasAdapter } from '@/lib/agent-adapter';
+import { createErrorResponse } from '@/app/api/utils/errors';
 import { withWorkspace } from '@/lib/workspace-context';
 
 export const runtime = 'nodejs';
@@ -27,7 +28,7 @@ export async function GET() {
       return NextResponse.json(config);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      return NextResponse.json({ error: message }, { status: 500 });
+      return createErrorResponse(message);
     }
   });
 }
@@ -38,7 +39,7 @@ export async function PATCH(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'Request body must be valid JSON' }, { status: 400 });
+    return createErrorResponse('Request body must be valid JSON', 'ValidationError', 400);
   }
 
   const input = body as Record<string, unknown>;
@@ -48,12 +49,12 @@ export async function PATCH(req: Request) {
   // Validate adapter if provided
   const adapterValidationError = validateAdapter(adapterInput as string | null | undefined);
   if (adapterValidationError) {
-    return NextResponse.json({ error: adapterValidationError }, { status: 400 });
+    return createErrorResponse(adapterValidationError, 'ValidationError', 400);
   }
 
   // Validate model can be null or string (no format restrictions)
   if (modelInput !== undefined && modelInput !== null && typeof modelInput !== 'string') {
-    return NextResponse.json({ error: 'model must be a string or null' }, { status: 400 });
+    return createErrorResponse('model must be a string or null', 'ValidationError', 400);
   }
 
   try {

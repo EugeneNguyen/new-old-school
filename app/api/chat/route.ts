@@ -158,8 +158,9 @@ export async function POST(request: NextRequest) {
         'Connection': 'keep-alive',
       },
     });
-  } catch (err: any) {
-    return createErrorResponse(err.message || 'Failed to start chat session', 'InternalServerError', 500);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to start chat session';
+    return createErrorResponse(message, 'InternalServerError', 500);
   }
   });
 }

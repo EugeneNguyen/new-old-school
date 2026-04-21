@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { loadSystemPrompt, saveSystemPrompt } from '@/lib/system-prompt';
 import { getProjectRoot } from '@/lib/project-root';
+import { createErrorResponse } from '@/app/api/utils/errors';
 import { withWorkspace } from '@/lib/workspace-context';
 
 export const runtime = 'nodejs';
@@ -18,7 +19,7 @@ export async function GET() {
       return NextResponse.json({ content, exists: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      return NextResponse.json({ error: message }, { status: 500 });
+      return createErrorResponse(message);
     }
   });
 }
@@ -29,16 +30,16 @@ export async function PUT(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'content must be a string' }, { status: 400 });
+    return createErrorResponse('content must be a string', 'ValidationError', 400);
   }
 
   const content = (body as { content?: unknown } | null)?.content;
   if (typeof content !== 'string') {
-    return NextResponse.json({ error: 'content must be a string' }, { status: 400 });
+    return createErrorResponse('content must be a string', 'ValidationError', 400);
   }
 
   if (Buffer.byteLength(content, 'utf-8') > MAX_BYTES) {
-    return NextResponse.json({ error: 'content exceeds 64 KB limit' }, { status: 413 });
+    return createErrorResponse('content exceeds 64 KB limit', 'PayloadTooLarge', 413);
   }
 
   try {

@@ -43,8 +43,8 @@ export default function DashboardPage() {
       if (!res.ok) throw new Error(`Error: ${res.status}`);
       const json = await res.json();
       setData(json);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch status');
     } finally {
       setIsLoading(false);
     }

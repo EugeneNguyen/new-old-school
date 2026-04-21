@@ -11,7 +11,7 @@ export async function GET(
     try {
       const { name } = await params;
       if (!hasAdapter(name)) {
-        return NextResponse.json({ error: 'unknown adapter' }, { status: 404 });
+        return createErrorResponse('unknown adapter', 'NotFound', 404);
       }
       const adapter = getAdapter(name);
       const models = await adapter.listModels();

@@ -322,12 +322,13 @@ export default function ClaudeTerminal() {
                 );
               }
             }
-          } catch (err: any) {
-            if (err.name !== 'AbortError') {
+          } catch (err: unknown) {
+            if (!(err instanceof DOMException && err.name === 'AbortError')) {
+              const message = err instanceof Error ? err.message : 'Failed to reconnect';
               setMessages(prev =>
                 prev.map(m =>
                   m.id === streamAssistantId
-                    ? { ...m, content: `Error reconnecting: ${err.message}` }
+                    ? { ...m, content: `Error reconnecting: ${message}` }
                     : m
                 )
               );
@@ -435,12 +436,13 @@ export default function ClaudeTerminal() {
           )
         );
       }
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
+    } catch (err: unknown) {
+      if (!(err instanceof DOMException && err.name === 'AbortError')) {
+        const message = err instanceof Error ? err.message : 'Failed to connect';
         setMessages(prev =>
           prev.map(m =>
             m.id === assistantId
-              ? { ...m, content: `Error: ${err.message || 'Failed to connect'}` }
+              ? { ...m, content: `Error: ${message}` }
               : m
           )
         );

@@ -56,8 +56,9 @@ export async function GET(req: NextRequest) {
   let dirents: fs.Dirent[];
   try {
     dirents = fs.readdirSync(resolved, { withFileTypes: true });
-  } catch (err: any) {
-    return createErrorResponse(err?.message ?? 'Failed to read directory', 'InternalServerError', 500);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to read directory';
+    return createErrorResponse(message, 'InternalServerError', 500);
   }
 
   const entries: BrowseEntry[] = [];

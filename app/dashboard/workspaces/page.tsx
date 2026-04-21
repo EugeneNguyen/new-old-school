@@ -44,8 +44,8 @@ function FolderBrowser({
       const body = (await res.json()) as BrowseResponse;
       setData(body);
       onChange(body.path);
-    } catch (err: any) {
-      setError(err?.message ?? 'Browse failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Browse failed');
     } finally {
       setLoading(false);
     }

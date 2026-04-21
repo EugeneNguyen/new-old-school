@@ -18,8 +18,9 @@ export async function POST(
   try {
     const templatesRoot = path.join(process.cwd(), 'templates', '.nos');
     ensureNosDir(ws.absolutePath, templatesRoot);
-  } catch (err: any) {
-    return createErrorResponse(err?.message ?? 'Failed to seed .nos directory', 'InternalServerError', 500);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to seed .nos directory';
+    return createErrorResponse(message, 'InternalServerError', 500);
   }
 
   const res = NextResponse.json({ ok: true, workspace: ws });

@@ -74,7 +74,8 @@ export default function ActivityPage() {
       if (!parsed || typeof parsed !== 'object') return;
       const payload = parsed as { type?: string; entry?: ActivityEntry };
       if (payload.type !== 'item-activity' || !payload.entry) return;
-      setEntries((prev) => [payload.entry!, ...prev]);
+      const entry = payload.entry;
+      setEntries((prev) => [entry, ...prev]);
     };
     source.addEventListener('message', onMessage);
     // Close on unmount to avoid leaking connections (AC-33 / §3.3)

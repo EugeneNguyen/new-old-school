@@ -70,11 +70,9 @@ export function readWorkspace(id: string): Workspace | null {
   return readRegistry().find((w) => w.id === id) ?? null;
 }
 
-export interface ValidatePathResult {
-  ok: boolean;
-  error?: string;
-  resolved?: string;
-}
+export type ValidatePathResult =
+  | { ok: true; resolved: string }
+  | { ok: false; error: string };
 
 export function validateWorkspacePath(input: string): ValidatePathResult {
   if (typeof input !== 'string' || !input.trim()) {
@@ -111,13 +109,13 @@ export function createWorkspace(input: CreateWorkspaceInput): Workspace | { erro
   const name = (input.name ?? '').trim();
   if (!name) return { error: 'name is required' };
   const pathCheck = validateWorkspacePath(input.absolutePath ?? '');
-  if (!pathCheck.ok) return { error: pathCheck.error ?? 'invalid path' };
+  if (pathCheck.ok === false) return { error: pathCheck.error };
 
   const now = new Date().toISOString();
   const workspace: Workspace = {
     id: randomUUID(),
     name,
-    absolutePath: pathCheck.resolved!,
+    absolutePath: pathCheck.resolved,
     createdAt: now,
     updatedAt: now,
   };
@@ -148,8 +146,8 @@ export function updateWorkspace(id: string, patch: WorkspacePatch): Workspace | 
   let absolutePath = current.absolutePath;
   if (patch.absolutePath !== undefined) {
     const check = validateWorkspacePath(patch.absolutePath);
-    if (!check.ok) return { error: check.error ?? 'invalid path' };
-    absolutePath = check.resolved!;
+    if (check.ok === false) return { error: check.error };
+    absolutePath = check.resolved;
   }
 
   const updated: Workspace = {

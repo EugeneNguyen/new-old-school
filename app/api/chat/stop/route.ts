@@ -17,8 +17,9 @@ export async function POST(request: NextRequest) {
 
       const killed = streamRegistry.kill(sessionId);
       return NextResponse.json({ ok: killed });
-    } catch (err: any) {
-      return createErrorResponse(err.message || 'Failed to stop session', 'InternalServerError', 500);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to stop session';
+      return createErrorResponse(message, 'InternalServerError', 500);
     }
   });
 }

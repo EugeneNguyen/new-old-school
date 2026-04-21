@@ -8,8 +8,9 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     return NextResponse.json(listWorkspaces());
-  } catch (err: any) {
-    return createErrorResponse(err?.message ?? 'Failed to list workspaces', 'InternalServerError', 500);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to list workspaces';
+    return createErrorResponse(message, 'InternalServerError', 500);
   }
 }
 

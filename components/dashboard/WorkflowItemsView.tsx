@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutGrid, List, Search, X, Settings } from 'lucide-react';
+import { LayoutGrid, List, Search, X, Settings, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -108,8 +108,8 @@ export default function WorkflowItemsView({ workflowId, stages, initialItems, in
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Button size="sm" onClick={openNewItem} disabled={currentStages.length === 0} title={currentStages.length === 0 ? 'Create a stage first' : undefined}>
-          Add item
+        <Button size="icon" onClick={openNewItem} disabled={currentStages.length === 0} title={currentStages.length === 0 ? 'Create a stage first' : 'Add item'} aria-label="Add item">
+          <Plus className="h-4 w-4" />
         </Button>
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative flex items-center">
@@ -145,33 +145,36 @@ export default function WorkflowItemsView({ workflowId, stages, initialItems, in
             <button
               type="button"
               aria-pressed={viewMode === 'kanban'}
+              title="Kanban"
+              aria-label="Kanban"
               onClick={() => updateViewMode('kanban')}
-              className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-1.5 text-sm sm:flex-none ${
+              className={`inline-flex items-center justify-center rounded px-2 py-1.5 ${
                 viewMode === 'kanban' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
               }`}
             >
               <LayoutGrid className="h-4 w-4" />
-              Kanban
             </button>
             <button
               type="button"
               aria-pressed={viewMode === 'list'}
+              title="List"
+              aria-label="List"
               onClick={() => updateViewMode('list')}
-              className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-1.5 text-sm sm:flex-none ${
+              className={`inline-flex items-center justify-center rounded px-2 py-1.5 ${
                 viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
               }`}
             >
               <List className="h-4 w-4" />
-              List
             </button>
           </div>
           <Button
-            size="sm"
+            size="icon"
             variant="outline"
+            title="Settings"
+            aria-label="Settings"
             onClick={() => router.push(`/dashboard/workflows/${workflowId}/settings`)}
           >
-            <Settings className="mr-1.5 h-4 w-4" />
-            Settings
+            <Settings className="h-4 w-4" />
           </Button>
           <Button
             size="sm"
