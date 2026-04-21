@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ToolRegistry } from '@/lib/tool-registry';
 import { Button } from '@/components/ui/button';
+import { Logo } from '@/components/ui/Logo';
 
 export default function HomePage() {
   const tools = ToolRegistry.getAllTools();
@@ -10,9 +11,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8 text-center space-y-6 bg-background text-foreground">
-      <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center text-primary-foreground text-3xl font-bold shadow-xl">
-        nos
-      </div>
+      <Logo size={80} variant="full" className="shadow-xl" />
       <div className="space-y-2">
         <h1 className="text-5xl font-extrabold tracking-tight">
           Welcome to nos

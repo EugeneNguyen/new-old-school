@@ -1,5 +1,16 @@
 import React from 'react';
+import { Metadata } from 'next';
 import './globals.css';
+import { ThemeProvider } from 'next-themes';
+
+export const metadata: Metadata = {
+  title: 'nos',
+  description: 'A professional administrative interface for managing local system tools.',
+  icons: {
+    icon: '/favicon.svg',
+    apple: '/apple-icon.png',
+  },
+};
 
 export default function RootLayout({
   children,
@@ -7,8 +18,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body suppressHydrationWarning>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

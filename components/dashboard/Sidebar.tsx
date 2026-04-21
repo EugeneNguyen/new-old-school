@@ -9,6 +9,8 @@ import { useSidebar } from './SidebarContext';
 import { useEffect, useState } from 'react';
 import { Workflow } from '@/types/workflow';
 import WorkspaceSwitcher from './WorkspaceSwitcher';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { Logo } from '@/components/ui/Logo';
 
 function isActive(href: string, pathname: string | null): boolean {
   if (!pathname) return false;
@@ -52,9 +54,7 @@ export default function Sidebar() {
       )}
     >
       <div className="p-6 flex items-center gap-2 font-bold text-xl overflow-hidden">
-        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground shrink-0 text-xs">
-          nos
-        </div>
+        <Logo size={32} className="shrink-0" variant="icon" />
         {!collapsed && <span className="tracking-tight whitespace-nowrap">New Old-school</span>}
       </div>
 
@@ -159,9 +159,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-border flex items-center justify-between">
-        {!collapsed && (
-          <span className="text-xs text-muted-foreground whitespace-nowrap">&copy; 2026 New Old-school</span>
-        )}
+        {!collapsed && <ThemeToggle />}
         <button
           onClick={toggleSidebar}
           className={cn(
