@@ -1,6 +1,6 @@
 # NOS Project Standards
 
-> Last audited: 2026-04-21
+> Last audited: 2026-04-21 (AUDIT-003 audit)
 
 ---
 
@@ -8,9 +8,9 @@
 
 | Technology | Version | Notes |
 |---|---|---|
-| **Next.js** | canary (App Router) | Server-first architecture |
-| **React** | canary | Server Components by default |
-| **TypeScript** | ^5.0 | `strict: false` in tsconfig |
+| **Next.js** | 16.2.1-canary.45 (App Router) | Server-first architecture; Next.js 16 stable is available |
+| **React** | 19.2.5 | Server Components by default; React 19 stable |
+| **TypeScript** | ^5.0 | `strict: true` enabled |
 | **Tailwind CSS** | ^3.0 | CSS variable-based theme via `hsl(var(--*))` |
 | **Node.js** | >=18 | Runtime requirement |
 | **Radix UI** | Various | Primitives: Select, Slot, Toast |
@@ -22,6 +22,8 @@
 | **chokidar** | ^3.6 | File system watching |
 | **commander** | ^12.0 | CLI framework |
 | **@mdxeditor/editor** | ^3.55 | Rich markdown editing |
+| **rehype-sanitize** | ^6.0 | Markdown HTML sanitization |
+| **remark-breaks** | ^4.0 | Markdown line break handling |
 | **Node test runner** | Built-in | `node --test` for unit tests |
 
 ---
@@ -36,6 +38,8 @@
 - **Layouts for shared UI.** Use `layout.tsx` to wrap persistent chrome (sidebar, toaster). Layouts don't re-render on navigation.
 - **Middleware for cross-cutting concerns.** `middleware.ts` at project root, scoped via `config.matcher`.
 - **Path aliases.** Use `@/*` for absolute imports (configured in `tsconfig.json`).
+- **Promise-based params.** In Next.js 15+/16, `params` and `searchParams` in page components are `Promise<>` types that must be awaited.
+- **Error and loading boundaries.** Add `error.tsx` and `loading.tsx` at key route segments for graceful degradation and streaming.
 
 ### Anti-Patterns to Avoid
 
@@ -43,11 +47,20 @@
 - Avoid mixing `pages/` and `app/` routers. This project is fully App Router.
 - Avoid `getServerSideProps` / `getStaticProps` (Pages Router patterns). Use async Server Components or `generateStaticParams` instead.
 - Avoid inline `fetch` without explicit revalidation strategy in production.
+- Avoid non-awaited access to `params` or `searchParams` — they are Promises in Next.js 15+.
 
 ### Version-Specific Notes
 
-- Running Next.js **canary** means access to latest experimental APIs. Pin specific canary versions for production stability.
-- React canary includes Server Components, Server Actions, and `use` hook natively.
+- Running Next.js **16.2.1-canary.45** (Next.js 16 is stable as of 2026). Consider moving to `next@^16` stable.
+- **React 19.2.5** (stable). Server Components, Server Actions, `use` hook, and ref-as-prop are production-ready.
+- **Next.js 16 key changes**:
+  - `params` and `searchParams` are `Promise<>` types that must be awaited.
+  - **React Compiler** is built-in and stable — automatically memoizes components, reducing unnecessary re-renders. Enable via `reactCompiler: true` in `next.config.mjs`. **Gap**: Not yet enabled in this project (see GAP-14).
+  - **Turbopack** is stable and the default bundler for `next dev` and `next build`.
+  - **`next lint` has been removed.** Use standalone ESLint or Biome directly. `next build` no longer runs linting. **Gap**: The project's `npm run lint` script still calls `next lint` (see GAP-13).
+  - `cacheLife` and `cacheTag` are stable (no `unstable_` prefix).
+- The project's `serverExternalPackages` includes `chokidar` and `fsevents`.
+- Dev server runs on port **30128**.
 
 ---
 
@@ -57,15 +70,16 @@
 
 - **Server-first.** Default to Server Components. Only add `"use client"` for interactivity (event handlers, hooks like `useState`, `useEffect`).
 - **Component composition.** Use React's composition model (children, render props) over deep prop drilling.
-- **`forwardRef` for reusable primitives.** UI components that wrap native elements should forward refs (see `Button` component).
+- **Ref as prop (React 19+).** In new code, accept `ref` as a regular prop instead of using `forwardRef`. Existing `forwardRef` usage still works but is deprecated.
 - **Custom hooks for shared logic.** Extract stateful logic into `lib/hooks/use-*.ts` files.
-- **Explicit `displayName`.** Set on `forwardRef` components for better debugging.
+- **Named exports** for components (not default exports) to aid tree-shaking and refactoring.
 
 ### Anti-Patterns to Avoid
 
 - Don't use `useEffect` for data fetching in components that could be Server Components.
 - Don't pass serialization-unfriendly props (functions, class instances) from Server to Client Components.
 - Avoid prop drilling more than 2 levels deep; prefer context or composition.
+- Don't wrap new components in `React.forwardRef` — pass `ref` as a regular prop instead.
 
 ---
 
@@ -78,17 +92,21 @@
 - **Import types with `import type`** when only using the type (not the runtime value). Reduces bundle.
 - **Path aliases.** Always use `@/` prefix for project imports.
 - **Discriminated unions for state machines.** Use union types with a literal discriminant (e.g. `ItemStatus`).
+- **`unknown` over `any`** at system boundaries, then narrow with type guards.
 
 ### Anti-Patterns to Avoid
 
 - Avoid `any`. Use `unknown` when the type is genuinely unknown, then narrow.
 - Avoid non-null assertions (`!`) unless the invariant is trivially obvious.
 - Avoid `enum`. Use `as const` objects or union literal types (the project already uses union types like `ItemStatus`).
+- Avoid `@ts-ignore` / `@ts-expect-error` without a tracking comment.
 
 ### Project-Specific Conventions
 
-- Types live in `types/` directory as dedicated files (e.g. `types/workflow.ts`).
-- The project uses `strict: false` in tsconfig. **Gap**: Enabling `strict: true` would catch more bugs. See Gaps section.
+- Types live in `types/` directory as dedicated files (e.g. `types/workflow.ts`, `types/session.ts`, `types/workspace.ts`, `types/skill.ts`, `types/question.ts`, `types/tool.ts`).
+- The project uses `strict: true` in tsconfig (resolved from AUDIT-002 GAP-01).
+- `moduleResolution: "bundler"` is correct for Next.js.
+- `allowImportingTsExtensions: true` enables `.ts` imports in non-emitting contexts.
 
 ---
 
@@ -100,17 +118,19 @@
 - **Dark mode via `class` strategy.** Toggled by `next-themes` `ThemeProvider` with `attribute="class"`.
 - **`cn()` utility for conditional classes.** Always use `cn()` (from `lib/utils.ts`) to merge Tailwind classes. Never manually concatenate class strings.
 - **Component variants via CVA.** Use `class-variance-authority` for components with multiple visual variants (see `Button`).
-- **Design tokens in config.** Colors, border-radius, and spacing defined in `tailwind.config.js`.
+- **Design tokens in config.** Colors (`primary`, `secondary`, `muted`, `accent`, `destructive`, `success`, `warning`, `info`), border-radius, and spacing defined in `tailwind.config.js`.
 
 ### Anti-Patterns to Avoid
 
 - Don't use arbitrary values (`[#hex]`) when a design token exists.
 - Don't duplicate theme colors across components; reference the Tailwind config tokens.
 - Avoid `@apply` in CSS files for one-off styles. Prefer inline Tailwind classes.
+- Don't inline `style=` attributes alongside Tailwind classes.
 
 ### Version-Specific Notes
 
-- Project uses Tailwind CSS v3. Tailwind v4 is now the current release (CSS-first config, Oxide engine, native CSS variables). **Gap**: Migration to v4 is recommended for performance. See Gaps section.
+- Project uses Tailwind CSS v3. Tailwind v4 (v4.2 as of early 2026) is the current release, using a CSS-first `@theme` configuration, the Oxide engine (2-5x faster builds), and native CSS variables. **Gap**: Migration to v4 is recommended. See Gaps section.
+- The project's existing CSS-variable theme approach is already v4-aligned, which should make migration smoother.
 
 ---
 
@@ -128,6 +148,7 @@
 
 - Don't introduce external test frameworks (Jest, Vitest) without team decision.
 - Don't rely on test execution order; each test should be independent.
+- Don't use snapshot tests for logic; prefer assertion-based tests.
 
 ---
 
@@ -140,11 +161,14 @@
 - **`withWorkspace()` wrapper.** API routes that access the filesystem use the workspace context wrapper.
 - **HTTP semantics.** Use correct status codes: 201 for creation, 400 for validation errors, 409 for conflicts, 500 for internal errors.
 - **Typed request bodies.** Define interfaces for expected request bodies.
+- **One `route.ts` per HTTP resource**, exporting named functions (`GET`, `POST`, `PUT`, `DELETE`, `PATCH`).
 
 ### Anti-Patterns to Avoid
 
-- Don't return bare strings as error responses; always use structured JSON.
+- Don't return bare strings as error responses; always use structured JSON via `NextResponse.json()`.
 - Don't access the filesystem directly in route handlers; delegate to store functions in `lib/`.
+- Don't swallow errors silently in catch blocks.
+- Don't put business logic in route handlers; extract to `lib/` modules.
 
 ---
 
@@ -154,15 +178,15 @@
 
 ```
 app/              # Next.js App Router pages and API routes
-  api/            # API route handlers
-  dashboard/      # Dashboard pages (layouts, workflows, settings)
+  api/            # API route handlers (~10 resource groups)
+  dashboard/      # Dashboard pages (workflows, agents, activity, settings, terminal, workspaces)
 components/
-  ui/             # Reusable primitives (Button, Card, Dialog, etc.)
-  dashboard/      # Dashboard-specific composed components
-  terminal/       # Terminal UI components
+  ui/             # Reusable primitives (button, card, dialog, input, select, etc.)
+  dashboard/      # Dashboard-specific composed components (KanbanBoard, ChatWidget, etc.)
+  terminal/       # Terminal UI components (SessionPanel, SlashPopup, etc.)
 lib/              # Business logic, stores, utilities, hooks
-  hooks/          # Custom React hooks
-types/            # TypeScript type definitions
+  hooks/          # Custom React hooks (use-toast, use-item-done-sound, use-workflow-items)
+types/            # TypeScript type definitions (6 files)
 public/           # Static assets
 bin/              # CLI entry point
 templates/        # Scaffolding templates
@@ -174,7 +198,8 @@ docs/             # Project documentation
 
 | Item | Convention | Example |
 |---|---|---|
-| React components | PascalCase files | `KanbanBoard.tsx`, `ChatWidget.tsx` |
+| UI primitives (shadcn-style) | lowercase | `button.tsx`, `card.tsx`, `dialog.tsx` |
+| Feature components | PascalCase | `KanbanBoard.tsx`, `ChatWidget.tsx` |
 | API routes | `route.ts` in kebab-case dirs | `app/api/workflows/[id]/route.ts` |
 | Utility modules | kebab-case | `workflow-store.ts`, `activity-log.ts` |
 | Custom hooks | `use-` prefix, kebab-case | `use-toast.ts`, `use-item-done-sound.ts` |
@@ -189,10 +214,11 @@ docs/             # Project documentation
 
 ### Recommended Patterns
 
-- **shadcn/ui-style primitives.** UI components in `components/ui/` follow the shadcn/ui pattern: CVA variants, `cn()` merging, `forwardRef`, Radix primitives.
+- **shadcn/ui-style primitives.** UI components in `components/ui/` follow the shadcn/ui pattern: CVA variants, `cn()` merging, Radix primitives.
 - **Composition over configuration.** Components expose `className` prop for overrides via `cn()`.
-- **Semantic color tokens.** Use `primary`, `secondary`, `muted`, `accent`, `destructive` — never raw hex/hsl in components.
+- **Semantic color tokens.** Use `primary`, `secondary`, `muted`, `accent`, `destructive`, `success`, `warning`, `info` — never raw hex/hsl in components.
 - **Consistent icon usage.** Use `lucide-react` icons throughout. Don't mix icon libraries.
+- **Ref as prop.** New components should accept `ref` as a regular prop (React 19 pattern) rather than wrapping in `forwardRef`.
 
 ---
 
@@ -202,7 +228,7 @@ docs/             # Project documentation
 
 - **YAML for metadata, JSON for config.** Workflow item metadata in `meta.yml`, workflow config in `config.json`.
 - **Atomic writes.** Use `atomicWriteFile()` (write to `.tmp`, then rename) for data integrity.
-- **Store pattern.** Business logic encapsulated in `lib/*-store.ts` files, not in API routes.
+- **Store pattern.** Business logic encapsulated in `lib/*-store.ts` files (`workflow-store.ts`, `agents-store.ts`, `workspace-store.ts`), not in API routes.
 - **Event emission.** State changes emit events via `lib/workflow-events.ts` for real-time updates.
 
 ---
@@ -212,64 +238,94 @@ docs/             # Project documentation
 The following deviations from current best practices should be tracked for remediation:
 
 ### GAP-01: TypeScript `strict: false`
-- **Current**: `tsconfig.json` has `"strict": false`.
-- **Standard**: TypeScript strict mode is universally recommended. It enables `strictNullChecks`, `noImplicitAny`, `strictFunctionTypes`, and other safety checks.
-- **Impact**: Potential null-reference bugs and implicit `any` types go uncaught.
-- **Recommendation**: Enable incrementally — start with `strictNullChecks`, then `noImplicitAny`, then full `strict: true`.
+- **Status**: RESOLVED (AUDIT-003)
+- **Resolution**: `tsconfig.json` now has `"strict": true`.
 
-### GAP-02: Tailwind CSS v3 (v4 is current)
+### GAP-02: Tailwind CSS v3 (v4.2 is current)
+- **Status**: OPEN
 - **Current**: Using `tailwindcss@^3.0` with JS-based `tailwind.config.js`.
-- **Standard**: Tailwind CSS v4 is the current release, offering CSS-first configuration (`@theme`), the Oxide engine (up to 10x faster builds), and native CSS variables.
+- **Standard**: Tailwind CSS v4.2 (Feb 2026) is the current release, offering CSS-first configuration (`@theme`), the Oxide engine (2-5x faster builds written in Rust), and native CSS variables.
 - **Impact**: Missing performance improvements and modern configuration patterns.
-- **Recommendation**: Run the official `@tailwindcss/upgrade` tool on a branch. Requires Node.js 20+. The project's CSS-variable theme approach is already v4-aligned, which should make migration smoother.
+- **Recommendation**: Run `npx @tailwindcss/upgrade` on a branch. The project's CSS-variable theme approach is already v4-aligned, making migration smoother. Most migrations complete in 1-2 hours.
 
-### GAP-03: No ESLint / Prettier Configuration
-- **Current**: No `.eslintrc.*` or `.prettierrc` files found. `next lint` is available but there's no explicit ESLint config.
-- **Standard**: Next.js projects should have explicit ESLint configuration with `eslint-config-next` for catching common issues (unused imports, React rules, accessibility).
-- **Impact**: No automated code quality enforcement beyond TypeScript type checking.
-- **Recommendation**: Run `npx next lint --init` to scaffold the recommended ESLint setup.
+### GAP-03: No ESLint / Biome / Prettier Configuration
+- **Status**: OPEN (elevated priority due to Next.js 16)
+- **Current**: No `.eslintrc.*`, `eslint.config.*`, `.prettierrc`, or `biome.json` found. The `next lint` command has been **removed** in Next.js 16, so the project currently has no linting path at all.
+- **Standard**: Next.js 16 projects should set up standalone ESLint (ESLint 9 flat config with `@next/eslint-plugin-next`) or Biome as a faster alternative. Prettier with `prettier-plugin-tailwindcss` for formatting and Tailwind class sorting.
+- **Impact**: No automated code quality enforcement. The `npm run lint` script is broken (calls removed `next lint`).
+- **Recommendation**: Choose ESLint 9 flat config or Biome. Add `eslint.config.mjs` with `@next/eslint-plugin-next` and `@typescript-eslint/eslint-plugin`, or add `biome.json`. Update the `lint` script in `package.json` accordingly.
 
-### GAP-04: Missing Suspense Boundaries
-- **Current**: Dashboard pages don't use `<Suspense>` boundaries or `loading.tsx` files.
-- **Standard**: App Router best practice is to add `loading.tsx` files at route boundaries and wrap async data fetches in `<Suspense>` for streaming.
-- **Impact**: Pages show no loading state during data fetches; full-page loading instead of progressive rendering.
-- **Recommendation**: Add `loading.tsx` to key route segments (`app/dashboard/`, `app/dashboard/workflows/`).
+### GAP-04: Incomplete Suspense Boundaries
+- **Status**: RESOLVED (AUDIT-003)
+- **Resolution**: `loading.tsx` added to all 8 dashboard sub-route segments (`activity/`, `agents/`, `settings/`, `terminal/`, `workflows/`, `workflows/[id]/`, `workflows/[id]/settings/`, `workspaces/`).
 
 ### GAP-05: Synchronous `fs` in API Routes
+- **Status**: OPEN (low priority)
 - **Current**: API routes and stores use `fs.readFileSync`, `fs.readdirSync`, `fs.existsSync`, etc.
-- **Standard**: Next.js API routes run in a server context where async I/O (`fs.promises`) is preferred to avoid blocking the event loop.
+- **Standard**: Async I/O (`fs.promises`) is preferred to avoid blocking the event loop.
 - **Impact**: Under concurrent requests, synchronous filesystem calls can create bottlenecks.
-- **Recommendation**: Migrate to `fs.promises` (or `import { readFile } from 'fs/promises'`) in store functions. Low priority for a local-only tool.
+- **Recommendation**: Migrate to `fs.promises` in store functions. Low priority for a local-only tool.
 
-### GAP-06: No Error Boundaries
-- **Current**: No `error.tsx` files in route segments.
-- **Standard**: App Router supports per-route error boundaries via `error.tsx` to catch rendering errors gracefully.
-- **Impact**: Unhandled errors in a route crash the entire page instead of showing a recoverable error UI.
-- **Recommendation**: Add `error.tsx` to `app/dashboard/` and other key route segments.
+### GAP-06: Incomplete Error Boundaries
+- **Status**: RESOLVED (AUDIT-003)
+- **Resolution**: `error.tsx` added to all 8 dashboard sub-route segments (`activity/`, `agents/`, `settings/`, `terminal/`, `workflows/`, `workflows/[id]/`, `workflows/[id]/settings/`, `workspaces/`).
 
 ### GAP-07: Mixed Config File Formats
+- **Status**: OPEN (low priority)
 - **Current**: `next.config.mjs` (ESM), `tailwind.config.js` (CJS), `postcss.config.js` (CJS).
-- **Standard**: Choose one module system for config files. With Next.js canary and ESM as the standard, prefer `.mjs` or use `"type": "module"` in `package.json`.
+- **Standard**: Choose one module system for config files. With ESM as the standard, prefer `.mjs` or use `"type": "module"` in `package.json`.
 - **Impact**: Minor inconsistency; no functional issue.
 - **Recommendation**: Low priority. Standardize to ESM when convenient.
 
 ### GAP-08: Limited Test Coverage
+- **Status**: OPEN
 - **Current**: Only 3 test files found (`system-prompt.test.ts`, `use-workflow-items.test.ts`, `workflow-view-mode.test.ts`). No API route tests, no component tests.
 - **Standard**: Critical business logic and API routes should have test coverage.
 - **Impact**: Regressions in store functions and API routes may go undetected.
-- **Recommendation**: Prioritize tests for `lib/workflow-store.ts` (core data operations) and API routes with complex validation logic.
+- **Recommendation**: Prioritize tests for `lib/workflow-store.ts`, `lib/agents-store.ts`, `lib/workspace-store.ts`, and API routes with complex validation logic.
 
-### GAP-09: `React.forwardRef` Deprecation Path
-- **Current**: UI components use `React.forwardRef` (e.g., `Button`).
-- **Standard**: React 19 passes `ref` as a regular prop, making `forwardRef` unnecessary for new code. It still works but is no longer the recommended pattern.
-- **Impact**: No functional issue. `forwardRef` works in React 19 but adds verbosity.
-- **Recommendation**: When touching UI components, migrate to direct `ref` prop. No urgent action needed.
+### GAP-09: `React.forwardRef` Deprecation
+- **Status**: RESOLVED (AUDIT-003)
+- **Resolution**: All 14 `forwardRef` usages migrated to React 19 ref-as-prop pattern across 5 UI files (`button.tsx`, `toast.tsx`, `input.tsx`, `scroll-area.tsx`, `card.tsx`).
 
 ### GAP-10: Canary Dependency Pinning
-- **Current**: `next`, `react`, and `react-dom` all point to `canary` with no version pinning.
-- **Standard**: Even when using canary, pin to specific canary versions (e.g., `next@15.2.0-canary.42`) for reproducible builds.
-- **Impact**: `npm install` on different days can pull different canary builds, causing inconsistent behavior.
-- **Recommendation**: Pin to specific canary versions in `package.json` or use a lockfile.
+- **Status**: PARTIALLY RESOLVED
+- **Current**: `react` (19.2.5) and `react-dom` (19.2.5) are on stable releases. `next` remains on canary (`16.2.1-canary.45`) but is pinned to a specific version.
+- **Standard**: Next.js 16 is now the stable release. Consider whether canary is still needed.
+- **Impact**: Canary builds may introduce unexpected behavior changes vs stable.
+- **Recommendation**: Evaluate whether Next.js canary features are still required. If not, move to `next@^16` stable.
+
+### GAP-11: `@types/react` v18 with React 19 stable
+- **Status**: OPEN
+- **Current**: `@types/react@18.3.28` and `@types/react-dom@^18.0.0` installed, but React is 19.2.5 stable.
+- **Standard**: Type definitions should match the React version in use. React 19 APIs (`use()`, `useFormStatus`, ref-as-prop) have different type signatures.
+- **Impact**: Type mismatches for React 19-specific APIs; IDE may flag valid React 19 code. With `strict: true` now enabled, these mismatches are more likely to surface.
+- **Recommendation**: Upgrade to `@types/react@^19.0.0` and `@types/react-dom@^19.0.0`, or use React's built-in types if available.
+
+### GAP-12: `Logo.tsx` naming inconsistency in `components/ui/`
+- **Status**: RESOLVED (AUDIT-003)
+- **Resolution**: File renamed to `logo.tsx`, consistent with shadcn/ui lowercase convention.
+
+### GAP-13: Broken `npm run lint` Script (NEW)
+- **Status**: OPEN (high priority)
+- **Current**: `package.json` defines `"lint": "next lint"`, but `next lint` has been removed in Next.js 16.
+- **Standard**: The lint script should invoke a standalone linter (ESLint or Biome) directly.
+- **Impact**: `npm run lint` will fail. No linting is possible without manual intervention.
+- **Recommendation**: After resolving GAP-03 (setting up a linter), update the script to `"lint": "eslint ."` or `"lint": "biome check ."` as appropriate.
+
+### GAP-14: React Compiler Not Enabled (NEW)
+- **Status**: OPEN (medium priority)
+- **Current**: `next.config.mjs` does not enable the React Compiler (`reactCompiler: true`).
+- **Standard**: Next.js 16 ships with a stable, built-in React Compiler that automatically memoizes components, eliminating the need for manual `useMemo`, `useCallback`, and `React.memo` usage.
+- **Impact**: Missing automatic memoization optimizations. Components may re-render unnecessarily.
+- **Recommendation**: Add `reactCompiler: true` to `next.config.mjs`. Test thoroughly — the compiler may surface issues in components that rely on referential identity in non-standard ways.
+
+### GAP-15: `next-themes` phantom dependency (NEW)
+- **Status**: OPEN
+- **Current**: `next-themes` (v0.4.6) is imported in `app/layout.tsx` and `components/ui/theme-toggle.tsx` but is not listed in `package.json` dependencies.
+- **Standard**: All direct imports must be listed as explicit dependencies in `package.json`.
+- **Impact**: Installation on a clean machine may fail if `next-themes` is not resolved as a transitive dependency. Version is unpinned and uncontrolled.
+- **Recommendation**: Add `"next-themes": "^0.4.6"` to `dependencies` in `package.json`.
 
 ---
 
@@ -285,4 +341,8 @@ The following deviations from current best practices should be tracked for remed
 | Class merge utility | `lib/utils.ts` |
 | Workflow types | `types/workflow.ts` |
 | Workflow store | `lib/workflow-store.ts` |
+| Agents store | `lib/agents-store.ts` |
+| Workspace store | `lib/workspace-store.ts` |
 | Error response utility | `app/api/utils/errors.ts` |
+| Dashboard error boundary | `app/dashboard/error.tsx` |
+| Dashboard loading state | `app/dashboard/loading.tsx` |
