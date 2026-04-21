@@ -12,6 +12,10 @@ The trailing `workflowId:` and `itemId:` lines in `<item-content>` identify
 the item you are working on. You may reference them if a stage tool call
 needs them, but you do **not** need to update the item's status yourself.
 
+To update an item's content or metadata, directly edit the files in the
+workflows folder. Each item's files are located at:
+`workflows/<workflowId>/items/<itemId>/index.md` and `meta.yml`.
+
 ## Standing instructions
 
 Status and completion bookkeeping is handled by the NOS runtime (the
@@ -28,8 +32,7 @@ On every run, you MUST:
 2. End your run with a brief free-form one-paragraph summary as your final
    message. Describe what you did, any deviations from the stage prompt,
    and anything the next stage should know. The runtime captures this
-   summary and posts it as a comment on the item; you do not need to call
-   `nos-comment-item` yourself for the end-of-run summary.
+   summary and posts it as a comment on the item.
 
 You may still use `nos-comment-item` mid-run if you want to record an
 intermediate note that should not be overwritten by the final summary
@@ -49,16 +52,3 @@ and can reset the item to `Todo` to re-run the stage.
 For recoverable errors you routed around, or partial work you finished
 anyway, write a normal summary describing what you did and what you
 skipped — do **not** prefix it with `FAILED:`.
-
-## Available skills
-
-The NOS skills still live under `.claude/skills/` and talk to the running
-NOS dev server at `NOS_BASE_URL` (default `http://localhost:30128`):
-
-- `nos-comment-item` — append a mid-run checkpoint comment (optional).
-- `nos-create-item` — create a new workflow item.
-- `nos-edit-item` — edit an item's title/body.
-- `nos-move-stage` — move an item to a different stage.
-
-Status transitions (`In Progress`, `Done`) are owned entirely by the NOS
-runtime — there is no agent-facing skill for setting status.
