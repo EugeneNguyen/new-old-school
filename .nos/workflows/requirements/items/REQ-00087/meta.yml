@@ -1,0 +1,86 @@
+title: the add item, kanban, list, setting, changed them into the icon only
+stage: Done
+status: Todo
+comments:
+  - >-
+    The analysis was already written by a prior session. It covers all the key
+    points I identified. The existing analysis is thorough and accurate — it
+    correctly identifies the single file affected, the icon availability,
+    accessibility concerns, and relevant open questions.
+
+
+    The analysis is already appended to the item's `index.md` with proper Scope,
+    Feasibility, Dependencies, and Open Questions sections. No further changes
+    needed.
+
+
+    **Summary:** The analysis for REQ-00087 was already completed by a prior
+    session run. It correctly identifies that all four buttons live in
+    `components/dashboard/WorkflowItemsView.tsx` (lines 111–175), three already
+    have lucide-react icons (only "Add item" needs a `Plus` import), and the
+    main considerations are accessibility (`aria-label`/`title`), toggle group
+    sizing, and whether the "Routine" button should also go icon-only for visual
+    consistency. No implementation blockers exist — this is a low-risk,
+    single-file UI change.
+  - >-
+    Specification complete. I've written a comprehensive `## Specification`
+    section for REQ-00087 that provides implementers with everything needed to
+    complete the work. The section includes three user stories (designer,
+    accessibility user, developer perspectives), nine numbered acceptance
+    criteria covering functionality and accessibility requirements, technical
+    constraints identifying the single file affected and icon/component usage,
+    and explicit out-of-scope items to prevent scope creep. The specification
+    clarifies that all four buttons become icon-only with required `title` and
+    `aria-label` attributes, icons come from `lucide-react`, and only standard
+    HTML tooltips are needed. This formalizes the analysis and resolves most
+    open questions by declaring standard practices (native `title` attributes,
+    existing Button component, no Routine button changes unless confirmed).
+  - >-
+    Implementation complete. All four toolbar buttons in
+    `components/dashboard/WorkflowItemsView.tsx` have been converted to
+    icon-only with proper accessibility attributes. The Plus icon was added to
+    the import, and each button now displays only its icon (Plus, LayoutGrid,
+    List, Settings) with matching `title` and `aria-label` attributes for
+    accessibility. Original click handlers and functionality are preserved, and
+    the toggle group layout remains balanced. All nine acceptance criteria are
+    satisfied, with no changes to the Routine button or any out-of-scope
+    components per the specification.
+  - >-
+    All 9 acceptance criteria pass. Validation section appended to `index.md`.
+
+
+    **Summary:** Validated REQ-00087 implementation against its specification by
+    reading `components/dashboard/WorkflowItemsView.tsx`. All four toolbar
+    buttons (Add item, Kanban, List, Settings) are correctly icon-only with no
+    text nodes, each has both `title` and `aria-label` attributes, original
+    click handlers are intact, the toggle group layout is compact and balanced,
+    and no regressions exist in adjacent functionality. The `Plus` icon import
+    is present (line 5), only the specified file was modified, and no new
+    dependencies were introduced. One minor deviation noted: the Add item
+    `title` is conditional (`'Create a stage first'` when disabled) — this is a
+    UX improvement, not a violation. All criteria: ✅.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 4f6be59e-073b-489e-af4f-1f8889882564
+    startedAt: '2026-04-21T04:55:57.422Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 7092128b-b2d2-40d1-9b3d-85d16d8b032a
+    startedAt: '2026-04-21T04:56:03.889Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 121d7d45-9d80-4a29-b649-0ccb4e94c6b1
+    startedAt: '2026-04-21T04:58:27.320Z'
+    agentId: david-engineer
+  - stage: Implementation
+    adapter: claude
+    sessionId: f790009c-96e6-4cc5-85fa-ee6c8513f897
+    startedAt: '2026-04-21T05:00:05.869Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 953c597c-9c40-43ab-aad0-9eaa5d293711
+    startedAt: '2026-04-21T05:01:44.456Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-21T05:03:00.111Z'
