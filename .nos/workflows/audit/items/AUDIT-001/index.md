@@ -155,3 +155,24 @@ The codebase follows many of the documented standards well — App Router archit
 1. Convert dashboard pages to Server Components for data fetching (F-05)
 2. Delegate filesystem operations from API routes to store functions (F-08)
 3. Standardize error responses via `createErrorResponse()` across all API routes (F-07)
+
+## Fix Log
+
+### Fixed
+
+- ✅ **F-01** Fixed: Replaced `catch (err: any)` with `catch (err: unknown)` + `instanceof Error` narrowing across 12 files (13 catch-block instances). Also replaced `Plugin<[], any>` with proper `Root`/`RootContent` types in `lib/markdown-preview.ts` and typed `toolUses` array in `app/api/claude/sessions/route.ts`.
+- ✅ **F-03** Fixed: Removed all 5 non-null assertions. Used discriminated union for `ValidatePathResult` in `lib/workspace-store.ts` (2 instances). Extracted narrowed variable before closure capture in `components/dashboard/ItemDetailDialog.tsx` (1 instance) and `app/dashboard/activity/page.tsx` (1 instance). Used optional chaining for `item?.id` (2 instances).
+- ✅ **F-06** Fixed: Added `success`, `warning`, and `info` semantic color tokens to CSS variables (`app/globals.css`) and Tailwind config (`tailwind.config.js`). Updated `components/ui/badge.tsx` and `components/ui/toast.tsx` to use semantic tokens instead of raw color classes.
+- ✅ **F-07** Fixed: Replaced all 13 bare `NextResponse.json({ error })` calls with `createErrorResponse()` across 7 files: `app/api/settings/system-prompt/route.ts`, `app/api/settings/heartbeat/route.ts`, `app/api/settings/default-agent/route.ts`, `app/api/adapters/[name]/models/route.ts`, `app/api/workflows/[id]/stages/route.ts`, `app/api/workflows/[id]/stages/order/route.ts`, `app/api/workflows/route.ts`.
+- ✅ **F-12** Fixed: Added `app/dashboard/loading.tsx` with animated loading state.
+- ✅ **F-13** Fixed: Added `app/dashboard/error.tsx` with error boundary UI and retry button.
+
+### Deferred
+
+- ⏸ **F-05** Deferred: Converting dashboard pages from client-side `useEffect` fetching to Server Components requires restructuring interactive state management patterns across multiple pages. High risk of regression; recommend as a dedicated refactor task.
+- ⏸ **F-08** Deferred: Delegating filesystem operations from API routes to store functions requires creating new store abstractions and restructuring the chat/claude/browse route handlers. Recommend as a dedicated refactor task.
+- ⏸ **F-09** Deferred: Migrating synchronous `fs` calls to `fs.promises` is widespread (3 core stores + 8 API routes). The standards document acknowledges this as low priority for a local-only tool.
+- ⏸ **F-02** Deferred: Adding explicit return types to 23+ exported functions is low-severity and best addressed incrementally alongside other changes.
+- ⏸ **F-04** Deferred: The flagged types are small, locally-scoped, and co-located with their usage. Moving them adds import complexity without meaningful benefit.
+- ⏸ **F-10** Deferred: The kebab-case naming in `components/ui/` is the default shadcn/ui convention. Recommend updating the standard to explicitly allow this exception rather than renaming.
+- ⏸ **F-11** Deferred: Hook file renaming involves import changes across the codebase for a low-severity naming convention issue.

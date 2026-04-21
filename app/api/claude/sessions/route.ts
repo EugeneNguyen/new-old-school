@@ -6,6 +6,7 @@ import { streamRegistry } from '@/lib/stream-registry';
 import { getProjectRoot } from '@/lib/project-root';
 import { withWorkspace } from '@/lib/workspace-context';
 import type { SessionSummary, SessionHistory, SessionHistoryMessage } from '@/types/session';
+import type { ToolUseBlock } from '@/types/tool';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -90,7 +91,7 @@ function parseSessionHistory(filePath: string): SessionHistoryMessage[] {
       }
 
       if (event.type === 'result' && event.result) {
-        const toolUses: any[] = [];
+        const toolUses: ToolUseBlock[] = [];
         if (event.message?.content && Array.isArray(event.message.content)) {
           for (const block of event.message.content) {
             if (block.type === 'tool_use' && block.name !== 'AskUserQuestion') {
