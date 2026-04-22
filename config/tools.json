@@ -9,6 +9,15 @@
     "category": "core"
   },
   {
+    "id": "files",
+    "name": "Files",
+    "href": "/dashboard/workspaces",
+    "icon": "FolderOpen",
+    "description": "Browse workspace files",
+    "endpoint": "/api/workspaces",
+    "category": "core"
+  },
+  {
     "id": "terminal",
     "name": "Claude Terminal",
     "href": "/dashboard/terminal",
