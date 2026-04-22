@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { MessageSquare, X, Plus, Square, Send, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ChatBubble, MessageList, TypingIndicator, ToolUseCard, QuestionCard } from '@/components/chat';
+import type { ToolUseBlock } from '@/types/tool';
+import type { InteractiveQuestion } from '@/types/question';
+import type { ChatMessage } from '@/types/chat';
 
 const SESSION_STORAGE_KEY = 'nos:chat-widget-session-id';
 
@@ -18,12 +20,6 @@ function generateId(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-}
-
 export function ChatWidget() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
@@ -32,7 +28,6 @@ export function ChatWidget() {
   const [isThinking, setIsThinking] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [hasDefaultAgent, setHasDefaultAgent] = useState<boolean | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -65,16 +60,6 @@ export function ChatWidget() {
       .catch(() => setHasDefaultAgent(null));
   }, []);
 
-  const scrollToBottom = useCallback(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, []);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
-
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus();
@@ -103,16 +88,11 @@ export function ChatWidget() {
         if (!jsonStr) continue;
 
         try {
-          const event = JSON.parse(jsonStr) as Record<string, unknown>;
+          const event = JSON.parse(jsonStr);
 
-          if (
-            event.type === 'assistant' &&
-            event.message &&
-            typeof event.message === 'object'
-          ) {
-            const msg = event.message as { content?: Array<{ type: string; text?: string }> };
-            for (const block of msg.content ?? []) {
-              if (block.type === 'text' && typeof block.text === 'string') {
+          if (event.type === 'assistant' && event.message?.content) {
+            for (const block of event.message.content) {
+              if (block.type === 'text') {
                 accumulated = block.text;
                 setMessages((prev) =>
                   prev.map((m) =>
@@ -120,7 +100,70 @@ export function ChatWidget() {
                   ),
                 );
               }
+
+              if (block.type === 'tool_use') {
+                if (block.name === 'AskUserQuestion') {
+                  const input = block.input as {
+                    questions: Array<{
+                      question: string;
+                      header?: string;
+                      options?: Array<{ label: string; description?: string }>;
+                      multiSelect?: boolean;
+                    }>;
+                  };
+                  const questions: InteractiveQuestion[] = input.questions.map(
+                    (q) => ({
+                      toolUseId: block.id,
+                      header: q.header,
+                      question: q.question,
+                      options: q.options || [],
+                      multiSelect: q.multiSelect ?? false,
+                    })
+                  );
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === assistantId
+                        ? { ...m, interactiveQuestions: [...(m.interactiveQuestions || []), ...questions] }
+                        : m
+                    )
+                  );
+                } else {
+                  const toolUse: ToolUseBlock = {
+                    id: block.id,
+                    name: block.name,
+                    input: block.input || {},
+                    result: undefined,
+                    status: 'pending',
+                  };
+                  setMessages((prev) =>
+                    prev.map((m) =>
+                      m.id === assistantId
+                        ? { ...m, toolUses: [...(m.toolUses || []), toolUse] }
+                        : m
+                    )
+                  );
+                }
+              }
             }
+          }
+
+          if (event.type === 'tool_result') {
+            const toolUseId = event.tool_use_id;
+            const result = event.content || '';
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantId && m.toolUses
+                  ? {
+                      ...m,
+                      toolUses: m.toolUses.map((tool) =>
+                        tool.id === toolUseId
+                          ? { ...tool, result, status: 'completed' }
+                          : tool
+                      ),
+                    }
+                  : m
+              )
+            );
           }
 
           if (event.type === 'result') {
@@ -254,10 +297,91 @@ export function ChatWidget() {
     setIsThinking(false);
   };
 
+  const handleQuestionAnswer = useCallback(
+    async (messageId: string, toolUseId: string, selectedLabels: string[]) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId
+            ? {
+                ...m,
+                interactiveQuestions: m.interactiveQuestions?.map((q) =>
+                  q.toolUseId === toolUseId
+                    ? { ...q, answered: true, answeredWith: selectedLabels }
+                    : q
+                ),
+                questionsAnswered: true,
+                answeredWith: selectedLabels,
+              }
+            : m
+        )
+      );
+
+      try {
+        await fetch('/api/chat/answer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionId,
+            toolUseId,
+            answers: selectedLabels,
+          }),
+        });
+      } catch {
+        // silently fail on answer submission
+      }
+    },
+    [sessionId]
+  );
+
+  const renderMessage = useCallback((msg: ChatMessage) => {
+    const isLastAssistant = msg.role === 'assistant' && msg.id === messages[messages.length - 1]?.id;
+
+    if (msg.role === 'system') {
+      return <p className="text-muted-foreground text-xs italic">{msg.content}</p>;
+    }
+
+    return (
+      <>
+        {msg.content && (
+          <ChatBubble role={msg.role} variant="widget">
+            {msg.content}
+          </ChatBubble>
+        )}
+        {!msg.content && isThinking && isLastAssistant && (
+          <TypingIndicator />
+        )}
+        {msg.toolUses && msg.toolUses.length > 0 && (
+          <div className="space-y-2 mr-8">
+            {msg.toolUses.map((tool) => (
+              <ToolUseCard key={tool.id} tool={tool} />
+            ))}
+          </div>
+        )}
+        {msg.interactiveQuestions && msg.interactiveQuestions.length > 0 && (
+          <div className="space-y-2 mr-8">
+            {msg.interactiveQuestions.map((q) => (
+              <QuestionCard
+                key={q.toolUseId}
+                header={q.header}
+                question={q.question}
+                options={q.options}
+                multiSelect={q.multiSelect}
+                disabled={msg.questionsAnswered ?? false}
+                answeredWith={msg.answeredWith}
+                onAnswer={(selectedLabels) =>
+                  handleQuestionAnswer(msg.id, q.toolUseId, selectedLabels)
+                }
+              />
+            ))}
+          </div>
+        )}
+      </>
+    );
+  }, [messages, isThinking, handleQuestionAnswer]);
+
   if (hidden) return null;
 
   return (
-    // FAB position: bottom-6 = 1.5rem, right-6 = 1.5rem (above toast zone)
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
       {isOpen && (
         <Card
@@ -312,76 +436,55 @@ export function ChatWidget() {
           </CardHeader>
 
           <CardContent className="p-0 flex-1 min-h-0 flex flex-col">
-            <ScrollArea ref={scrollRef} className="flex-1 min-h-0 min-h-32">
-              <div className="p-3 space-y-3 text-sm">
-                {messages.length === 0 && hasDefaultAgent === false && (
-                  <p className="text-muted-foreground text-xs">
-                    No default agent configured.{' '}
-                    <a href="/dashboard/settings" className="underline hover:text-foreground">
-                      Go to Settings → Agents to set one.
-                    </a>
-                  </p>
-                )}
-                {messages.length === 0 && hasDefaultAgent !== false && (
-                  <p className="text-muted-foreground text-xs">
-                    Ask anything. Your session persists across the dashboard.
-                  </p>
-                )}
-                {messages.map((msg) => (
-                  <div key={msg.id}>
-                    {msg.role === 'system' ? (
-                      <p className="text-muted-foreground text-xs italic">{msg.content}</p>
-                    ) : (
-                      <div
-                        className={cn(
-                          'rounded-lg px-3 py-2 text-xs leading-relaxed whitespace-pre-wrap break-words',
-                          msg.role === 'user'
-                            ? 'bg-primary text-primary-foreground ml-8'
-                            : 'bg-muted text-foreground mr-8',
-                        )}
-                      >
-                        {msg.content ||
-                          (isThinking &&
-                            msg.role === 'assistant' &&
-                            msg.id === messages[messages.length - 1]?.id ? (
-                              <span className="flex items-center gap-1 text-muted-foreground">
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                                Thinking...
-                              </span>
-                            ) : null)}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
+            <MessageList
+              messages={messages}
+              renderMessage={renderMessage}
+              className="text-sm"
+              scrollAreaClassName="min-h-32"
+              emptyContent={
+                <>
+                  {hasDefaultAgent === false && (
+                    <p className="text-muted-foreground text-xs">
+                      No default agent configured.{' '}
+                      <a href="/dashboard/settings" className="underline hover:text-foreground">
+                        Go to Settings → Agents to set one.
+                      </a>
+                    </p>
+                  )}
+                  {hasDefaultAgent !== false && (
+                    <p className="text-muted-foreground text-xs">
+                      Ask anything. Your session persists across the dashboard.
+                    </p>
+                  )}
+                </>
+              }
+            />
 
             {hasDefaultAgent !== false && (
-              <form
-                onSubmit={handleSubmit}
-                className="p-2 border-t flex gap-2 shrink-0"
-              >
-                <Input
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask something..."
-                  aria-label="Message"
-                  className="h-8 text-xs"
-                  disabled={isThinking}
-                />
-                <Button
-                  type="submit"
-                  size="icon"
-                  className="h-8 w-8 shrink-0"
-                  aria-label="Send"
-                  disabled={isThinking || !input.trim()}
-                >
-                  {isThinking
-                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    : <Send className="w-3.5 h-3.5" />}
-                </Button>
-              </form>
+              <div className="p-2 border-t shrink-0">
+                <form onSubmit={handleSubmit} className="flex gap-2">
+                  <Input
+                    ref={inputRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Ask something..."
+                    aria-label="Message"
+                    className="h-8 text-xs"
+                    disabled={isThinking}
+                  />
+                  <Button
+                    type="submit"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    aria-label="Send"
+                    disabled={isThinking || !input.trim()}
+                  >
+                    {isThinking
+                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      : <Send className="w-3.5 h-3.5" />}
+                  </Button>
+                </form>
+              </div>
             )}
           </CardContent>
         </Card>

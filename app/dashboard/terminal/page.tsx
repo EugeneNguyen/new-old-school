@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Input } from '@/components/ui/input';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageSquare, Send, Plus, Loader2, Copy, Check } from 'lucide-react';
+import { MessageSquare, Plus, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SessionPanel } from '@/components/terminal/SessionPanel';
 import type { SessionSummary, SessionHistory } from '@/types/session';
@@ -13,8 +11,8 @@ import type { InteractiveQuestion } from '@/types/question';
 import type { ToolUseBlock } from '@/types/tool';
 import { useSlashComplete } from '@/hooks/useSlashComplete';
 import { SlashPopup } from '@/components/terminal/SlashPopup';
-import { QuestionCard } from '@/components/terminal/QuestionCard';
-import { ToolUseCard } from '@/components/terminal/ToolUseCard';
+import { ChatBubble, MessageList, TypingIndicator, ChatInput, ToolUseCard, QuestionCard } from '@/components/chat';
+import type { ChatMessage } from '@/types/chat';
 
 function generateId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -26,17 +24,6 @@ function generateId(): string {
   });
 }
 
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  timestamp: string;
-  interactiveQuestions?: InteractiveQuestion[];
-  questionsAnswered?: boolean;
-  answeredWith?: string[];
-  toolUses?: ToolUseBlock[];
-}
-
 export default function ClaudeTerminal() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -45,23 +32,12 @@ export default function ClaudeTerminal() {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [copiedCommand, setCopiedCommand] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const { isOpen: slashOpen, filteredSkills, activeIndex, handleKeyDown } = useSlashComplete({
     input,
     onSelect: (value) => setInput(value),
   });
-
-  const scrollToBottom = useCallback(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, []);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
 
   const fetchSessions = useCallback(async () => {
     try {
@@ -486,6 +462,72 @@ export default function ClaudeTerminal() {
     await sendPrompt(followUp);
   }, [sendPrompt]);
 
+  const renderMessage = useCallback((msg: ChatMessage) => {
+    const isLastAssistant = msg.role === 'assistant' && msg.id === messages[messages.length - 1]?.id;
+
+    if (msg.role === 'system') {
+      return <ChatBubble role="system">{msg.content}</ChatBubble>;
+    }
+
+    return (
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          {msg.timestamp && (
+            <span className="text-muted-foreground/60 text-xs">[{msg.timestamp}]</span>
+          )}
+          <span className={cn(
+            "text-xs font-bold uppercase",
+            msg.role === 'user' ? 'text-blue-400' : 'text-green-400'
+          )}>
+            {msg.role === 'user' ? 'you' : 'claude'}
+          </span>
+        </div>
+        <ChatBubble role={msg.role} variant="terminal">
+          {msg.content || (isThinking && isLastAssistant && !msg.content ? '' : msg.content)}
+        </ChatBubble>
+        {msg.toolUses && msg.toolUses.length > 0 && (
+          <div className="pl-4 pt-2 space-y-2">
+            {msg.toolUses.map((tool, idx) => (
+              <ToolUseCard
+                key={`${msg.id}-tool-${idx}`}
+                tool={tool}
+              />
+            ))}
+          </div>
+        )}
+        {msg.interactiveQuestions && msg.interactiveQuestions.length > 0 && (
+          <div className="pl-4 pt-2 space-y-3">
+            {msg.interactiveQuestions.map((q, idx) => (
+              <QuestionCard
+                key={`${msg.id}-q-${idx}`}
+                header={q.header}
+                question={q.question}
+                options={q.options}
+                multiSelect={q.multiSelect}
+                disabled={!!msg.questionsAnswered || isThinking}
+                answeredWith={msg.questionsAnswered ? msg.answeredWith : undefined}
+                onAnswer={(selectedLabels) => handleQuestionAnswer(msg.id, q, selectedLabels)}
+              />
+            ))}
+          </div>
+        )}
+        {isThinking && isLastAssistant && !msg.content && !msg.interactiveQuestions && (
+          <div className="pl-4">
+            <TypingIndicator label="Claude is thinking..." />
+          </div>
+        )}
+      </div>
+    );
+  }, [messages, isThinking, handleQuestionAnswer]);
+
+  const slashAddonSlot = slashOpen ? (
+    <SlashPopup
+      skills={filteredSkills}
+      activeIndex={activeIndex}
+      onSelect={(skill) => setInput(skill.name + ' ')}
+    />
+  ) : undefined;
+
   return (
     <div className="dark h-full flex flex-col min-h-0">
       <div className="flex items-center justify-between px-8 pt-8 pb-4 shrink-0">
@@ -543,113 +585,31 @@ export default function ClaudeTerminal() {
             </div>
           </CardHeader>
           <CardContent className="p-0 flex-1 min-h-0 flex flex-col">
-            <ScrollArea ref={scrollRef} className="flex-1 min-h-0 h-full w-full">
-              <div className="p-4 space-y-4 font-mono text-sm">
-                {messages.length === 0 && (
-                  <div className="text-muted-foreground italic">
-                    Start a conversation with Claude. Your messages will be sent via the Claude Code CLI.
-                  </div>
-                )}
-                {messages.map((msg) => (
-                  <div key={msg.id} className="space-y-1">
-                    {msg.role === 'system' ? (
-                      <div className="text-muted-foreground/60 italic text-xs py-2">
-                        {msg.content}
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          {msg.timestamp && (
-                            <span className="text-muted-foreground/60 text-xs">[{msg.timestamp}]</span>
-                          )}
-                          <span className={cn(
-                            "text-xs font-bold uppercase",
-                            msg.role === 'user' ? 'text-blue-400' : 'text-green-400'
-                          )}>
-                            {msg.role === 'user' ? 'you' : 'claude'}
-                          </span>
-                        </div>
-                        <pre className={cn(
-                          "pl-4 py-1 rounded whitespace-pre-wrap break-words",
-                          msg.role === 'user' ? 'text-foreground' : 'text-muted-foreground'
-                        )}>
-                          {msg.content || (isThinking && msg.role === 'assistant' ? '' : msg.content)}
-                        </pre>
-                        {msg.toolUses && msg.toolUses.length > 0 && (
-                          <div className="pl-4 pt-2 space-y-2">
-                            {msg.toolUses.map((tool, idx) => (
-                              <ToolUseCard
-                                key={`${msg.id}-tool-${idx}`}
-                                tool={tool}
-                              />
-                            ))}
-                          </div>
-                        )}
-                        {msg.interactiveQuestions && msg.interactiveQuestions.length > 0 && (
-                          <div className="pl-4 pt-2 space-y-3">
-                            {msg.interactiveQuestions.map((q, idx) => (
-                              <QuestionCard
-                                key={`${msg.id}-q-${idx}`}
-                                header={q.header}
-                                question={q.question}
-                                options={q.options}
-                                multiSelect={q.multiSelect}
-                                disabled={!!msg.questionsAnswered || isThinking}
-                                answeredWith={msg.questionsAnswered ? msg.answeredWith : undefined}
-                                onAnswer={(selectedLabels) => handleQuestionAnswer(msg.id, q, selectedLabels)}
-                              />
-                            ))}
-                          </div>
-                        )}
-                        {isThinking && msg.role === 'assistant' && !msg.content && !msg.interactiveQuestions && msg.id === messages[messages.length - 1]?.id && (
-                          <div className="pl-4 flex items-center gap-2 text-muted-foreground">
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                            <span className="text-xs">Claude is thinking...</span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-            <form onSubmit={sendMessage} className="p-4 border-t border-border flex gap-2 shrink-0">
-              <div className="flex-1 relative">
-                {slashOpen && (
-                  <SlashPopup
-                    skills={filteredSkills}
-                    activeIndex={activeIndex}
-                    onSelect={(skill) => setInput(skill.name + ' ')}
-                  />
-                )}
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 font-bold">&gt;</span>
-                <Input
-                  id="terminal-input"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Ask Claude something..."
-                  className="bg-muted border-border text-foreground pl-7 focus:ring-ring"
-                  disabled={isThinking}
-                  role="combobox"
-                  aria-expanded={slashOpen}
-                  aria-controls="slash-popup"
-                  aria-activedescendant={
-                    slashOpen && filteredSkills[activeIndex]
-                      ? `slash-option-${filteredSkills[activeIndex].id}`
-                      : undefined
-                  }
-                  autoComplete="off"
-                />
-              </div>
-              <Button
-                type="submit"
-                disabled={isThinking || !input.trim()}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                {isThinking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </Button>
-            </form>
+            <MessageList
+              messages={messages}
+              renderMessage={renderMessage}
+              className="font-mono text-sm"
+              emptyContent={
+                <div className="text-muted-foreground italic">
+                  Start a conversation with Claude. Your messages will be sent via the Claude Code CLI.
+                </div>
+              }
+            />
+            <div className="p-4 border-t border-border shrink-0">
+              <ChatInput
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onSubmit={sendMessage}
+                onKeyDown={handleKeyDown}
+                promptPrefix=">"
+                addonSlot={slashAddonSlot}
+                placeholder="Ask Claude something..."
+                disabled={isThinking}
+                isThinking={isThinking}
+                className="flex gap-2"
+                inputClassName="bg-muted border-border text-foreground pl-7 focus:ring-ring"
+              />
+            </div>
           </CardContent>
         </Card>
       </div>

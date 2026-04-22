@@ -1,0 +1,115 @@
+title: >-
+  Refactor Claude Terminal chat, reuse component bubble and others from the chat
+  widget
+stage: Validation
+status: In Progress
+comments:
+  - >-
+    [runtime] session log stalled; The `index.md` is empty — the requirement is
+    only captured in the title. Let me explore the relevant components in the
+    codebase.
+  - >-
+    [runtime] session log stalled; The `index.md` is empty — the requirement is
+    only captured in the title. Let me explore the relevant components in the
+    codebase.
+  - >-
+    The specification is complete and well-structured. Here's my summary:
+
+
+    I wrote the full `## Analysis` and `## Specification` sections for REQ-00093
+    into its `index.md`. The specification covers the extraction of four shared
+    chat primitives (`ChatBubble`, `MessageList`, `TypingIndicator`,
+    `ChatInput`) into a new `components/chat/` directory, with `cva`-driven
+    variants so the Terminal keeps its monospace aesthetic and the ChatWidget
+    keeps its card-bubble style. The spec includes 12 acceptance criteria (with
+    Given/When/Then patterns for visual regression and streaming behavior),
+    technical constraints aligned with existing project conventions (React 19
+    ref-as-prop, `cn()` class merging, no new dependencies), explicit
+    out-of-scope boundaries (no backend changes, no feature additions, no visual
+    redesign), and RTM/WBS mappings to packages 1.4.8 (Claude Terminal), 1.5.1
+    (Primitive Components), and 1.4 (Web Dashboard). `ToolUseCard` and
+    `QuestionCard` are also relocated from `components/terminal/` to
+    `components/chat/` as part of the consolidation.
+  - >-
+    All runtime references to the old paths are gone — the remaining matches are
+    in documentation/metadata files describing historical code state, which is
+    expected.
+
+
+    ---
+
+
+    ## Implementation Summary
+
+
+    All 12 acceptance criteria for REQ-00093 have been satisfied:
+
+
+    **Created:**
+
+    - `types/chat.ts` — consolidated `ChatMessage` interface (superset of both
+    local definitions)
+
+    - `components/chat/ChatBubble.tsx` — `cva`-driven component with `role` +
+    `variant` props; terminal uses monospace `<pre>` with role-colored labels,
+    widget uses rounded `<div>` with directional margin and background
+
+    - `components/chat/MessageList.tsx` — wraps `ScrollArea` with internal
+    auto-scroll-to-bottom via `useRef` + `useEffect`; accepts `messages`,
+    `renderMessage` callback, `className`, `emptyContent`
+
+    - `components/chat/TypingIndicator.tsx` — `Loader2` spinner with
+    configurable label (default "Thinking...")
+
+    - `components/chat/ChatInput.tsx` — text input with submit-on-Enter,
+    optional `promptPrefix` (e.g., `>`), optional `addonSlot` for popup UI
+
+    - `components/chat/index.ts` — barrel re-exporting all shared components and
+    `ChatMessage` type
+
+    - `components/chat/ToolUseCard.tsx` + `components/chat/QuestionCard.tsx` —
+    relocated from `components/terminal/`
+
+
+    **Modified:**
+
+    - `app/dashboard/terminal/page.tsx` — removed ~100 lines of inline
+    rendering; composes `ChatBubble` (terminal variant), `MessageList`,
+    `TypingIndicator`, `ChatInput`; terminal-specific features (SessionPanel,
+    SlashPopup, session header) preserved
+
+    - `components/dashboard/ChatWidget.tsx` — removed ~80 lines of inline
+    rendering; composes `ChatBubble` (widget variant), `MessageList`,
+    `TypingIndicator`; widget-specific features (FAB toggle, stop/new-session
+    buttons, agent check) preserved
+
+
+    **Deleted:**
+
+    - `components/terminal/ToolUseCard.tsx` and
+    `components/terminal/QuestionCard.tsx` (relocated)
+
+
+    No new dependencies introduced; all shared components use existing
+    primitives from `components/ui/` and `lucide-react`. TypeScript compiles
+    cleanly (the only remaining warnings are pre-existing unrelated issues).
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 73acd8ce-b248-45a0-a686-cfdb13b86701
+    startedAt: '2026-04-22T12:29:33.757Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: f77125ab-9668-471c-ac73-03b42654d342
+    startedAt: '2026-04-22T13:00:01.430Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 34fb2c7c-f302-4829-bb9b-9b2ff1452c31
+    startedAt: '2026-04-22T13:05:04.133Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 19b686cc-d842-40bf-ad8b-edbbf26a83c7
+    startedAt: '2026-04-22T13:15:33.638Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-22T13:15:33.652Z'
