@@ -1,0 +1,14 @@
+title: Remove workspace menu item in side menu.
+stage: Analysis
+status: In Progress
+comments: []
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: d1713b5a-43b2-4c10-8c44-5b0327082439
+    startedAt: '2026-04-22T15:38:26.667Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 134d492d-e39b-487f-93b2-9d4a5dbfada6
+    startedAt: '2026-04-22T15:38:29.821Z'
+updatedAt: '2026-04-22T15:38:29.822Z'

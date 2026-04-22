@@ -32,7 +32,6 @@ interface Props {
   stages: Stage[];
   onSaved: (updated: WorkflowItem) => void;
   onBeforeSave?: (itemId: string) => void;
-  onRestart?: (itemId: string) => void;
 }
 
 const STATUSES: ItemStatus[] = ['Todo', 'In Progress', 'Done', 'Failed'];

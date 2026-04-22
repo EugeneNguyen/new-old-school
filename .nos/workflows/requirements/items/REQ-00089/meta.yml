@@ -1,0 +1,57 @@
+title: chatwidget show tool call and other message
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis complete. I appended an `## Analysis` section to
+    `REQ-00089/index.md` covering scope (ChatWidget needs
+    tool_use/tool_result/question event handling — Terminal page already has
+    this), feasibility (high — existing `ToolUseCard` and `QuestionCard`
+    components can be reused, only `processStream()` and rendering in
+    `ChatWidget.tsx` need extending), dependencies (all internal, no backend
+    changes required), and four open questions around display density,
+    interactive question support, which "other messages" are in scope, and error
+    display treatment.
+  - >-
+    Specification written and appended to REQ-00089/index.md. The spec includes
+    4 user stories, 10 testable acceptance criteria (Given/When/Then), technical
+    constraints tied to existing APIs and components, explicit out-of-scope
+    boundaries, and RTM/WBS mappings that anchor the requirement to 1.4.8
+    (Claude Terminal), 1.5.1 (Primitives), and 1.5.3 (Markdown). All acceptance
+    criteria map cleanly to integration tests (processStream event parsing) and
+    E2E validation (visual card rendering in ChatWidget). The specification
+    reuses existing ToolUseCard and QuestionCard components and references the
+    Terminal page's proven event-handling pattern, lowering implementation risk.
+  - >-
+    [runtime] session log stalled; Let me verify the TypeScript compilation and
+    check the dev server:
+  - 'API Error: Unable to connect to API (ConnectionRefused)'
+  - >-
+    [runtime] session log stalled; Let me verify the TypeScript compilation and
+    check the dev server:
+  - 'API Error: Unable to connect to API (ConnectionRefused)'
+  - >-
+    [runtime] session log stalled; Let me verify the TypeScript compilation and
+    check the dev server:
+  - 'API Error: Unable to connect to API (ConnectionRefused)'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: b25b2c9d-0a4d-45bb-9d7c-23a3a43eff08
+    startedAt: '2026-04-21T22:56:59.596Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 5388f554-5a6a-4032-a4c9-728c23183080
+    startedAt: '2026-04-21T23:00:11.320Z'
+    agentId: david-engineer
+  - stage: Implementation
+    adapter: claude
+    sessionId: 13d310c7-79f6-467b-b460-ab9cd3a0eee1
+    startedAt: '2026-04-21T23:01:56.724Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: eec6ab41-1758-4a32-80c2-e15b13ec1cd2
+    startedAt: '2026-04-22T00:08:33.496Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-22T07:09:27.764Z'

@@ -332,6 +332,40 @@ export function readItem(workflowId: string, itemId: string): WorkflowItem | nul
   return readItemFolder(workflowId, itemId);
 }
 
+/**
+ * Restarts an item: resets stage to first, status to Todo, clears sessions,
+ * and truncates index.md body at the first `## Analysis` heading.
+ * Preserves title, comments, and id.
+ */
+export function restartItem(workflowId: string, itemId: string): WorkflowItem | null {
+  const stages = readStages(workflowId);
+  if (stages.length === 0) return null;
+  const firstStage = stages[0].name;
+
+  const metaPath = path.join(itemDir(workflowId, itemId), META_FILE);
+  if (!fs.existsSync(metaPath)) return null;
+  const meta = (yaml.load(fs.readFileSync(metaPath, 'utf-8')) as Record<string, unknown>) ?? {};
+
+  // Preserve title, comments; reset stage/status/sessions
+  meta.stage = firstStage;
+  meta.status = 'Todo' as ItemStatus;
+  meta.sessions = [];
+
+  const result = writeMeta(workflowId, itemId, meta, 'updated');
+  if (!result) return null;
+
+  // Truncate index.md at first ## Analysis heading
+  const contentPath = path.join(itemDir(workflowId, itemId), CONTENT_FILE);
+  if (fs.existsSync(contentPath)) {
+    const raw = fs.readFileSync(contentPath, 'utf-8');
+    const sections = raw.split(/^## Analysis$/m);
+    const truncated = sections[0].trimEnd();
+    atomicWriteFile(contentPath, truncated ? `${truncated}\n` : '');
+  }
+
+  return result;
+}
+
 export function updateItemMeta(
   workflowId: string,
   itemId: string,

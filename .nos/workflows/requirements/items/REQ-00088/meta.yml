@@ -1,0 +1,114 @@
+title: >-
+  implement scaffolding function to init nos in a new workspace, and also can
+  update the updated version of nos.
+stage: Done
+status: Todo
+comments:
+  - >-
+    **Analysis complete.** Appended to REQ-00088's `index.md`, the analysis
+    covers:
+
+
+    1. **Scope** — `nos init` and `nos update` CLIs that scaffold/update `.nos/`
+    from `templates/.nos/`. Excludes: runtime server, workflow items, workspace
+    registry, and non-requirements workflows.
+
+
+    2. **Feasibility (HIGH)** — `ensureNosDir` in `lib/workspace-store.ts` is
+    the existing foundation. Key risk is `system-prompt.md` divergence between
+    template and live versions; mitigation is treating it as sacred and doing
+    additive updates by default.
+
+
+    3. **Dependencies** — `lib/workspace-store.ts`, `templates/.nos/`,
+    `bin/cli.mjs`, and the existing CLAUDE.md docs define the structure.
+
+
+    4. **Open questions (7)** — Template source, update semantics (additive vs.
+    force), CLI surface, workflow provisioning scope, agent scaffolding, and
+    workspace detection.
+
+
+    The next stage should resolve the open questions and produce formal
+    documentation in `docs/requirements/REQ-00088.md`.
+  - >-
+    Specification complete. The `## Specification` section has been appended to
+    REQ-00088's `index.md`, covering:
+
+
+    - **4 user stories** — bootstrap, update, dry-run, force-reset
+
+    - **12 acceptance criteria** (AC-1 through AC-12) with Given/When/Then test
+    scenarios for both `nos init` and `nos update` commands, all traceable to
+    `lib/scaffolding.test.ts`
+
+    - **Technical constraints** — CLI surface in `bin/cli.mjs`, template source
+    at `templates/.nos/`, version from `package.json`, path validation, atomic
+    write pattern
+
+    - **Out of scope** — explicit non-goals to prevent scope creep
+
+    - **RTM entry** — documented with design artifacts, implementation files (to
+    be filled), and test coverage (to be filled)
+
+    - **WBS mapping** — new deliverables 1.7.4 (Init Command) and 1.7.5 (Update
+    Command) under the existing CLI package
+
+
+    The RTM at `docs/standards/rtm.md` has been updated with the new row for
+    REQ-00088. The next stage (Implementation) can proceed directly — all open
+    questions from the analysis have been resolved in the spec.
+  - >-
+    **Validation complete.** All 12 acceptance criteria pass with evidence
+    documented.
+
+
+    **Summary of validation:**
+
+    - Ran all 15 unit tests — 15/15 passing
+
+    - Manually exercised `nos init`, `nos init --help`, `nos update`, `nos
+    update --dry-run`, `nos update --force`, `nos update --help` — all behave
+    correctly
+
+    - Verified `activity.jsonl` is scaffolded as empty (0 bytes)
+
+    - Verified `--force` correctly restores `system-prompt.md` from template
+
+    - Verified idempotency: init-then-update adds 0 files
+
+
+    **Changes committed:**
+
+    - Updated RTM row for REQ-00088 to `Done`, added `lib/scaffolding.mjs` as
+    the runtime implementation file
+
+    - Appended `## Validation` section to REQ-00088's `index.md` with
+    per-criterion verdicts and evidence
+
+    - Pushed to `main`
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 92f6a574-2fd5-4015-8eac-8cde73d36a20
+    startedAt: '2026-04-21T16:45:13.565Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 0c2b9d59-73ec-4737-92c1-50633bd05b24
+    startedAt: '2026-04-21T16:45:15.337Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 4b8bca2a-a85b-4db3-b994-2ad6cb3a9c26
+    startedAt: '2026-04-21T16:48:09.506Z'
+    agentId: david-engineer
+  - stage: Implementation
+    adapter: claude
+    sessionId: db200ab3-a4e7-4dc5-8552-5d1f95cb5b10
+    startedAt: '2026-04-21T16:51:33.790Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: c49916fa-d5c5-4c95-b565-d21d59cbe9e9
+    startedAt: '2026-04-21T16:57:15.313Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-21T16:59:46.430Z'

@@ -231,6 +231,35 @@ export function useWorkflowItems({
     [items, markSelfOriginated, workflowId]
   );
 
+  const restartItem = useCallback(
+    async (itemId: string) => {
+      const previous = items;
+      const target = items.find((item) => item.id === itemId);
+      if (!target) return;
+
+      setError(null);
+      markSelfOriginated(itemId);
+
+      try {
+        const res = await fetch(
+          `/api/workflows/${encodeURIComponent(workflowId)}/items/${encodeURIComponent(itemId)}/restart`,
+          { method: 'POST' }
+        );
+        if (!res.ok) {
+          const msg = await res.text();
+          throw new Error(msg || `Request failed: ${res.status}`);
+        }
+        const updated: WorkflowItem = await res.json();
+        setItems((curr) => curr.map((item) => (item.id === itemId ? updated : item)));
+      } catch (e) {
+        console.error('Failed to restart item:', e);
+        setItems(previous);
+        setError(e instanceof Error ? e.message : 'Failed to restart item');
+      }
+    },
+    [items, markSelfOriginated, workflowId]
+  );
+
   const openItem = useCallback((itemId: string) => setDetailItemId(itemId), []);
   const closeItem = useCallback(() => setDetailItemId(null), []);
   const openNewItem = useCallback(() => setNewItemOpen(true), []);
@@ -329,5 +358,6 @@ export function useWorkflowItems({
     handleStageCreated,
     handleStageDeleted,
     handleStagesReordered,
+    restartItem,
   };
 }

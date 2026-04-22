@@ -230,3 +230,123 @@ All 17 audit findings are **Compliant** — no violations were found, so no sour
 | 15 | Type import style | ✅ Fixed (already compliant) |
 | 16 | Synchronous `fs` API (GAP-05) | ⏸ Deferred — known open gap, tracked in project-standards.md, not a new violation |
 | 17 | `lib/scaffolding.mjs` dual-module naming | ✅ Fixed (already compliant) |
+
+---
+
+## Doc Audit Findings
+
+### Finding D-01: RTM status inconsistency — Multiple items marked "Todo" but actually Done
+- **Artifact**: `docs/standards/rtm.md`, rows REQ-00024, REQ-00029, REQ-00030, REQ-00031, REQ-00032, REQ-00041, REQ-00043, REQ-00045, REQ-00046, REQ-00047, REQ-00049, REQ-00053 through REQ-00087
+- **Gap**: The RTM (rows 25–99) shows ~60 items as "Todo" or "In Progress" but the actual implementation state from `.nos/workflows/requirements/items/*/meta.yml` and validation comments confirms they are Done. The RTM reflects the original backlog ordering but was never updated as items were completed through the pipeline.
+- **Severity**: **High** — The RTM is the ground-truth traceability artifact. Stale "Todo" rows on implemented features defeat the purpose of the matrix.
+- **Status**: Documentation only; no source-code impact.
+- **Note**: REQ-00024, REQ-00029, REQ-00030, REQ-00031, REQ-00032, REQ-00041, REQ-00043 are confirmed Done via pipeline validation sessions. The RTM was written before the validation pipeline was established and has not been reconciled.
+
+---
+
+### Finding D-02: RTM row for REQ-00088 lacks test coverage annotation
+- **Artifact**: `docs/standards/rtm.md`, row REQ-00088
+- **Gap**: The RTM row for REQ-00088 lists "Test Coverage: `lib/scaffolding.test.ts`" but the field is annotated as "(to be filled)" in the source spec. The actual test file exists and contains 15 passing tests (covering AC-1 through AC-12 plus integration), but the RTM row entry in the documentation artifact has not been updated to reflect the completion.
+- **Severity**: **Low** — The RTM row needs updating to mark test coverage as complete.
+- **Status**: Documentation only; no source-code impact.
+- **Reference**: REQ-00088's `index.md` validation section confirms 15/15 tests passing.
+
+---
+
+### Finding D-03: `docs/standards/wbs-dictionary.md` references non-existent `.nos/claude.md`
+- **Artifact**: `docs/standards/wbs-dictionary.md`, Section 1.1.3 Item Lifecycle (acceptance criteria)
+- **Gap**: The WBS dictionary references `.nos/claude.md` as the authoritative structure guide for scaffolding. This file does not exist in the repository. The actual structure guide is `.nos/CLAUDE.md` (existing) and `.nos/workflows/CLAUDE.md` (existing).
+- **File path**: `.nos/claude.md` (does not exist)
+- **Severity**: **Medium** — WBS acceptance criteria point to a non-existent file. Operators following the documented path will not find the referenced guide.
+- **Status**: Documentation gap; source file `.nos/claude.md` is missing.
+- **Fix**: Either create `.nos/claude.md` (mirroring the structure guide purpose) or update the WBS dictionary entry to reference `.nos/CLAUDE.md` and `.nos/workflows/CLAUDE.md` which already exist and serve the same purpose.
+
+---
+
+### Finding D-04: `docs/standards/wbs-dictionary.md` Section 1.1.5 Activity Logging — activity types mismatch
+- **Artifact**: `docs/standards/wbs-dictionary.md`, Section 1.1.5
+- **Gap**: WBS dictionary (Section 1.1.5) states activity log entry types include: `title-changed`, `stage-changed`, `status-changed`. However, `lib/activity-log.ts` also defines `body-changed` and `item-created` / `routine-item-created` (5 types total). The WBS dictionary entry only lists 3 types.
+- **File path**: `lib/activity-log.ts` lines 11–17 (ActivityEventType union); `docs/standards/wbs-dictionary.md` Section 1.1.5
+- **Severity**: **Low** — The WBS entry is incomplete but not incorrect. The documented types are a subset of the actual types.
+- **Status**: Stale documentation; `lib/activity-log.ts` is the authoritative source.
+
+---
+
+### Finding D-05: `docs/standards/wbs.md` Section 1.8.6 says "8 route segments" but implementation has 9
+- **Artifact**: `docs/standards/wbs.md` Section 1.8.6; `docs/standards/wbs-dictionary.md` Section WBS 1.8.6
+- **Gap**: WBS and WBS dictionary state that `error.tsx` and `loading.tsx` exist at "8 dashboard sub-routes". The actual implementation has 9: the 8 documented plus `/dashboard/workspaces/`. The workspaces route segment also has its own `error.tsx` and `loading.tsx`.
+- **File paths**: `app/dashboard/workspaces/error.tsx`, `app/dashboard/workspaces/loading.tsx`
+- **Severity**: **Low** — Documentation understated the coverage. Implementation is actually better than documented.
+- **Status**: Documentation gap (stale count); implementation is complete.
+
+---
+
+### Finding D-06: `docs/standards/wbs-dictionary.md` Section 1.2.6 Routine Scheduler — outdated reference
+- **Artifact**: `docs/standards/wbs-dictionary.md`, Section 1.2.6 (Routine Scheduler)
+- **Gap**: The WBS dictionary states routine state is tracked in `routine-state.json` (file name). The actual file is `routine-state.json` (singular, correct). However, the acceptance criteria entry references the Routine entity but does not cross-reference the database-design.md artifact which documents the same entity. Minor inconsistency in traceability.
+- **Severity**: **Low** — File name is correct in both docs; just not cross-referenced.
+- **Status**: Documentation gap (missing cross-reference).
+
+---
+
+### Finding D-07: `docs/standards/rtm.md` Audit Findings Traceability table — F-08 and F-10 deferred indefinitely
+- **Artifact**: `docs/standards/rtm.md`, "Audit Findings Traceability" table, rows F-08 and F-10
+- **Gap**: F-08 (business logic extraction from route handlers) and F-10 (synchronous fs in route handlers) are marked "Deferred" with no target date, owner, or remediation milestone. These represent architectural debt.
+- **Severity**: **Medium** — F-08 allows business logic to remain in route handlers; F-10 perpetuates GAP-05 (synchronous I/O). Both are tracked but without an owner or plan.
+- **Status**: Known gap, no owner assigned. Recommend assigning to a quarterly tech-debt review.
+
+---
+
+### Finding D-08: `docs/standards/glossary.md` missing "Scaffolding" domain term
+- **Artifact**: `docs/standards/glossary.md`
+- **Gap**: The glossary defines terms like "Workspace", "Workflow", "Stage", "Agent", "Session", etc. but does not define the term "Scaffolding" (the process of creating a new NOS workspace via `nos init` and keeping it current via `nos update`). REQ-00088 introduces this concept and its glossary entry should reference it.
+- **Reference**: REQ-00088 `index.md` section "Out of Scope" mentions "scaffolding of workflows other than `requirements`", assuming the reader knows what scaffolding means. The glossary does not define it.
+- **Severity**: **Low** — Domain term used in code (`lib/scaffolding.ts`, `lib/scaffolding.mjs`) but absent from glossary.
+- **Status**: Missing glossary entry for a new domain term.
+
+---
+
+### Finding D-09: `docs/standards/rtm.md` — duplicate requirement titles in the matrix
+- **Artifact**: `docs/standards/rtm.md`, lines 36–99
+- **Gap**: The RTM contains multiple rows with identical titles but different IDs:
+  - REQ-00039, REQ-00059, REQ-00063, REQ-00067 — all "Implement search item function" (4 rows, different IDs)
+  - Several other features appear under different IDs (e.g., REQ-00048 "Rename NOS to New Old-school in UI" may have related items under different IDs)
+- **Note**: These appear to be intentional separate requirements (different items in the backlog) rather than copy-paste errors. However, the RTM should clarify whether multiple items address the same feature or if they represent distinct sub-requirements. If they are duplicates, the RTM should consolidate them.
+- **Severity**: **Low** — The RTM may be documenting separate but related items rather than true duplicates. The matrix does not claim uniqueness per title.
+- **Status**: Documentation clarity issue; requires owner judgment on whether consolidation is needed.
+- **Reference**: `grep "Implement search item function" docs/standards/rtm.md` shows 4 rows at lines 50, 70, 74, 78.
+
+---
+
+### Finding D-10: `docs/standards/api-reference.md` — SSE event types documented as generic strings
+- **Artifact**: `docs/standards/api-reference.md`, lines 411–418
+- **Gap**: The API reference documents SSE events as: `"item-created", "item-updated", "item-deleted", "item-activity"`. However, `lib/workflow-events.ts` actually emits events typed by `WorkflowEventType` which includes these plus `WORKFLOW_EVENT` as the type discriminator. The reference does not cross-reference `lib/workflow-events.ts` for the authoritative event schema.
+- **File path**: `lib/workflow-events.ts` (authoritative), `docs/standards/api-reference.md` lines 411–418 (doc)
+- **Severity**: **Low** — The documented events are correct but incomplete. The reference should link to the source file for the canonical type.
+- **Status**: Documentation gap (missing cross-reference).
+
+---
+
+## Doc Audit Summary
+
+| Severity | Count | Details |
+|----------|-------|---------|
+| **High** | 1 | D-01: RTM has ~60 items stuck as "Todo" despite Done validation — core traceability artifact is stale |
+| **Medium** | 2 | D-03: WBS references non-existent `.nos/claude.md`; D-07: F-08/F-10 deferred without owner |
+| **Low** | 7 | D-02: REQ-00088 test coverage annotation missing; D-04: activity types list incomplete; D-05: WBS undercounts error boundaries; D-06: missing cross-reference; D-08: "Scaffolding" term missing from glossary; D-09: RTM has duplicate-titled rows (clarity issue); D-10: SSE event types not cross-referenced to source |
+
+**Total: 1 High, 2 Medium, 7 Low = 10 findings**
+
+**Overall Compliance Verdict: PARTIALLY COMPLIANT**
+
+The codebase implementation broadly satisfies documented standards. All 17 naming convention findings from AUDIT-004 remain **Compliant**. However, the documentation artifacts themselves have accumulated significant gaps:
+
+- The **RTM** is the most critical issue — ~60 items show "Todo" but validation confirms they are Done. This was a backlog-tracking artifact before the pipeline validation system existed, and it has not been reconciled. An operator trusting the RTM would believe ~60 features are unimplemented when they are actually shipped.
+- The **WBS dictionary** references a non-existent file (`.nos/claude.md`) in its acceptance criteria, making the structural guide unreliable.
+- The **RTM duplicate ID problem** suggests the matrix was maintained by appending rows rather than checking for existing entries.
+
+**Recommended remediation order:**
+1. **D-01** (High): Reconcile RTM status column against `.nos/workflows/requirements/items/*/meta.yml` stage field. Bulk-update all items with `stage: Done` to reflect Done in the RTM matrix.
+2. **D-03** (Medium): Create `.nos/claude.md` or update WBS dictionary to reference `.nos/CLAUDE.md` and `.nos/workflows/CLAUDE.md` (both exist).
+3. **D-07** (Medium): Assign owners to F-08 (business logic extraction) and F-10 (async I/O migration). No target date but should be on the tech-debt backlog.
+4. **D-02, D-04, D-05, D-06, D-08, D-09, D-10** (Low): Minor cross-reference, terminology, and clarity fixes. Can be batched into a documentation hygiene PR.

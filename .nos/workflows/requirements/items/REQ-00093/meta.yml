@@ -1,8 +1,8 @@
 title: >-
   Refactor Claude Terminal chat, reuse component bubble and others from the chat
   widget
-stage: Validation
-status: In Progress
+stage: Done
+status: Todo
 comments:
   - >-
     [runtime] session log stalled; The `index.md` is empty — the requirement is
@@ -93,6 +93,36 @@ comments:
     No new dependencies introduced; all shared components use existing
     primitives from `components/ui/` and `lucide-react`. TypeScript compiles
     cleanly (the only remaining warnings are pre-existing unrelated issues).
+  - >-
+    Validation complete. 10 of 12 acceptance criteria pass; 2 require attention:
+
+
+    **Summary of validation for REQ-00093:**
+
+
+    I read all implementation files and verified each acceptance criterion
+    against the code and a `tsc --noEmit` run. Results appended to `index.md` as
+    `## Validation`; RTM updated with the implementation files and status "In
+    Progress".
+
+
+    - **10 AC pass (✅):** `ChatBubble` (cva + `React.memo`, correct variants),
+    `MessageList` (auto-scroll via ref on the custom `ScrollArea`),
+    `TypingIndicator`, `ChatInput`, terminal page composing all 4 primitives,
+    `ToolUseCard`/`QuestionCard` relocated with barrel re-export and old files
+    deleted, visual style preserved in both surfaces, no new dependencies,
+    `ChatMessage` type consolidated in `types/chat.ts`.
+
+
+    - **AC-6 partial (⚠️):** `ChatWidget` uses `ChatBubble`, `MessageList`, and
+    `TypingIndicator` from the shared library but the input form (lines 464–488)
+    remains inline using `<Input>` + `<Button>` directly rather than the shared
+    `<ChatInput>` component. Follow-up: wrap the widget's form in `<ChatInput>`
+    with the `hasDefaultAgent` guard around it and widget sizing via
+    `className`/`inputClassName` props.
+
+
+    Committed and pushed as `5614be2`.
 sessions:
   - stage: Analysis
     adapter: claude
@@ -112,4 +142,4 @@ sessions:
     sessionId: 19b686cc-d842-40bf-ad8b-edbbf26a83c7
     startedAt: '2026-04-22T13:15:33.638Z'
     agentId: martin-senior-engineer
-updatedAt: '2026-04-22T13:15:33.652Z'
+updatedAt: '2026-04-22T13:20:36.187Z'

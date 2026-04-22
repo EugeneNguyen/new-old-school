@@ -4,7 +4,7 @@ This directory contains the living standards and conventions for the NOS project
 Each section covers a major technology in the stack with recommended patterns,
 anti-patterns, and project-specific conventions already in use.
 
-**Last audited:** 2026-04-21 (AUDIT-003)
+**Last audited:** 2026-04-22 (AUDIT-004)
 
 ---
 
@@ -21,7 +21,9 @@ anti-patterns, and project-specific conventions already in use.
   - File organization and naming conventions
   - UI component standards (shadcn/ui pattern)
   - Data layer standards (YAML/JSON, atomic writes, store pattern)
+  - Documentation standards (markdown conventions, code examples, diagrams)
   - Identified gaps (15 items: 5 resolved, 1 partially resolved, 9 open)
+- [**documentation-standards.md**](documentation-standards.md) — Documentation authoring standards: Markdown conventions, code examples, Mermaid diagrams, gap summaries, audit integration
 - [**system-architecture.md**](system-architecture.md) — System architecture overview: component topology, data flow diagrams, key design decisions, Mermaid sequence diagrams
 - [**database-design.md**](database-design.md) — Data model (ER diagram), entity definitions, file-based storage schema, YAML/JSON conventions
 - [**wbs.md**](wbs.md) — Work Breakdown Structure: hierarchical decomposition of all project packages
@@ -52,7 +54,7 @@ anti-patterns, and project-specific conventions already in use.
 | GAP-05 | Synchronous `fs` in API routes | OPEN | Low |
 | GAP-06 | Incomplete error boundaries | RESOLVED | ~~Low~~ |
 | GAP-07 | Mixed config file formats | OPEN | Low |
-| GAP-08 | Limited test coverage (3 files) | OPEN | Medium |
+| GAP-08 | Limited test coverage (2 test files) | OPEN | Medium |
 | GAP-09 | `React.forwardRef` deprecation | RESOLVED | ~~Low~~ |
 | GAP-10 | Canary dependency pinning | PARTIAL | Medium |
 | GAP-11 | `@types/react` v18 vs React 19 | OPEN | Medium |
@@ -60,3 +62,5 @@ anti-patterns, and project-specific conventions already in use.
 | GAP-13 | Broken `npm run lint` script | OPEN | High |
 | GAP-14 | React Compiler not enabled | OPEN | Medium |
 | GAP-15 | `next-themes` phantom dependency | OPEN | Medium |
+
+> **AUDIT-004 Notes (2026-04-22):** Tech stack unchanged from AUDIT-003. `@types/react@18.3.28` still installed despite React 19.2.5 (GAP-11 still open). Next.js 16 is stable - consider moving from canary. New scaffolding module (`lib/scaffolding.ts`) follows existing patterns. All 15 gaps remain in their prior states.

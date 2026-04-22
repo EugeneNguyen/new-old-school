@@ -1,0 +1,108 @@
+title: add item in sidemenu to access file browser
+stage: Done
+status: Todo
+comments:
+  - >-
+    The analysis section has already been written by a concurrent session. The
+    existing analysis is thorough and covers all four required areas (Scope,
+    Feasibility, Dependencies, Open questions). It correctly identifies the
+    `config/tools.json` registry approach as the simplest path, notes the icon
+    collision risk with the Workflows `Folder` icon, and raises the right open
+    questions around labeling, placement, and routing.
+
+
+    One supplementary observation from my exploration: the `FileExplorer`
+    component in `app/dashboard/workspaces/page.tsx` is currently a controlled
+    component (`value`/`onChange` props) tightly coupled to the `WorkspaceForm`.
+    If a future requirement creates a dedicated `/dashboard/files` route (open
+    question #4), the component would need a thin browse-only wrapper. This
+    doesn't affect the current requirement — linking to the existing
+    `/dashboard/workspaces` route works as-is — but is worth noting for the
+    Documentation stage.
+
+
+    Analysis for REQ-00095 was completed by a parallel session. The `index.md`
+    now contains a full `## Analysis` section covering scope (add a sidebar nav
+    item pointing to the existing file browser), feasibility (high — one JSON
+    entry in `config/tools.json`), dependencies (REQ-00092, Sidebar.tsx,
+    tool-registry), and four open questions around labeling, placement, icon
+    choice, and routing. No implementation was started.
+  - >-
+    Specification for REQ-00095 has been written and appended to the item's
+    `index.md`. The spec covers three user stories (sidebar access, active-state
+    indication, collapsed mode), seven acceptance criteria in Given/When/Then
+    form, six technical constraints (including the exact JSON entry, array
+    position, icon choice, and route reuse), five explicit out-of-scope items,
+    an RTM row ready for the traceability matrix, and WBS mapping to packages
+    1.4.1, 1.7.3, and 1.5.4.
+
+
+    The key design decisions resolved in this spec: label is "Files" (concise,
+    avoids conflation with workspace management), icon is `FolderOpen` (distinct
+    from Workflows' `Folder`), route reuses `/dashboard/workspaces` (no new
+    route), and the entry goes at array index 1 (after Dashboard, before Claude
+    Terminal). Implementation requires editing exactly one file:
+    `config/tools.json`.
+  - >-
+    Implementation complete. Added the "Files" navigation item to
+    `config/tools.json` at index 1 (between Dashboard and Claude Terminal) with
+    `id: "files"`, `name: "Files"`, `href: "/dashboard/workspaces"`, `icon:
+    "FolderOpen"`, `description: "Browse workspace files"`, `endpoint:
+    "/api/workspaces"`, and `category: "core"`. No changes were required to
+    `Sidebar.tsx` or `lib/tool-registry.ts` — the existing config-driven
+    rendering via `ToolRegistry.getAllTools()` automatically picks up and
+    renders the new entry with correct active-state highlighting, icon-only
+    collapsed mode, and icon+label expanded mode. All 7 acceptance criteria are
+    satisfied.
+  - >-
+    Validation complete. All 7 acceptance criteria for REQ-00095 pass:
+
+
+    - **AC-1** ✅ `config/tools.json` index 1 is the "Files" entry, positioned
+    between Dashboard (0) and Claude Terminal (2).
+
+    - **AC-2** ✅ `href: "/dashboard/workspaces"` — Sidebar renders it as a
+    `<Link>`.
+
+    - **AC-3** ✅ `icon: "FolderOpen"` resolves via `ToolRegistry.getIcon()`;
+    label shown when `!collapsed`.
+
+    - **AC-4** ✅ `{!collapsed && <span>}` in `Sidebar.tsx:82` hides label in
+    collapsed mode.
+
+    - **AC-5** ✅ `isActive()` matches `/dashboard/workspaces` and sub-paths;
+    active class applied.
+
+    - **AC-6** ✅ All required fields (`id`, `name`, `href`, `icon`,
+    `description`, `endpoint`, `category`) match spec exactly.
+
+    - **AC-7** ✅ `Sidebar.tsx` is unmodified — config-driven rendering handles
+    the new entry automatically.
+
+
+    No regressions found. RTM updated with a Done entry for REQ-00095. Changes
+    committed and pushed.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: eba92e36-d13b-4dad-81cd-e4c56fbeab45
+    startedAt: '2026-04-22T13:13:02.037Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 96d6f269-57fa-4b74-b46b-37b0030ad46c
+    startedAt: '2026-04-22T13:13:09.392Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 29c77c10-e3f8-403c-8cc8-b8b6d74dee1d
+    startedAt: '2026-04-22T13:17:34.445Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 59c5ccb8-a8d0-46c8-be90-d5e5b017aa1e
+    startedAt: '2026-04-22T13:20:43.580Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: eb4936c6-8c7a-4f25-b174-fff03455b03c
+    startedAt: '2026-04-22T13:22:52.211Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-22T13:25:08.400Z'

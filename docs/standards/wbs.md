@@ -62,6 +62,8 @@
 - 1.7.1 CLI Entry Point (`bin/cli.mjs` via Commander.js)
 - 1.7.2 Skill Registry (load/search skills from `config/skills.json`)
 - 1.7.3 Tool Registry (load tools from `config/tools.json`)
+- 1.7.4 Workspace Scaffolding (`initWorkspace()`/`updateWorkspace()` for NOS workspace init and version updates)
+- 1.7.5 Template Management (`listTemplateFiles`, `getTemplatesRoot`, `getNosTemplatesRoot`; templates root configurable via `NOS_TEMPLATES_ROOT`)
 
 ### 1.8 Infrastructure & Quality
 - 1.8.1 TypeScript Configuration (strict mode, path aliases, bundler resolution)

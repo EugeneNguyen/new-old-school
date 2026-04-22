@@ -1,6 +1,6 @@
 # NOS Project Standards
 
-> Last audited: 2026-04-21 (AUDIT-003 audit)
+> Last audited: 2026-04-22 (AUDIT-004 audit)
 
 ---
 
@@ -192,6 +192,8 @@ bin/              # CLI entry point
 templates/        # Scaffolding templates
 .nos/             # NOS runtime data (workflows, config)
 docs/             # Project documentation
+  standards/      # Living standards and conventions
+  requirements/   # Feature requirements
 ```
 
 ### Naming Conventions
@@ -297,10 +299,10 @@ The following deviations from current best practices should be tracked for remed
 
 ### GAP-11: `@types/react` v18 with React 19 stable
 - **Status**: OPEN
-- **Current**: `@types/react@18.3.28` and `@types/react-dom@^18.0.0` installed, but React is 19.2.5 stable.
+- **Current**: `@types/react@18.3.28` installed (verified in node_modules), but React is 19.2.5 stable. `package.json` specifies `^19.0.0` but older version is resolved.
 - **Standard**: Type definitions should match the React version in use. React 19 APIs (`use()`, `useFormStatus`, ref-as-prop) have different type signatures.
 - **Impact**: Type mismatches for React 19-specific APIs; IDE may flag valid React 19 code. With `strict: true` now enabled, these mismatches are more likely to surface.
-- **Recommendation**: Upgrade to `@types/react@^19.0.0` and `@types/react-dom@^19.0.0`, or use React's built-in types if available.
+- **Recommendation**: Run `npm install @types/react@^19.0.0 @types/react-dom@^19.0.0` to update. Verify types resolve correctly after update.
 
 ### GAP-12: `Logo.tsx` naming inconsistency in `components/ui/`
 - **Status**: RESOLVED (AUDIT-003)
@@ -327,6 +329,50 @@ The following deviations from current best practices should be tracked for remed
 - **Impact**: Installation on a clean machine may fail if `next-themes` is not resolved as a transitive dependency. Version is unpinned and uncontrolled.
 - **Recommendation**: Add `"next-themes": "^0.4.6"` to `dependencies` in `package.json`.
 
+### AUDIT-004 (2026-04-22) Summary
+- **Tech stack unchanged** from AUDIT-003.
+- **New files added**: `lib/scaffolding.ts`, `lib/scaffolding.mjs`, `lib/scaffolding.test.ts` - follows existing patterns.
+- **New standards documents**: `adr/`, `api-reference.md`, `deployment-design.md`, `error-handling-strategy.md`, `glossary.md`, `performance-budget.md`, `security-design.md`, `test-plan.md`, `ui-design.md`, `user-journey.md`, `ux-design.md`, `wbs-dictionary.md` added to `docs/standards/`.
+- **All 15 gaps** remain in their prior states (5 resolved, 1 partial, 9 open).
+- **Verified**: `@types/react@18.3.28` still installed despite `package.json` specifying `^19.0.0`.
+
+---
+
+## 12. Documentation Standards
+
+### Recommended Patterns
+
+- **Markdown-first.** All documentation in `docs/` uses Markdown with frontmatter metadata.
+- **Living documents.** Standards documents should be updated as part of each audit cycle.
+- **YAML metadata.** Use YAML frontmatter (`---`) for document metadata (last updated, author, status).
+- **Cross-references.** Link between related documents using relative paths.
+
+### Document Types
+
+| Type | Location | Purpose |
+|------|----------|---------|
+| Standards | `docs/standards/*.md` | Living conventions and patterns |
+| Architecture | `docs/standards/adr/*.md` | Architecture Decision Records |
+| References | `docs/standards/api-reference.md` | API documentation |
+| Design | `docs/standards/ui-design.md`, `ux-design.md` | Design specifications |
+| Requirements | `docs/requirements/*.md` | Feature requirements |
+| Audit | `.nos/workflows/audit/items/*/meta.yml` | Audit findings and fixes |
+
+### Naming Conventions
+
+| Document Type | Convention | Example |
+|---|---|---|
+| Standards | `kebab-case.md` | `error-handling-strategy.md` |
+| ADRs | `ADR-###-title.md` | `ADR-008-atomic-file-writes.md` |
+| Requirements | `REQ-#####.md` | `REQ-00088.md` |
+| Audit findings | `AUDIT-###/*.md` | `AUDIT-004/meta.yml` |
+
+### Anti-Patterns to Avoid
+
+- Don't hardcode dates that will become stale; use relative references.
+- Don't duplicate information across documents.
+- Don't commit generated files (`.next/`, `node_modules/`, etc.).
+
 ---
 
 ## Appendix: Key Files Reference
@@ -346,3 +392,6 @@ The following deviations from current best practices should be tracked for remed
 | Error response utility | `app/api/utils/errors.ts` |
 | Dashboard error boundary | `app/dashboard/error.tsx` |
 | Dashboard loading state | `app/dashboard/loading.tsx` |
+| Scaffolding module | `lib/scaffolding.ts` |
+| Templates root | `templates/` |
+| NOS templates | `templates/.nos/` |

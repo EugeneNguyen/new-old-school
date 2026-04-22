@@ -135,6 +135,144 @@ async function stopServer(lf) {
   deleteLockfile();
 }
 
+// ---- Scaffolding ----
+
+async function handleInit(args) {
+  const templatesRoot = path.join(pkgRoot, 'templates', '.nos');
+  const { initWorkspace } = await import(path.join(pkgRoot, 'lib', 'scaffolding.js')).catch(() =>
+    import(path.join(pkgRoot, 'lib', 'scaffolding.mjs'))
+  ).catch(() => null);
+  if (!initWorkspace) {
+    try {
+      const mod = await import(path.join(pkgRoot, 'lib', 'scaffolding.mjs'));
+      handleInitInner(mod, args, templatesRoot);
+    } catch {
+      console.error('nos init: could not load scaffolding module');
+      process.exit(1);
+    }
+  } else {
+    handleInitInner({ initWorkspace }, args, templatesRoot);
+  }
+}
+
+function handleInitInner(mod, args, templatesRoot) {
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log('Usage: nos init [path]');
+    console.log('');
+    console.log('Scaffold a new NOS workspace in the target directory.');
+    console.log('If no path is provided, uses the current working directory.');
+    console.log('');
+    console.log('Arguments:');
+    console.log('  path    Target directory (absolute or relative to CWD)');
+    process.exit(0);
+  }
+
+  const workspacePath = args[0] ?? process.cwd();
+  let resolved;
+  try {
+    resolved = fs.realpathSync(workspacePath);
+  } catch {
+    console.error('nos init: path does not exist:', workspacePath);
+    process.exit(1);
+  }
+
+  const result = mod.initWorkspace(resolved, templatesRoot);
+
+  if (result.ok) {
+    console.log('NOS scaffolded at', result.nosDir);
+    process.exit(0);
+  } else {
+    if (result.error === 'already_exists') {
+      console.error('nos init: .nos/ already exists at', result.nosDir);
+      process.exit(1);
+    } else if (result.error === 'template_not_found') {
+      console.error('nos init: templates not found at', templatesRoot);
+      process.exit(1);
+    } else {
+      console.error('nos init:', result.error);
+      process.exit(1);
+    }
+  }
+}
+
+async function handleUpdate(args) {
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log('Usage: nos update [path] [--dry-run] [--force]');
+    console.log('');
+    console.log('Update a NOS workspace by adding missing template files.');
+    console.log('The update is additive — existing files are never overwritten by default.');
+    console.log('The system-prompt.md is sacred and never overwritten unless --force is passed.');
+    console.log('');
+    console.log('Arguments:');
+    console.log('  path         Target directory (default: current working directory)');
+    console.log('');
+    console.log('Options:');
+    console.log('  --dry-run    Preview what files would be added without modifying the filesystem');
+    console.log('  --force      Overwrite all template files including system-prompt.md');
+    console.log('  --help, -h   Show this help message');
+    process.exit(0);
+  }
+
+  const templatesRoot = path.join(pkgRoot, 'templates', '.nos');
+
+  const mod = await import(path.join(pkgRoot, 'lib', 'scaffolding.mjs')).catch(() => null);
+  if (!mod) {
+    console.error('nos update: could not load scaffolding module');
+    process.exit(1);
+  }
+
+  const force = args.includes('--force');
+  const dryRun = args.includes('--dry-run');
+  const targetArgs = args.filter(a => !a.startsWith('--'));
+  const workspacePath = targetArgs[0] ?? process.cwd();
+
+  let resolved;
+  try {
+    resolved = fs.realpathSync(workspacePath);
+  } catch {
+    console.error('nos update: path does not exist:', workspacePath);
+    process.exit(1);
+  }
+
+  const result = mod.updateWorkspace({
+    workspacePath: resolved,
+    templatesRoot,
+    force,
+    dryRun,
+  });
+
+  if (!result.ok) {
+    if (result.error === 'workspace_not_found') {
+      console.error('nos update: .nos/ not found at', result.nosDir, '(run "nos init" first)');
+      process.exit(1);
+    }
+    console.error('nos update:', result.error);
+    process.exit(1);
+  }
+
+  if (dryRun) {
+    if (result.added.length === 0) {
+      console.log('nos update --dry-run: no files to add');
+    } else {
+      console.log('nos update --dry-run: the following files would be added:');
+      for (const file of result.added) {
+        console.log(' +', file);
+      }
+    }
+  } else {
+    if (result.added.length === 0) {
+      console.log('nos update: no new files to add');
+    } else {
+      console.log('nos update: added', result.added.length, 'file(s):');
+      for (const file of result.added) {
+        console.log(' +', file);
+      }
+    }
+  }
+
+  process.exit(0);
+}
+
 // ---- Subcommands ----
 
 async function handleStatus() {
@@ -295,9 +433,18 @@ async function runTUI(nextBin) {
 
 async function main() {
   const cmd = process.argv[2];
+  const restArgs = process.argv.slice(3);
 
   if (cmd === 'status') return handleStatus();
   if (cmd === 'stop') return handleStopCmd();
+  if (cmd === 'init') {
+    await handleInit(restArgs);
+    return;
+  }
+  if (cmd === 'update') {
+    await handleUpdate(restArgs);
+    return;
+  }
 
   const nextBin = resolveNextBin();
 

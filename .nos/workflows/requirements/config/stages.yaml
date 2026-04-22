@@ -73,7 +73,7 @@
     Keep the document the single source of truth — anything an implementer needs
     must be answerable from this section. Do not write code.
   autoAdvanceOnComplete: true
-  agentId: david-engineer
+  agentId: null
 - name: Implementation
   description: Build the feature or fix according to the documented requirements.
   prompt: >
@@ -85,8 +85,8 @@
 
     1. Read the item's `index.md` and `meta.yml`.
 
-    2. Read the relevant documentation standards in `docs/standards/` that
-    apply to this requirement:
+    2. Read the relevant documentation standards in `docs/standards/` that apply
+    to this requirement:
        - **Database changes** — `docs/standards/database-design.md`
        - **UI components** — `docs/standards/ui-design.md`
        - **UX interactions** — `docs/standards/ux-design.md`
@@ -99,8 +99,8 @@
 
     Workflow:
 
-    1. Treat the spec in `index.md` as authoritative; if you find gaps,
-    stop and flag them rather than guessing.
+    1. Treat the spec in `index.md` as authoritative; if you find gaps, stop and
+    flag them rather than guessing.
 
     2. Plan the changes (files to touch, order of edits) before editing.
 
@@ -110,8 +110,8 @@
     4. Follow existing project conventions (see `CLAUDE.md`) and the
     documentation standards listed above.
 
-    5. Update `meta.yml` `status` to `In Progress` when you start and update
-    the item's `index.md` by appending a brief `## Implementation Notes` section
+    5. Update `meta.yml` `status` to `In Progress` when you start and update the
+    item's `index.md` by appending a brief `## Implementation Notes` section
     summarizing the changes and any deviations from the documented standards.
 
 
@@ -127,8 +127,8 @@
 
     **Before validating, gather context:**
 
-    1. Read the item's `index.md` (including `## Specification` and
-    `## Implementation Notes`) and `meta.yml`.
+    1. Read the item's `index.md` (including `## Specification` and `##
+    Implementation Notes`) and `meta.yml`.
 
     2. Read the documentation standards in `docs/standards/` to verify the
     implementation aligns with the documented design:

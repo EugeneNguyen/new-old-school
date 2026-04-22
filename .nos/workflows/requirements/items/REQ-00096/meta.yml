@@ -1,0 +1,74 @@
+title: Create file system browser
+stage: Done
+status: Todo
+comments:
+  - >-
+    [runtime] session log stalled; I'll analyze this file system browser
+    requirement. Let me start by reading the item files and exploring the
+    codebase to understand the current architecture.
+  - >-
+    Specification for REQ-00096 is complete. I wrote the `## Specification`
+    section with 5 user stories, 12 Gherkin-style acceptance criteria, detailed
+    technical constraints (API endpoints, data shapes, file paths, security,
+    performance), explicit out-of-scope items, an RTM entry, and WBS mapping. I
+    also added the corresponding row to `docs/standards/rtm.md`.
+
+
+    Key design decisions resolved from the Analysis open questions: (1) binary
+    files served via a new `/api/workspaces/serve` streaming endpoint with
+    workspace sandboxing; (2) sidebar "Files" re-pointed to `/dashboard/files`,
+    existing workspaces page unchanged; (3) sandboxing enforced at the API level
+    via `realpathSync` comparison; (4) 100 MB size cap for inline binary
+    preview; (5) unsupported file types show a metadata card.
+  - >-
+    [runtime] session log stalled; Let me check the middleware for cookie
+    handling and see how the workspace root is resolved.
+  - >-
+    All 12 acceptance criteria pass. Three defects were found and fixed during
+    validation, then committed. Here is the summary:
+
+
+    **REQ-00096 validation complete — all 12 ACs pass.**
+
+
+    During validation I found and fixed three defects:
+
+
+    1. **AC-1 (config)** — `config/tools.json` "Files" entry still pointed to
+    `/dashboard/workspaces` instead of `/dashboard/files`. Corrected; a separate
+    "Workspaces" entry was preserved by the implementation hook.
+
+
+    2. **AC-4 (security)** — The browse route sandbox check used
+    `resolved.startsWith(wsResolved)` without a path-separator suffix. This
+    allowed a workspace at `/a/b` to be bypassed by paths like `/a/bc/...`.
+    Fixed to `startsWith(wsResolved + path.sep) || resolved === wsResolved`,
+    matching the already-correct guard in `serve/route.ts`.
+
+
+    3. **AC-12 (UX)** — `FileViewer` error state had no retry button; added a
+    "Retry" button that reinvokes `loadPreview`.
+
+
+    All implementation files are now recorded in the RTM with status **Done**,
+    and the `## Validation` section has been appended to `index.md`.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 33903cba-3493-44cb-aba4-77277e9ab20b
+    startedAt: '2026-04-22T13:25:35.020Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 585ef760-19cb-467c-b627-fb13699b33dd
+    startedAt: '2026-04-22T13:28:54.950Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: fc057832-9fe4-4e4e-a2e4-0f4de0d5a2c5
+    startedAt: '2026-04-22T13:34:34.560Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: c552c956-85c1-4c3f-b0ad-80e071428097
+    startedAt: '2026-04-22T13:45:40.210Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-22T13:51:13.192Z'

@@ -264,3 +264,31 @@ u2705 **Pass.** `route.ts` returns `createErrorResponse(..., 'NotFound', 404)` w
 #### Minor findings (non-blocking)
 - ~~`formatSummary` in `ItemDetailDialog.tsx` lacked a `restart` case~~ — fixed during validation; now displays `Restarted: <before.stage> <before.status> u2192 <after.stage> <after.status>`.
 - `onRestart` prop declared in `Props` and destructured but unused (dead code); the button calls `handleRestartConfirm` directly. No functional impact.
+
+## Implementation Notes
+
+### Decisions Made
+
+1. **Body content strategy (AC-2)**: Implemented the convention-based approach — `index.md` is split at the first `## Analysis` heading (`content.split(/^## Analysis$/m)[0].trimEnd()`). If no `## Analysis` heading exists, the body is left unchanged. This aligns with the established NOS pipeline order.
+
+2. **UI restart implementation**: The Restart button is handled entirely within `ItemDetailDialog.tsx` via a direct fetch to the new endpoint. No `onRestart` prop was needed — the dialog calls the API directly and calls `onSaved` with the updated item to update the parent's state.
+
+3. **`onRestart` prop removed from Props interface**: The original Props interface had an `onRestart?: (itemId: string) => void` which was unnecessary — the restart is self-contained in the dialog. Removed to avoid dead code.
+
+4. **`restartItem` in hook** (`lib/hooks/use-workflow-items.ts`): Added as a convenience method for future use (e.g., Kanban card context menu). Currently unused since the dialog handles restart directly.
+
+5. **Stage pipeline trigger on restart**: The restart route calls `triggerStagePipeline()` after the reset, ensuring the first stage's agent is triggered if configured with `autoAdvanceOnComplete`.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `lib/workflow-store.ts` | Added `restartItem()` function (atomic reset of meta.yml + truncation of index.md) |
+| `lib/activity-log.ts` | Added `'restart'` to `ActivityEventType` union + `restart` data variant |
+| `app/api/workflows/[id]/items/[itemId]/restart/route.ts` | New POST endpoint |
+| `lib/hooks/use-workflow-items.ts` | Added `restartItem()` hook method |
+| `components/dashboard/ItemDetailDialog.tsx` | Added Restart button + confirmation dialog + `formatSummary` case |
+
+### Deviations from Standards
+
+- No deviations from documented standards. All error responses follow `docs/standards/error-handling-strategy.md`, all API shapes follow `docs/standards/api-reference.md`, and UI patterns follow existing dialog conventions.

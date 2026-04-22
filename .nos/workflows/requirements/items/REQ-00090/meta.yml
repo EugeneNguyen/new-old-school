@@ -1,0 +1,84 @@
+title: When npx nos init, i got the error
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis complete for REQ-00090. The root cause is the legacy `bin/cli.js` —
+    a CJS entry point that unconditionally starts the Next.js dev server with no
+    command dispatch. The modern `bin/cli.mjs` already handles `init` correctly
+    (exits after scaffolding), but if `npx` or a cached install resolves to the
+    old `.js` file, the server starts and hits the `EADDRINUSE` error. The
+    simplest fix is removing `bin/cli.js` entirely since `package.json` already
+    points to `cli.mjs`. The analysis has been appended to the item's
+    `index.md`.
+  - >-
+    Perfect! I've written and appended the formal specification for REQ-00090.
+    The specification includes:
+
+
+    **User Stories** — Two stories covering the developer's need to initialize
+    NOS without server startup and the consistency expectation with `nos
+    update`.
+
+
+    **Acceptance Criteria** — Six testable criteria covering successful
+    execution, no port binding, no server messages, scaffolding completion, no
+    regressions to the default `nos` command, and unchanged `update` behavior.
+
+
+    **Technical Constraints** — Four constraints tied directly to the WBS
+    dictionary (1.7.1 CLI Entry Point, 1.7.4 Workspace Scaffolding) and glossary
+    terms, specifying that `bin/cli.mjs` must be the primary entry point,
+    scaffolding must exit via `process.exit()`, and template management must
+    respect the `NOS_TEMPLATES_ROOT` environment variable.
+
+
+    **Out of Scope** — Clarifies that port changes, TUI refactoring, and changes
+    to `nos update` are explicitly excluded.
+
+
+    **RTM Entry** — Documents the requirement in the traceability matrix with
+    links to design artifacts, implementation files (`bin/cli.mjs`,
+    `bin/cli.js`, `lib/scaffolding.mjs`), and test coverage in
+    `lib/scaffolding.test.ts`.
+
+
+    **WBS Mapping** — Traces the requirement to two WBS packages: 1.7.1 (CLI
+    Entry Point) and 1.7.4 (Workspace Scaffolding), identifying the deliverables
+    affected.
+
+
+    The specification is now ready for implementation.
+  - >-
+    [runtime] session log stalled; Now let me test that `npx nos init` works
+    correctly:
+  - 'API Error: Unable to connect to API (ConnectionRefused)'
+  - >-
+    [runtime] session log stalled; Now let me test that `npx nos init` works
+    correctly:
+  - 'API Error: Unable to connect to API (ConnectionRefused)'
+  - >-
+    [runtime] session log stalled; Now let me test that `npx nos init` works
+    correctly:
+  - 'API Error: Unable to connect to API (ConnectionRefused)'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: c17bc29d-e9fe-4998-a320-44c3a72e9471
+    startedAt: '2026-04-21T22:56:55.986Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 375a0134-ab07-400f-8d5b-bc2a7b31818a
+    startedAt: '2026-04-21T23:01:04.030Z'
+    agentId: david-engineer
+  - stage: Implementation
+    adapter: claude
+    sessionId: e99466be-17b5-45e1-a22e-768b55bf01af
+    startedAt: '2026-04-21T23:02:19.256Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: d066f4cf-cdc9-4e44-aff8-f7a7f5d7c692
+    startedAt: '2026-04-22T00:08:40.898Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-22T07:09:27.769Z'

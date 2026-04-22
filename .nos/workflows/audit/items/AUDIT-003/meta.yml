@@ -1,6 +1,6 @@
 title: today audit
-stage: Fix audit findings
-status: In Progress
+stage: Done
+status: Todo
 comments:
   - >-
     Good. All clean. Here is my summary:
@@ -47,6 +47,32 @@ comments:
     Router, `"use client"` misuse) but needs work on API input validation and
     TypeScript type hygiene. All 7 previously-open gaps
     (GAP-03/05/09/11/13/14/15) were reconfirmed as unresolved.
+  - >-
+    Applied 12 of 15 AUDIT-003 findings across 58 files. **Fixed:** F-01 (import
+    type in 13 files), F-03 (non-null assertion), F-04 (req.json try/catch in 6
+    endpoints), F-05 (shell command type validation), F-06 (limit bounds
+    clamping), F-07 (HTTP status codes: 201 for creation, 204 for deletion, 500
+    for internal errors), F-09 (createErrorResponse using NextResponse.json,
+    consistent error shapes in 5 routes), F-11 (14 forwardRef → React 19 ref
+    prop), F-12 (cn() for class concatenation in 3 locations), F-13 (hooks moved
+    to lib/hooks/), F-14 (8 loading.tsx files), F-15 (8 error.tsx files).
+    **Deferred:** F-02 (explicit return types on ~50+ functions — best enforced
+    via linter rule once GAP-03 resolved), F-08 (business logic extraction —
+    structural refactor deserving its own PR), F-10 (sync→async fs — low
+    severity, significant refactor). TypeScript compiles cleanly and all hook
+    tests pass. The codebase is now substantially compliant with the documented
+    standards, with the three deferred items being larger-scope refactors
+    tracked for future work.
+  - >-
+    [runtime] session log stalled; Starting with the first batch of artifacts.
+    Creating WBS, WBS Dictionary, RTM, and Database Design in parallel.
+  - >-
+    [runtime] session log stalled; Now I have the full picture. Let me write the
+    Doc Audit Findings section to the item's index.md. I'll append after the
+    existing content.
+  - >-
+    [runtime] session log stalled; Let me collect all 78 requirement items'
+    metadata to build the RTM entries.
 sessions:
   - stage: Update technology standard
     adapter: claude
@@ -64,4 +90,16 @@ sessions:
     adapter: claude
     sessionId: 395924d4-a792-44ae-9ece-58b74ef06c49
     startedAt: '2026-04-21T15:05:47.522Z'
-updatedAt: '2026-04-21T15:05:47.534Z'
+  - stage: Update documentation standard
+    adapter: claude
+    sessionId: cd79e8c5-f1f7-49bf-abbe-126f4843239c
+    startedAt: '2026-04-21T15:17:31.765Z'
+  - stage: Audit with the doc standard
+    adapter: claude
+    sessionId: 5091522e-0be0-4d9f-baa0-ba17a5df7516
+    startedAt: '2026-04-21T15:22:11.906Z'
+  - stage: Fix doc audit findings
+    adapter: claude
+    sessionId: dae4ce75-1df8-473d-8726-b4a805cec5ba
+    startedAt: '2026-04-21T15:36:25.905Z'
+updatedAt: '2026-04-21T15:43:29.119Z'
