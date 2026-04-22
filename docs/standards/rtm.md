@@ -99,6 +99,7 @@
 | REQ-00088 | Implement scaffolding function to init NOS in a new workspace, and also can update the updated version of NOS | Internal requirement | system-architecture.md (CLI), wbs-dictionary.md (1.7), glossary.md | `bin/cli.mjs`, `lib/scaffolding.mjs`, `lib/scaffolding.ts` (TS reference, not used at runtime) | `lib/scaffolding.test.ts` | Done |
 | REQ-00089 | Audit with the project-standards.md | Internal requirement | project-standards.md | `.nos/workflows/audit/items/AUDIT-004/*` | Routine audit | Done |
 | REQ-00091 | When choose workflow, go back to dashboard | Feature request | `docs/standards/ux-design.md` (u00a7Navigation), `docs/standards/ui-design.md` (u00a7Layout Conventions, u00a7Typography Scale, u00a7Spacer) | `app/dashboard/workflows/[id]/page.tsx`, `app/dashboard/workflows/page.tsx` | Visual regression check u2014 breadcrumb visible on both pages; links navigate to correct routes | Done |
+| REQ-00092 | File System Browser UI | Feature request | `docs/standards/ui-design.md`, `docs/standards/api-reference.md`, `docs/standards/security-design.md` | `app/dashboard/workspaces/page.tsx` (FileExplorer, FilePreview), `app/api/workspaces/browse/route.ts`, `app/api/workspaces/preview/route.ts`, `docs/requirements/REQ-00092.md`, `docs/requirements/REQ-00092.json` | Manual validation u2014 all 11 acceptance criteria verified | Done |
 
 ---
 

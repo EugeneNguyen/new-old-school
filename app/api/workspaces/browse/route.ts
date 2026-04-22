@@ -10,6 +10,9 @@ export const dynamic = 'force-dynamic';
 interface BrowseEntry {
   name: string;
   absolutePath: string;
+  isDirectory: boolean;
+  size?: number;
+  modified?: string;
 }
 
 interface BrowseResponse {
@@ -64,19 +67,45 @@ export async function GET(req: NextRequest) {
   const entries: BrowseEntry[] = [];
   for (const d of dirents) {
     if (d.name.startsWith('.')) continue;
+    const entryPath = path.join(resolved, d.name);
     let isDir = d.isDirectory();
+    let size: number | undefined;
+    let modified: string | undefined;
+
     if (d.isSymbolicLink()) {
       try {
-        const target = fs.realpathSync(path.join(resolved, d.name));
-        isDir = fs.statSync(target).isDirectory();
+        const target = fs.realpathSync(entryPath);
+        const stat = fs.statSync(target);
+        isDir = stat.isDirectory();
+        if (!isDir) {
+          size = stat.size;
+          modified = stat.mtime.toISOString();
+        }
+      } catch {
+        continue;
+      }
+    } else if (d.isDirectory()) {
+      // Directories have no size
+    } else {
+      // Regular files - get their stats
+      try {
+        const stat = fs.statSync(entryPath);
+        size = stat.size;
+        modified = stat.mtime.toISOString();
       } catch {
         continue;
       }
     }
-    if (!isDir) continue;
-    entries.push({ name: d.name, absolutePath: path.join(resolved, d.name) });
+
+    entries.push({ name: d.name, absolutePath: entryPath, isDirectory: isDir, size, modified });
   }
-  entries.sort((a, b) => a.name.localeCompare(b.name));
+
+  // Sort: directories first, then alphabetically
+  entries.sort((a, b) => {
+    if (a.isDirectory && !b.isDirectory) return -1;
+    if (!a.isDirectory && b.isDirectory) return 1;
+    return a.name.localeCompare(b.name);
+  });
 
   const parent = path.dirname(resolved);
   const response: BrowseResponse = {

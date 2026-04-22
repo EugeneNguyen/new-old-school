@@ -4,12 +4,17 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronUp, Folder, Plus, RefreshCcw, Trash2, Edit3 } from 'lucide-react';
+import { ChevronUp, Folder, Plus, RefreshCcw, Trash2, Edit3, FileText, FileCode, FileImage, File, X, Search } from 'lucide-react';
 import type { Workspace } from '@/types/workspace';
+import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface BrowseEntry {
   name: string;
   absolutePath: string;
+  isDirectory: boolean;
+  size?: number;
+  modified?: string;
 }
 
 interface BrowseResponse {
@@ -19,7 +24,124 @@ interface BrowseResponse {
   home: string;
 }
 
-function FolderBrowser({
+interface PreviewResponse {
+  name: string;
+  path: string;
+  size: number;
+  modified: string;
+  content: string | null;
+  previewable: boolean;
+  truncated: boolean;
+}
+
+function getFileIcon(name: string, isDirectory: boolean) {
+  if (isDirectory) {
+    return <Folder className="w-4 h-4 text-muted-foreground" />;
+  }
+  const ext = name.split('.').pop()?.toLowerCase() ?? '';
+  if (['md', 'txt', 'rst', 'doc', 'docx'].includes(ext)) {
+    return <FileText className="w-4 h-4 text-blue-500" />;
+  }
+  if (['js', 'jsx', 'ts', 'tsx', 'json', 'yaml', 'yml', 'toml', 'css', 'html', 'xml'].includes(ext)) {
+    return <FileCode className="w-4 h-4 text-green-500" />;
+  }
+  if (['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico'].includes(ext)) {
+    return <FileImage className="w-4 h-4 text-purple-500" />;
+  }
+  return <File className="w-4 h-4 text-muted-foreground" />;
+}
+
+function formatSize(bytes?: number): string {
+  if (bytes === undefined) return '';
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
+
+function formatDate(dateStr?: string): string {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  return date.toLocaleDateString();
+}
+
+function FilePreview({
+  path,
+  onClose,
+}: {
+  path: string;
+  onClose: () => void;
+}) {
+  const [data, setData] = useState<PreviewResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`/api/workspaces/preview?path=${encodeURIComponent(path)}`);
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setError(body.message ?? `Failed to preview (${res.status})`);
+          return;
+        }
+        const body = (await res.json()) as PreviewResponse;
+        setData(body);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Preview failed');
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [path]);
+
+  return (
+    <div className="flex flex-col h-full border-l border-border bg-card">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/40 shrink-0">
+        <div className="truncate text-sm font-medium">{data?.name ?? 'Loading…'}</div>
+        <Button type="button" size="sm" variant="ghost" onClick={onClose}>
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+      {data && (
+        <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-muted/20 shrink-0">
+          {formatSize(data.size)}
+          {data.modified && ` • Modified ${formatDate(data.modified)}`}
+        </div>
+      )}
+      <ScrollArea className="flex-1">
+        <div className="p-3">
+          {error && <div className="text-sm text-destructive">{error}</div>}
+          {loading && <div className="text-sm text-muted-foreground">Loading preview…</div>}
+          {data && !data.previewable && (
+            <div className="text-sm text-muted-foreground">Preview not available for this file type.</div>
+          )}
+          {data?.content !== null && data?.content !== undefined && (
+            <pre className="text-xs font-mono whitespace-pre-wrap break-all text-foreground">
+              {data.content}
+              {data.truncated && (
+                <span className="text-muted-foreground">{'\\n\\n[... file truncated, showing first 100 lines ...]'}</span>
+              )}
+            </pre>
+          )}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
+
+function FileExplorer({
   value,
   onChange,
 }: {
@@ -29,6 +151,8 @@ function FolderBrowser({
   const [data, setData] = useState<BrowseResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [previewFile, setPreviewFile] = useState<BrowseEntry | null>(null);
 
   const load = useCallback(async (target?: string) => {
     setLoading(true);
@@ -56,6 +180,18 @@ function FolderBrowser({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const filteredEntries = data?.entries.filter((entry) =>
+    entry.name.toLowerCase().includes(search.toLowerCase())
+  ) ?? [];
+
+  const handleEntryClick = (entry: BrowseEntry) => {
+    if (entry.isDirectory) {
+      load(entry.absolutePath);
+    } else {
+      setPreviewFile(entry);
+    }
+  };
+
   return (
     <div className="border border-border rounded-md">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-muted/40">
@@ -75,27 +211,58 @@ function FolderBrowser({
           disabled={loading}
           onClick={() => load(data?.path)}
         >
-          <RefreshCcw className="w-4 h-4" />
+          <RefreshCcw className={cn('w-4 h-4', loading && 'animate-spin')} />
         </Button>
         <div className="truncate text-xs text-muted-foreground flex-1">{data?.path ?? '…'}</div>
       </div>
-      {error && <div className="px-3 py-2 text-sm text-destructive">{error}</div>}
-      <div className="max-h-60 overflow-y-auto">
-        {data?.entries.length === 0 && !loading && (
-          <div className="px-3 py-4 text-xs text-muted-foreground">No subdirectories.</div>
-        )}
-        {data?.entries.map((entry) => (
-          <button
-            key={entry.absolutePath}
-            type="button"
-            onClick={() => load(entry.absolutePath)}
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent text-left"
-          >
-            <Folder className="w-4 h-4 text-muted-foreground" />
-            <span className="truncate">{entry.name}</span>
-          </button>
-        ))}
+      <div className="px-3 py-2 border-b border-border">
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search files..."
+            className="pl-8 h-8 text-xs"
+          />
+        </div>
       </div>
+      {error && <div className="px-3 py-2 text-sm text-destructive">{error}</div>}
+      <div className={cn('flex', previewFile && 'h-80 md:h-96')}>
+        <ScrollArea className={cn('flex-1', previewFile && 'border-r border-border')}>
+          <div className="max-h-60 md:max-h-80">
+            {filteredEntries.length === 0 && !loading && (
+              <div className="px-3 py-4 text-xs text-muted-foreground">
+                {search ? 'No matching files or folders.' : 'This directory is empty.'}
+              </div>
+            )}
+            {filteredEntries.map((entry) => (
+              <button
+                key={entry.absolutePath}
+                type="button"
+                onClick={() => handleEntryClick(entry)}
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent text-left"
+              >
+                {getFileIcon(entry.name, entry.isDirectory)}
+                <span className="truncate flex-1">{entry.name}</span>
+                {entry.isDirectory && <span className="text-xs text-muted-foreground">/</span>}
+                {!entry.isDirectory && entry.size !== undefined && (
+                  <span className="text-xs text-muted-foreground">{formatSize(entry.size)}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </ScrollArea>
+        {previewFile && (
+          <div className="w-1/2 min-w-48 hidden md:block">
+            <FilePreview path={previewFile.absolutePath} onClose={() => setPreviewFile(null)} />
+          </div>
+        )}
+      </div>
+      {previewFile && (
+        <div className="md:hidden border-t border-border">
+          <FilePreview path={previewFile.absolutePath} onClose={() => setPreviewFile(null)} />
+        </div>
+      )}
     </div>
   );
 }
@@ -138,7 +305,7 @@ function WorkspaceForm({
           required
         />
       </div>
-      <FolderBrowser value={absolutePath} onChange={setAbsolutePath} />
+      <FileExplorer value={absolutePath} onChange={setAbsolutePath} />
       {error && <div className="text-sm text-destructive">{error}</div>}
       <div className="flex gap-2 justify-end">
         <Button type="button" variant="ghost" onClick={onCancel} disabled={saving}>
