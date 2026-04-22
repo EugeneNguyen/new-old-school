@@ -1,0 +1,62 @@
+title: Reorder sidemenu
+stage: Validation
+status: In Progress
+comments:
+  - >-
+    Analysis appended to `REQ-00099/index.md`. The key finding is that the
+    sidebar has **two rendering layers** — tool registry items from
+    `config/tools.json` and hardcoded Activity/Workflows sections in JSX. The
+    requested order interleaves both, requiring changes to both layers. The most
+    important open question is whether "Workflows" should become a Link
+    (navigating to `/dashboard/workflows`) or remain a collapsible button — this
+    is a UX decision that blocks implementation.
+  - >-
+    The `## Specification` section has been appended to `REQ-00099/index.md`.
+    The spec resolves the three open questions from the analysis by adopting the
+    approach that keeps Workflows as a collapsible button and Activity as a Link
+    — ordering is achieved purely by changing the render sequence in
+    `Sidebar.tsx` without modifying `config/tools.json` or converting Workflows
+    to a Link. Key decisions documented:
+
+
+    - **Workflows stays as a collapsible `<button>`** (not a Link) —
+    expand/collapse behavior preserved.
+
+    - **Activity stays as a `<Link>` to `/dashboard/activity`** — navigation
+    behavior unchanged.
+
+    - **Ordering done in `Sidebar.tsx` render sequencing** — `config/tools.json`
+    array order is not changed.
+
+    - **RTM entry** maps to WBS package 1.4.1 (Dashboard Shell) with
+    `components/dashboard/Sidebar.tsx` as the sole implementation file.
+
+    - **8 acceptance criteria** cover expanded/collapsed states, active
+    highlighting, and non-regression.
+  - >-
+    All acceptance criteria satisfied. The nav now renders in the requested
+    order (Dashboard → Workflows → Files → Claude Terminal → Members → Activity
+    → Settings), with Workflows remaining a collapsible button and Activity
+    remaining a Link to `/dashboard/activity`. The `config/tools.json` order was
+    not modified. The collapsed sidebar displays icons in the same top-to-bottom
+    sequence.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: c9d71d47-7703-4150-9e30-626152972d59
+    startedAt: '2026-04-22T16:02:40.203Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: a35551c5-24d1-4906-8518-79a4820dc801
+    startedAt: '2026-04-22T16:06:01.215Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 09d43a90-6ea2-48f1-8fc2-2e516108c924
+    startedAt: '2026-04-22T16:09:25.629Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: fe8f4503-1ce1-4928-8917-c21c9f871d55
+    startedAt: '2026-04-22T16:13:05.263Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-22T16:13:05.274Z'

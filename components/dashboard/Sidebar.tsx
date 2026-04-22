@@ -61,7 +61,9 @@ export function Sidebar() {
       <WorkspaceSwitcher collapsed={collapsed} />
 
       <nav className="flex-1 px-2 py-4 space-y-1">
-        {tools.map((tool) => {
+        {/* Dashboard */}
+        {(() => {
+          const tool = tools[0]; // Dashboard
           const Icon = ToolRegistry.getIcon(tool.icon);
           const active = isActive(tool.href, pathname);
           return (
@@ -82,83 +84,181 @@ export function Sidebar() {
               {!collapsed && <span className="whitespace-nowrap overflow-hidden">{tool.name}</span>}
             </Link>
           );
-        })}
+        })()}
 
-        <div className="pt-2 space-y-1">
-          {(() => {
-            const href = '/dashboard/activity';
-            const active = isActive(href, pathname);
-            return (
-              <Link
-                href={href}
-                title="Activity"
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium',
-                  'hover:bg-accent hover:text-accent-foreground',
-                  'text-muted-foreground',
-                  collapsed && 'justify-center px-0',
-                  active && 'bg-accent text-accent-foreground'
-                )}
-              >
-                <Activity className="w-4 h-4 shrink-0" />
-                {!collapsed && <span className="whitespace-nowrap overflow-hidden">Activity</span>}
-              </Link>
-            );
-          })()}
-        </div>
-
-        <div className="pt-2 space-y-1">
-          <button
-            onClick={() => setWorkflowsExpanded(!workflowsExpanded)}
-            className={cn(
-              'flex w-full items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium',
-              'hover:bg-accent hover:text-accent-foreground',
-              'text-muted-foreground',
-              collapsed && 'justify-center px-0'
-            )}
-          >
-            <Folder className="w-4 h-4 shrink-0" />
-            {!collapsed && (
-              <div className="flex-1 flex items-center justify-between overflow-hidden">
-                <span className="truncate">Workflows</span>
-                {workflowsExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              </div>
-            )}
-          </button>
-          {!collapsed && workflowsExpanded && (
-            <div className="pl-4 space-y-1">
-              <Link
-                href="/dashboard/workflows"
-                className="flex items-center px-3 py-2 rounded-md transition-colors text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              >
-                All workflows…
-              </Link>
-              {workflows.map((wf) => {
-                const href = `/dashboard/workflows/${wf.id}`;
-                const active = isActive(href, pathname);
-                return (
-                  <Link
-                    key={wf.id}
-                    href={href}
-                    aria-current={active ? 'page' : undefined}
-                    className={cn(
-                      'flex items-center px-3 py-2 rounded-md transition-colors text-sm font-medium',
-                      'hover:bg-accent hover:text-accent-foreground',
-                      'text-muted-foreground',
-                      active && 'bg-accent text-accent-foreground'
-                    )}
-                  >
-                    {wf.routineEnabled && (
-                      <CalendarClock className="w-4 h-4 shrink-0 mr-2 text-muted-foreground" />
-                    )}
-                    <span className="truncate">{wf.name}</span>
-                  </Link>
-                );
-              })}
+        {/* Workflows (collapsible folder) */}
+        <button
+          onClick={() => setWorkflowsExpanded(!workflowsExpanded)}
+          className={cn(
+            'flex w-full items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium',
+            'hover:bg-accent hover:text-accent-foreground',
+            'text-muted-foreground',
+            collapsed && 'justify-center px-0'
+          )}
+        >
+          <Folder className="w-4 h-4 shrink-0" />
+          {!collapsed && (
+            <div className="flex-1 flex items-center justify-between overflow-hidden">
+              <span className="truncate">Workflows</span>
+              {workflowsExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
             </div>
           )}
-        </div>
+        </button>
+        {!collapsed && workflowsExpanded && (
+          <div className="pl-4 space-y-1">
+            <Link
+              href="/dashboard/workflows"
+              className="flex items-center px-3 py-2 rounded-md transition-colors text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            >
+              All workflows…
+            </Link>
+            {workflows.map((wf) => {
+              const href = `/dashboard/workflows/${wf.id}`;
+              const active = isActive(href, pathname);
+              return (
+                <Link
+                  key={wf.id}
+                  href={href}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'flex items-center px-3 py-2 rounded-md transition-colors text-sm font-medium',
+                    'hover:bg-accent hover:text-accent-foreground',
+                    'text-muted-foreground',
+                    active && 'bg-accent text-accent-foreground'
+                  )}
+                >
+                  {wf.routineEnabled && (
+                    <CalendarClock className="w-4 h-4 shrink-0 mr-2 text-muted-foreground" />
+                  )}
+                  <span className="truncate">{wf.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Files */}
+        {(() => {
+          const tool = tools[1]; // Files
+          const Icon = ToolRegistry.getIcon(tool.icon);
+          const active = isActive(tool.href, pathname);
+          return (
+            <Link
+              key={tool.id}
+              href={tool.href}
+              title={tool.name}
+              aria-current={active ? 'page' : undefined}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium',
+                'hover:bg-accent hover:text-accent-foreground',
+                'text-muted-foreground',
+                collapsed && 'justify-center px-0',
+                active && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              {!collapsed && <span className="whitespace-nowrap overflow-hidden">{tool.name}</span>}
+            </Link>
+          );
+        })()}
+
+        {/* Claude Terminal */}
+        {(() => {
+          const tool = tools[2]; // Claude Terminal
+          const Icon = ToolRegistry.getIcon(tool.icon);
+          const active = isActive(tool.href, pathname);
+          return (
+            <Link
+              key={tool.id}
+              href={tool.href}
+              title={tool.name}
+              aria-current={active ? 'page' : undefined}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium',
+                'hover:bg-accent hover:text-accent-foreground',
+                'text-muted-foreground',
+                collapsed && 'justify-center px-0',
+                active && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              {!collapsed && <span className="whitespace-nowrap overflow-hidden">{tool.name}</span>}
+            </Link>
+          );
+        })()}
+
+        {/* Members */}
+        {(() => {
+          const tool = tools[3]; // Members
+          const Icon = ToolRegistry.getIcon(tool.icon);
+          const active = isActive(tool.href, pathname);
+          return (
+            <Link
+              key={tool.id}
+              href={tool.href}
+              title={tool.name}
+              aria-current={active ? 'page' : undefined}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium',
+                'hover:bg-accent hover:text-accent-foreground',
+                'text-muted-foreground',
+                collapsed && 'justify-center px-0',
+                active && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              {!collapsed && <span className="whitespace-nowrap overflow-hidden">{tool.name}</span>}
+            </Link>
+          );
+        })()}
+
+        {/* Activity */}
+        {(() => {
+          const href = '/dashboard/activity';
+          const active = isActive(href, pathname);
+          return (
+            <Link
+              href={href}
+              title="Activity"
+              aria-current={active ? 'page' : undefined}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium',
+                'hover:bg-accent hover:text-accent-foreground',
+                'text-muted-foreground',
+                collapsed && 'justify-center px-0',
+                active && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Activity className="w-4 h-4 shrink-0" />
+              {!collapsed && <span className="whitespace-nowrap overflow-hidden">Activity</span>}
+            </Link>
+          );
+        })()}
+
+        {/* Settings */}
+        {(() => {
+          const tool = tools[4]; // Settings
+          const Icon = ToolRegistry.getIcon(tool.icon);
+          const active = isActive(tool.href, pathname);
+          return (
+            <Link
+              key={tool.id}
+              href={tool.href}
+              title={tool.name}
+              aria-current={active ? 'page' : undefined}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium',
+                'hover:bg-accent hover:text-accent-foreground',
+                'text-muted-foreground',
+                collapsed && 'justify-center px-0',
+                active && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              {!collapsed && <span className="whitespace-nowrap overflow-hidden">{tool.name}</span>}
+            </Link>
+          );
+        })()}
       </nav>
 
       <div className="p-4 border-t border-border flex items-center justify-between">
