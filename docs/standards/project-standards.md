@@ -1,6 +1,6 @@
 # NOS Project Standards
 
-> Last audited: 2026-04-22 (AUDIT-004 audit)
+> Last audited: 2026-04-23 (AUDIT-005 audit)
 
 ---
 
@@ -336,6 +336,36 @@ The following deviations from current best practices should be tracked for remed
 - **All 15 gaps** remain in their prior states (5 resolved, 1 partial, 9 open).
 - **Verified**: `@types/react@18.3.28` still installed despite `package.json` specifying `^19.0.0`.
 
+### AUDIT-005 (2026-04-23) Summary
+- **Tech stack unchanged** from AUDIT-004. Node.js runtime updated to v25.2.1.
+- **Reuse extractions implemented**:
+  - `lib/fs-utils.ts` created — consolidates `atomicWriteFile`, `atomicWriteFileWithDir`, `readYamlFile`, `META_FILE`, and `CONTENT_FILE` constants. Updated `workflow-store.ts`, `agents-store.ts`, `routine-scheduler.ts`, `settings.ts`, and `workspace-store.ts` to import from it.
+  - `lib/validators.ts` created — consolidates `WORKFLOW_ID_REGEX` and `WORKFLOW_PREFIX_REGEX`. Updated `app/api/workflows/route.ts` and `app/dashboard/workflows/page.tsx` to import from it.
+- **Reuse opportunities flagged** (not implemented): sidebar NavLink component, EmptyState component, `useApiList` hook, `mapStageError` utility, `withErrorHandler` HOF. See GAP-16.
+- **All 15 prior gaps** remain in their prior states (5 resolved, 1 partial, 9 open).
+- **New gap**: GAP-16 (reuse opportunities). GAP-17 (pre-existing null-safety issue).
+- **Verified**: `@types/react@18.3.28` still installed despite `package.json` specifying `^19.0.0`.
+
+### GAP-16: Remaining Reuse Opportunities (NEW)
+- **Status**: OPEN (low-medium priority)
+- **Current**: Several duplicated patterns remain across the codebase after AUDIT-005 extractions.
+- **Flagged opportunities**:
+  - **Sidebar NavLink component**: 7 near-identical nav link blocks in `components/dashboard/Sidebar.tsx`. Extract to a `NavLink` component.
+  - **EmptyState component**: Identical "no stages" placeholder in `KanbanBoard.tsx` and `ListView.tsx`. Extract to `components/ui/empty-state.tsx`.
+  - **`useApiList<T>` hook**: 4 dashboard pages (`workflows`, `agents`, `activity`, `workspaces`) repeat the same `reload` function pattern (loading state, error state, fetch/parse/setState). Extract to `lib/hooks/use-api-list.ts`.
+  - **`mapStageError` utility**: 3 route files (`stages/route.ts`, `stages/order/route.ts`, `stages/[stageName]/route.ts`) duplicate `StageError.code` → HTTP status code mapping. Extract to `app/api/utils/errors.ts`.
+  - **`withErrorHandler` HOF**: ~15 API route handlers have identical outer try/catch → `console.error` → `createErrorResponse` blocks. Extract a wrapper function.
+  - **`parseBody<T>` utility**: ~10 API routes duplicate the same `req.json()` try/catch with 400 error response. Extract to `app/api/utils/parse-body.ts`.
+- **Impact**: Maintenance burden; changes to shared patterns require updating multiple files.
+- **Recommendation**: Address incrementally. Highest-value targets are `useApiList` hook and `withErrorHandler` HOF.
+
+### GAP-17: Null-safety Issue in `createItem` (NEW)
+- **Status**: OPEN (low priority)
+- **Current**: `lib/workflow-store.ts:798` accesses `config.idPrefix` where `config` (from `readWorkflowConfig`) may be `null`.
+- **Standard**: With `strict: true`, nullable values must be checked before access.
+- **Impact**: TypeScript reports `TS18047`. At runtime, workflows without a `config.json` would throw when creating items.
+- **Recommendation**: Add a null guard: `if (!config) return null;` before the `finalId` assignment block.
+
 ---
 
 ## 12. Documentation Standards
@@ -385,6 +415,8 @@ The following deviations from current best practices should be tracked for remed
 | PostCSS config | `postcss.config.js` |
 | Global CSS / theme tokens | `app/globals.css` |
 | Class merge utility | `lib/utils.ts` |
+| FS utilities (atomic writes, YAML read) | `lib/fs-utils.ts` |
+| Shared validators (workflow ID/prefix regex) | `lib/validators.ts` |
 | Workflow types | `types/workflow.ts` |
 | Workflow store | `lib/workflow-store.ts` |
 | Agents store | `lib/agents-store.ts` |

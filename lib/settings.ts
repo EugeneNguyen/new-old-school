@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
 import { getProjectRoot } from '@/lib/project-root';
+import { atomicWriteFileWithDir } from '@/lib/fs-utils';
 
 function settingsFile(): string {
   return path.join(getProjectRoot(), '.nos', 'settings.yaml');
@@ -23,13 +24,6 @@ function readFileRaw(): Record<string, unknown> {
   }
 }
 
-function atomicWrite(contents: string): void {
-  fs.mkdirSync(path.dirname(settingsFile()), { recursive: true });
-  const tmp = `${settingsFile()}.tmp`;
-  fs.writeFileSync(tmp, contents, 'utf-8');
-  fs.renameSync(tmp, settingsFile());
-}
-
 export function readHeartbeatMs(): number {
   const settings = readFileRaw();
   const raw = settings.autoAdvanceHeartbeatMs;
@@ -49,7 +43,7 @@ export function writeHeartbeatMs(ms: number): void {
   if (Buffer.byteLength(dumped, 'utf-8') > MAX_BYTES) {
     throw new Error('settings file exceeds 64 KB limit');
   }
-  atomicWrite(dumped);
+  atomicWriteFileWithDir(settingsFile(), dumped);
 }
 
 export { DEFAULT_HEARTBEAT_MS };
@@ -94,5 +88,5 @@ export function writeDefaultAgent(config: Partial<DefaultAgentConfig>): void {
   if (Buffer.byteLength(dumped, 'utf-8') > MAX_BYTES) {
     throw new Error('settings file exceeds 64 KB limit');
   }
-  atomicWrite(dumped);
+  atomicWriteFileWithDir(settingsFile(), dumped);
 }

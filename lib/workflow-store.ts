@@ -1,21 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
-import { Stage, WorkflowItem, ItemStatus, WorkflowDetail, ItemSession } from '@/types/workflow';
+import type { Stage, WorkflowItem, ItemStatus, WorkflowDetail, ItemSession } from '@/types/workflow';
 import { emitItemCreated, emitItemUpdated } from '@/lib/workflow-events';
 import { getProjectRoot } from '@/lib/project-root';
 import { appendActivity, hashBody, type ActivityActor } from '@/lib/activity-log';
+import { atomicWriteFile, META_FILE, CONTENT_FILE } from '@/lib/fs-utils';
 
 function workflowsRoot(): string {
   return path.join(getProjectRoot(), '.nos', 'workflows');
-}
-const META_FILE = 'meta.yml';
-const CONTENT_FILE = 'index.md';
-
-function atomicWriteFile(filePath: string, contents: string): void {
-  const tmp = `${filePath}.tmp`;
-  fs.writeFileSync(tmp, contents, 'utf-8');
-  fs.renameSync(tmp, filePath);
 }
 
 function writeMeta(
@@ -791,6 +784,7 @@ export function createItem(
   fs.mkdirSync(itemsRoot, { recursive: true });
 
   const config = readWorkflowConfig(workflowId);
+  if (!config) return null;
   const explicitId = input.id?.trim();
 
   let finalId: string;

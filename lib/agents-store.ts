@@ -4,20 +4,13 @@ import yaml from 'js-yaml';
 import type { Agent } from '@/types/workflow';
 import { readStages, listWorkflows } from '@/lib/workflow-store';
 import { getProjectRoot } from '@/lib/project-root';
+import { atomicWriteFile, META_FILE, CONTENT_FILE } from '@/lib/fs-utils';
 
 function agentsRoot(): string {
   return path.join(getProjectRoot(), '.nos', 'agents');
 }
-const META_FILE = 'meta.yml';
-const CONTENT_FILE = 'index.md';
 
 export const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-function atomicWriteFile(filePath: string, contents: string): void {
-  const tmp = `${filePath}.tmp`;
-  fs.writeFileSync(tmp, contents, 'utf-8');
-  fs.renameSync(tmp, filePath);
-}
 
 function agentDir(id: string): string {
   return path.join(agentsRoot(), id);

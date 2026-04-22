@@ -6,6 +6,7 @@ import { getProjectRoot } from '@/lib/project-root';
 import { createItem, readStages, workflowExists } from '@/lib/workflow-store';
 import { triggerStagePipeline } from '@/lib/stage-pipeline';
 import { appendActivity } from '@/lib/activity-log';
+import { atomicWriteFile } from '@/lib/fs-utils';
 
 function workflowsRoot(): string {
   return path.join(getProjectRoot(), '.nos', 'workflows');
@@ -26,12 +27,6 @@ export interface RoutineConfig {
 
 export interface RoutineState {
   lastFiredAt: string | null;
-}
-
-function atomicWriteFile(filePath: string, contents: string): void {
-  const tmp = `${filePath}.tmp`;
-  fs.writeFileSync(tmp, contents, 'utf-8');
-  fs.renameSync(tmp, filePath);
 }
 
 export function readRoutineConfig(workflowId: string): RoutineConfig | null {

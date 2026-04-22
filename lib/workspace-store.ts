@@ -4,6 +4,7 @@ import path from 'path';
 import { randomUUID } from 'crypto';
 import yaml from 'js-yaml';
 import type { Workspace } from '@/types/workspace';
+import { atomicWriteFileWithDir } from '@/lib/fs-utils';
 
 const NOS_HOME = process.env.NOS_HOME && process.env.NOS_HOME.trim()
   ? path.resolve(process.env.NOS_HOME)
@@ -20,12 +21,6 @@ export function getRegistryFile(): string {
   return REGISTRY_FILE;
 }
 
-function atomicWrite(contents: string): void {
-  fs.mkdirSync(NOS_HOME, { recursive: true });
-  const tmp = `${REGISTRY_FILE}.tmp`;
-  fs.writeFileSync(tmp, contents, 'utf-8');
-  fs.renameSync(tmp, REGISTRY_FILE);
-}
 
 function readRegistry(): Workspace[] {
   try {
@@ -59,7 +54,7 @@ function writeRegistry(workspaces: Workspace[]): void {
   if (Buffer.byteLength(dumped, 'utf-8') > MAX_BYTES) {
     throw new Error('workspace registry exceeds 1 MB limit');
   }
-  atomicWrite(dumped);
+  atomicWriteFileWithDir(REGISTRY_FILE, dumped);
 }
 
 export function listWorkspaces(): Workspace[] {

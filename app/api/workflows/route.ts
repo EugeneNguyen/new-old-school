@@ -7,9 +7,7 @@ import { createWorkflow, workflowExists } from '@/lib/workflow-store';
 import { createErrorResponse } from '@/app/api/utils/errors';
 import { withWorkspace } from '@/lib/workspace-context';
 import { readRoutineConfig } from '@/lib/routine-scheduler';
-
-const ID_REGEX = /^[a-z0-9][a-z0-9_-]{0,63}$/;
-const PREFIX_REGEX = /^[A-Z0-9][A-Z0-9_-]{0,15}$/;
+import { WORKFLOW_ID_REGEX as ID_REGEX, WORKFLOW_PREFIX_REGEX as PREFIX_REGEX } from '@/lib/validators';
 
 interface CreateBody {
   id?: unknown;
