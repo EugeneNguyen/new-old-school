@@ -182,6 +182,7 @@ app/              # Next.js App Router pages and API routes
   dashboard/      # Dashboard pages (workflows, agents, activity, settings, terminal, workspaces)
 components/
   ui/             # Reusable primitives (button, card, dialog, input, select, etc.)
+  chat/           # Chat UI components (ChatBubble, ToolUseCard, QuestionCard, etc.)
   dashboard/      # Dashboard-specific composed components (KanbanBoard, ChatWidget, etc.)
   terminal/       # Terminal UI components (SessionPanel, SlashPopup, etc.)
 lib/              # Business logic, stores, utilities, hooks
@@ -281,7 +282,7 @@ The following deviations from current best practices should be tracked for remed
 
 ### GAP-08: Limited Test Coverage
 - **Status**: OPEN
-- **Current**: Only 3 test files found (`system-prompt.test.ts`, `use-workflow-items.test.ts`, `workflow-view-mode.test.ts`). No API route tests, no component tests.
+- **Current**: Only 4 test files found (`system-prompt.test.ts`, `use-workflow-items.test.ts`, `workflow-view-mode.test.ts`, `scaffolding.test.ts`). No API route tests, no component tests.
 - **Standard**: Critical business logic and API routes should have test coverage.
 - **Impact**: Regressions in store functions and API routes may go undetected.
 - **Recommendation**: Prioritize tests for `lib/workflow-store.ts`, `lib/agents-store.ts`, `lib/workspace-store.ts`, and API routes with complex validation logic.
@@ -342,8 +343,9 @@ The following deviations from current best practices should be tracked for remed
   - `lib/fs-utils.ts` created — consolidates `atomicWriteFile`, `atomicWriteFileWithDir`, `readYamlFile`, `META_FILE`, and `CONTENT_FILE` constants. Updated `workflow-store.ts`, `agents-store.ts`, `routine-scheduler.ts`, `settings.ts`, and `workspace-store.ts` to import from it.
   - `lib/validators.ts` created — consolidates `WORKFLOW_ID_REGEX` and `WORKFLOW_PREFIX_REGEX`. Updated `app/api/workflows/route.ts` and `app/dashboard/workflows/page.tsx` to import from it.
 - **Reuse opportunities flagged** (not implemented): sidebar NavLink component, EmptyState component, `useApiList` hook, `mapStageError` utility, `withErrorHandler` HOF. See GAP-16.
-- **All 15 prior gaps** remain in their prior states (5 resolved, 1 partial, 9 open).
-- **New gap**: GAP-16 (reuse opportunities). GAP-17 (pre-existing null-safety issue).
+- **Prior gaps**: 5 resolved, 1 partial, 9 open (unchanged).
+- **New gaps**: GAP-16 (reuse opportunities, open), GAP-17 (null-safety — resolved same audit cycle).
+- **Totals**: 6 resolved, 1 partial, 10 open.
 - **Verified**: `@types/react@18.3.28` still installed despite `package.json` specifying `^19.0.0`.
 
 ### GAP-16: Remaining Reuse Opportunities (NEW)
@@ -359,12 +361,9 @@ The following deviations from current best practices should be tracked for remed
 - **Impact**: Maintenance burden; changes to shared patterns require updating multiple files.
 - **Recommendation**: Address incrementally. Highest-value targets are `useApiList` hook and `withErrorHandler` HOF.
 
-### GAP-17: Null-safety Issue in `createItem` (NEW)
-- **Status**: OPEN (low priority)
-- **Current**: `lib/workflow-store.ts:798` accesses `config.idPrefix` where `config` (from `readWorkflowConfig`) may be `null`.
-- **Standard**: With `strict: true`, nullable values must be checked before access.
-- **Impact**: TypeScript reports `TS18047`. At runtime, workflows without a `config.json` would throw when creating items.
-- **Recommendation**: Add a null guard: `if (!config) return null;` before the `finalId` assignment block.
+### GAP-17: Null-safety Issue in `createItem`
+- **Status**: RESOLVED (AUDIT-005)
+- **Resolution**: Null guard `if (!config) return null;` added at `lib/workflow-store.ts:787`, before `config.idPrefix` access.
 
 ---
 
@@ -386,7 +385,7 @@ The following deviations from current best practices should be tracked for remed
 | References | `docs/standards/api-reference.md` | API documentation |
 | Design | `docs/standards/ui-design.md`, `ux-design.md` | Design specifications |
 | Requirements | `docs/requirements/*.md` | Feature requirements |
-| Audit | `.nos/workflows/audit/items/*/meta.yml` | Audit findings and fixes |
+| Audit | `.nos/workflows/audit/items/*/index.md` | Audit findings and fixes |
 
 ### Naming Conventions
 
@@ -425,5 +424,11 @@ The following deviations from current best practices should be tracked for remed
 | Dashboard error boundary | `app/dashboard/error.tsx` |
 | Dashboard loading state | `app/dashboard/loading.tsx` |
 | Scaffolding module | `lib/scaffolding.ts` |
+| Settings store | `lib/settings.ts` |
+| Routine scheduler | `lib/routine-scheduler.ts` |
+| Auto-advance engine | `lib/auto-advance.ts` |
+| Auto-advance sweeper | `lib/auto-advance-sweeper.ts` |
+| Activity log | `lib/activity-log.ts` |
+| Workflow events (SSE) | `lib/workflow-events.ts` |
 | Templates root | `templates/` |
 | NOS templates | `templates/.nos/` |
