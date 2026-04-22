@@ -11,9 +11,18 @@
   {
     "id": "files",
     "name": "Files",
-    "href": "/dashboard/workspaces",
+    "href": "/dashboard/files",
     "icon": "FolderOpen",
     "description": "Browse workspace files",
+    "endpoint": "/api/workspaces",
+    "category": "core"
+  },
+  {
+    "id": "workspaces",
+    "name": "Workspaces",
+    "href": "/dashboard/workspaces",
+    "icon": "Briefcase",
+    "description": "Manage workspaces",
     "endpoint": "/api/workspaces",
     "category": "core"
   },
