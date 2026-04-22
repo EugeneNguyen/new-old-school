@@ -18,15 +18,6 @@
     "category": "core"
   },
   {
-    "id": "workspaces",
-    "name": "Workspaces",
-    "href": "/dashboard/workspaces",
-    "icon": "Briefcase",
-    "description": "Manage workspaces",
-    "endpoint": "/api/workspaces",
-    "category": "core"
-  },
-  {
     "id": "terminal",
     "name": "Claude Terminal",
     "href": "/dashboard/terminal",
