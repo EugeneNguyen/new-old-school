@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { PanelLeftClose, PanelLeftOpen, Folder, ChevronDown, ChevronRight, Activity } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Folder, ChevronDown, ChevronRight, Activity, CalendarClock } from 'lucide-react';
 import { ToolRegistry } from '@/lib/tool-registry';
 import { cn } from '@/lib/utils';
 import { useSidebar } from './SidebarContext';
@@ -149,6 +149,9 @@ export function Sidebar() {
                       active && 'bg-accent text-accent-foreground'
                     )}
                   >
+                    {wf.routineEnabled && (
+                      <CalendarClock className="w-4 h-4 shrink-0 mr-2 text-muted-foreground" />
+                    )}
                     <span className="truncate">{wf.name}</span>
                   </Link>
                 );

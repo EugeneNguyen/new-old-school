@@ -6,6 +6,7 @@ import { getProjectRoot } from '@/lib/project-root';
 import { createWorkflow, workflowExists } from '@/lib/workflow-store';
 import { createErrorResponse } from '@/app/api/utils/errors';
 import { withWorkspace } from '@/lib/workspace-context';
+import { readRoutineConfig } from '@/lib/routine-scheduler';
 
 const ID_REGEX = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 const PREFIX_REGEX = /^[A-Z0-9][A-Z0-9_-]{0,15}$/;
@@ -37,10 +38,13 @@ export async function GET() {
       if (fs.existsSync(configPath)) {
         try {
           const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+          const routineConfig = readRoutineConfig(folder);
+          const routineEnabled = routineConfig?.enabled === true;
           workflows.push({
             id: folder,
             name: config.name || folder,
-            idPrefix: config.idPrefix || ''
+            idPrefix: config.idPrefix || '',
+            routineEnabled
           });
         } catch (e) {
           console.error(`Error parsing config.json for workflow ${folder}:`, e);

@@ -2,6 +2,7 @@ export interface Workflow {
   id: string;
   name: string;
   idPrefix: string;
+  routineEnabled?: boolean;
 }
 
 export interface Stage {

@@ -105,6 +105,7 @@
 | REQ-00095 | Add item in sidemenu to access file browser | Feature request | `docs/standards/ui-design.md`, `docs/standards/ux-design.md` | `config/tools.json` | Manual validation — all 7 acceptance criteria verified | Done |
 | REQ-00096 | Create file system browser | Feature request | `docs/standards/ui-design.md`, `docs/standards/api-reference.md`, `docs/standards/security-design.md` | `app/dashboard/files/page.tsx`, `app/dashboard/files/loading.tsx`, `app/dashboard/files/error.tsx`, `components/dashboard/FileBrowser.tsx`, `components/dashboard/FileViewer.tsx`, `app/api/workspaces/serve/route.ts`, `app/api/workspaces/browse/route.ts` (modified), `app/api/workspaces/active/route.ts` (new), `lib/file-types.ts`, `config/tools.json` (modified) | Manual validation — all 12 ACs verified. **Note:** The "Workspaces" sidebar entry added in REQ-00096 was subsequently removed by REQ-00097. | Done |
 | REQ-00097 | Remove workspace menu item in side menu | Feature request | `docs/standards/ux-design.md` (§ Navigation), `docs/standards/wbs.md` (1.7.3) | `config/tools.json` | Manual validation — all 6 ACs verified | Done |
+| REQ-00098 | Workflow with routine enabled displays differently in sidebar list | Feature request | `docs/standards/ui-design.md`, `docs/standards/ux-design.md` | `types/workflow.ts`, `app/api/workflows/route.ts`, `components/dashboard/Sidebar.tsx` | Manual validation — all 7 ACs verified | Done |
 
 ---
 

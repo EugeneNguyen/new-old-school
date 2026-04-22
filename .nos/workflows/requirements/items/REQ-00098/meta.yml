@@ -1,0 +1,106 @@
+title: >-
+  the workflow with routine enabled should display different in list workflow in
+  side menu
+stage: Validation
+status: In Progress
+comments:
+  - >-
+    The analysis has been appended to `index.md`. Here's the summary:
+
+
+    **Scope:** Visual differentiation in the sidebar for routine-enabled
+    workflows, requiring changes to the sidebar component, workflow type, and
+    API. Routine scheduling logic and other pages are out of scope.
+
+
+    **Feasibility:** High — routine config files, a routine API, and sidebar
+    rendering all already exist. Key unknowns: visual treatment (icon vs. badge
+    vs. color), whether to expose cron schedule in addition to boolean, and
+    whether the API-side fetch could create latency at scale.
+
+
+    **Dependencies:** `types/workflow.ts`, `app/api/workflows/route.ts`,
+    `lib/routine-scheduler.ts`, and `components/dashboard/Sidebar.tsx`.
+
+
+    **Open questions:** Visual treatment, level of detail to show, handling of
+    workflows without a config file, and performance implications of fetching
+    routine status for all workflows at list time.</parameter>
+
+    <parameter name="status">completed</parameter>
+
+    </invoke>
+  - >-
+    The Specification section has been appended to `index.md`. The document now
+    has: Analysis, then Specification (with User Stories, Acceptance Criteria,
+    Technical Constraints, Out of Scope, RTM Entry, and WBS Mapping), then the
+    Implementation Reference section (which provides useful code reference for
+    implementers).
+
+
+    The Specification section traces cleanly to the RTM (Req ID REQ-00098,
+    design artifacts, WBS 1.4.1 and 1.3.1), uses the glossary's ubiquitous
+    language (Workflow, routine-enabled), and maps all 7 acceptance criteria to
+    testable verifications. The implementation reference section at the bottom
+    provides exact code context for the implementer.
+
+
+    This requirement is ready to move to the Implementation stage.
+  - >-
+    Implementation is complete. All 7 acceptance criteria are satisfied:
+
+
+    - **AC-1:** `routineEnabled?: boolean` added to the `Workflow` interface in
+    `types/workflow.ts`
+
+    - **AC-2:** `GET /api/workflows` now calls `readRoutineConfig(folder)` and
+    includes `routineEnabled` in each workflow object
+
+    - **AC-3:** `CalendarClock` icon from `lucide-react` rendered inline before
+    the workflow name for enabled workflows
+
+    - **AC-4:** Icon uses `text-muted-foreground` (same as text at rest) and has
+    no opacity/visibility changes on hover — always visible
+
+    - **AC-5:** No config or `enabled: false` → no icon; `enabled: true` → icon
+    shown
+
+    - **AC-6:** Layout stable — the icon is placed inside the flex container
+    before the text span, no layout breaks
+
+    - **AC-7:** TypeScript passes with no new errors in the modified files
+
+
+    Three files were modified:
+
+    1. `types/workflow.ts` — added optional `routineEnabled` field
+
+    2. `app/api/workflows/route.ts` — integrated `readRoutineConfig()` to
+    populate the field
+
+    3. `components/dashboard/Sidebar.tsx` — added `CalendarClock` icon and
+    conditional rendering
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 74a9c7c8-0b22-49e7-a776-552761f7f5ea
+    startedAt: '2026-04-22T15:50:47.517Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 21e5d914-6286-4da9-8ed0-cf150284e4f2
+    startedAt: '2026-04-22T15:50:52.464Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: e5a55887-a2c8-4186-86bc-6ddd9978bf39
+    startedAt: '2026-04-22T15:55:02.341Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: d8fd61af-31e4-4e91-91cd-cae0938d3be6
+    startedAt: '2026-04-22T15:58:11.595Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 5d3edc71-58c7-4841-b05e-48782bfe9991
+    startedAt: '2026-04-22T16:02:37.099Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-22T16:02:37.113Z'
