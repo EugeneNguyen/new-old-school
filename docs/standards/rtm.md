@@ -1,6 +1,6 @@
 # Requirement Traceability Matrix (RTM)
 
-> Last updated: 2026-04-21
+> Last updated: 2026-04-22
 
 ---
 
@@ -97,6 +97,8 @@
 | REQ-00086 | Fix status not changing to done after session ends | Bug report | system-architecture.md | `lib/auto-advance.ts` | Manual validation | Todo |
 | REQ-00087 | Create routine mode (auto-create item on cron) | Feature request | system-architecture.md | `lib/routine-scheduler.ts`, `lib/workflow-store.ts` | Manual validation | Todo |
 | REQ-00088 | Implement scaffolding function to init NOS in a new workspace, and also can update the updated version of NOS | Internal requirement | system-architecture.md (CLI), wbs-dictionary.md (1.7), glossary.md | `bin/cli.mjs`, `lib/scaffolding.mjs`, `lib/scaffolding.ts` (TS reference, not used at runtime) | `lib/scaffolding.test.ts` | Done |
+| REQ-00089 | Audit with the project-standards.md | Internal requirement | project-standards.md | `.nos/workflows/audit/items/AUDIT-004/*` | Routine audit | Done |
+| REQ-00091 | When choose workflow, go back to dashboard | Feature request | `docs/standards/ux-design.md` (u00a7Navigation), `docs/standards/ui-design.md` (u00a7Layout Conventions, u00a7Typography Scale, u00a7Spacer) | `app/dashboard/workflows/[id]/page.tsx`, `app/dashboard/workflows/page.tsx` | Visual regression check u2014 breadcrumb visible on both pages; links navigate to correct routes | Done |
 
 ---
 

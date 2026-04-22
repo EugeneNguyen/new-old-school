@@ -213,6 +213,21 @@ export default function WorkflowsPage() {
 
   return (
     <div className="p-8 space-y-6">
+      <nav aria-label="Breadcrumb" className="text-sm">
+        <ol className="flex items-center gap-1">
+          <li>
+            <Link href="/dashboard" className="text-foreground hover:underline">
+              Dashboard
+            </Link>
+          </li>
+          <li>
+            <span className="text-muted-foreground mx-1" aria-hidden="true">›</span>
+          </li>
+          <li>
+            <span className="text-muted-foreground">Workflows</span>
+          </li>
+        </ol>
+      </nav>
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Workflows</h1>
