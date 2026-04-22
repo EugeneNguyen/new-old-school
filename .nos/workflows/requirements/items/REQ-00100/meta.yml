@@ -1,0 +1,55 @@
+title: Update sidemenu
+stage: Validation
+status: In Progress
+comments:
+  - >-
+    Analysis complete for REQ-00100. The requirement is a straightforward JSX
+    reorder in `components/dashboard/Sidebar.tsx`: swap the static "All
+    workflows…" link (lines 109-114) and the `workflows.map(…)` block (lines
+    115-136) so individual workflows render first. No API, data model, or
+    cross-module changes are needed — it's a self-contained, low-risk UI tweak
+    with no open questions.
+  - >-
+    Specification complete for REQ-00100. I appended a `## Specification`
+    section to the item's `index.md` with six acceptance criteria covering the
+    visual reorder, preserved API order, routine icon retention, active-state
+    highlighting, empty-state behavior, and collapsed-mode invariance. The spec
+    traces to WBS 1.4.1 (Dashboard Shell) and `ux-design.md`, confirms the
+    change is confined to a single JSX swap in `Sidebar.tsx`, and explicitly
+    excludes API, data model, and cross-section sidebar changes. The RTM entry
+    is documented and ready to be merged into `docs/standards/rtm.md` after
+    implementation.
+  - >-
+    Implementation complete for REQ-00100. Swapped the two JSX blocks inside
+    `<div className="pl-4 space-y-1">` in `components/dashboard/Sidebar.tsx` so
+    the `workflows.map(…)` block renders before the static "All workflows…" link
+    — a single block swap, no other changes. All six acceptance criteria are
+    satisfied: individual workflows appear first (AC-1), API-returned order is
+    preserved (AC-2), `CalendarClock` icon renders on `routineEnabled` workflows
+    (AC-3), active-state styling is unchanged (AC-4), empty workflow list shows
+    only "All workflows…" (AC-5), and collapsed mode is unaffected (AC-6). No
+    deviations from standards.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: eeeeeb01-d5fb-4dba-b822-44fd67c17530
+    startedAt: '2026-04-22T22:53:32.001Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: e05b3dd3-c2b6-48ba-9efa-2c75d806fec0
+    startedAt: '2026-04-22T22:53:32.028Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 81f98fa9-3c69-4624-924f-3b9339c164f2
+    startedAt: '2026-04-22T22:55:25.445Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 3336f819-4a9a-4596-93d3-2cd38ff01f7d
+    startedAt: '2026-04-22T22:57:03.550Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 9655a000-37d5-4bc4-aafb-a4ba6c029412
+    startedAt: '2026-04-22T22:58:11.524Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-22T22:58:11.535Z'
