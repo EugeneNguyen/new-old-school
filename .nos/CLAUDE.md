@@ -42,6 +42,8 @@ For details on workflows structure and configuration, see [workflows/CLAUDE.md](
 
 Agents MUST NOT manually update an item's `stage` field. Stage transitions are automated by the NOS runtime heartbeat sweeper. An agent may only update an item's `stage` when explicitly instructed to do so by the system prompt or stage prompt.
 
+**YAML date quoting:** ISO-8601 date/time strings in `meta.yml` and other YAML files must be single-quoted (e.g., `updatedAt: '2026-04-22T14:02:41.000Z'`). Unquoted ISO timestamps are parsed as JavaScript `Date` objects by the YAML parser, which then fails validation and causes the item to be silently dropped from the API. Prefer the `nos-edit-item` and `nos-move-stage` skills over manual `meta.yml` edits — the server write path produces correctly quoted YAML automatically.
+
 ## Maintenance
 
 This document describes stable structural concepts. When adding or removing subdirectories, update this guide to reflect the change. No single owner is assigned — contributors are expected to update it alongside structural changes, similar to a README convention.

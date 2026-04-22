@@ -52,10 +52,12 @@ sessions:               # Session history
   - stage: <stage>
     adapter: claude
     sessionId: <id>
-    startedAt: <iso-date>
+    startedAt: '2026-04-22T14:02:41.000Z'  # Always quote ISO-8601 strings
     agentId: <agent-id>
-updatedAt: <iso-date>
+updatedAt: '2026-04-22T14:02:41.000Z'      # Always quote ISO-8601 strings
 ```
+
+> **YAML pitfall:** ISO-8601 timestamps like `updatedAt: 2026-04-22T14:02:41Z` (unquoted) are parsed as JavaScript `Date` objects by the YAML parser, which then fails the `typeof !== 'string'` validation and causes the item to be silently dropped from the API. Always use single-quoted strings for date/time fields (`updatedAt: '2026-04-22T14:02:41.000Z'`).
 
 ## activity.jsonl
 

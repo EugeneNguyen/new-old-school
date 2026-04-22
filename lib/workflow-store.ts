@@ -203,8 +203,19 @@ function readItemFolder(workflowId: string, itemId: string): WorkflowItem | null
     return null;
   }
 
-  if (typeof data.updatedAt !== 'string' || !data.updatedAt.trim()) return null;
-  if (Number.isNaN(Date.parse(data.updatedAt))) return null;
+  if (typeof data.updatedAt !== 'string' || !data.updatedAt.trim()) {
+    // Coerce YAML-parsed Date objects back to ISO strings so items aren't silently dropped
+    if (data.updatedAt instanceof Date) {
+      console.warn(
+        `[readItemFolder] ${workflowId}/${itemId}: updatedAt was a Date object, coerced to ISO string`
+      );
+      data.updatedAt = data.updatedAt.toISOString();
+    } else {
+      return null;
+    }
+  }
+  const updatedAt = data.updatedAt as string;
+  if (Number.isNaN(Date.parse(updatedAt))) return null;
 
   const sessions = parseSessions(data.sessions);
   if (!sessions) return null;
@@ -219,7 +230,7 @@ function readItemFolder(workflowId: string, itemId: string): WorkflowItem | null
     comments: data.comments,
     body: body || undefined,
     sessions,
-    updatedAt: data.updatedAt,
+    updatedAt,
   };
 }
 
@@ -232,14 +243,23 @@ function parseSessions(raw: unknown): ItemSession[] | null {
     if (typeof e.stage !== 'string' || !e.stage) return null;
     if (typeof e.adapter !== 'string' || !e.adapter) return null;
     if (typeof e.sessionId !== 'string' || !e.sessionId) return null;
-    if (typeof e.startedAt !== 'string' || !e.startedAt || Number.isNaN(Date.parse(e.startedAt))) {
-      return null;
+    if (typeof e.startedAt !== 'string' || !e.startedAt) {
+      // Coerce YAML-parsed Date objects back to ISO strings so items aren't silently dropped
+      if (e.startedAt instanceof Date) {
+        console.warn(
+          `[parseSessions] session startedAt was a Date object, coerced to ISO string`
+        );
+        e.startedAt = e.startedAt.toISOString();
+      } else {
+        return null;
+      }
     }
+    if (Number.isNaN(Date.parse(e.startedAt as string))) return null;
     const session: ItemSession = {
       stage: e.stage,
       adapter: e.adapter,
       sessionId: e.sessionId,
-      startedAt: e.startedAt,
+      startedAt: e.startedAt as string,
     };
     if (e.agentId !== undefined && e.agentId !== null) {
       if (typeof e.agentId !== 'string' || !e.agentId) return null;

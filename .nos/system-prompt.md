@@ -52,3 +52,9 @@ and can reset the item to `Todo` to re-run the stage.
 For recoverable errors you routed around, or partial work you finished
 anyway, write a normal summary describing what you did and what you
 skipped — do **not** prefix it with `FAILED:`.
+
+## YAML writing rules
+
+- **ISO-8601 date/time strings must be single-quoted** in YAML (e.g., `updatedAt: '2026-04-22T14:02:41.000Z'`). Unquoted ISO timestamps are parsed as JavaScript `Date` objects by the YAML parser, which then fails the `typeof !== 'string'` validation and causes the item to be silently dropped from the API.
+- Always quote any value that could be interpreted as a boolean, number, or date by YAML's implicit typing.
+- The `nos-edit-item` and `nos-move-stage` skills generate correctly quoted YAML via the server write path — prefer these over manual `meta.yml` edits.
