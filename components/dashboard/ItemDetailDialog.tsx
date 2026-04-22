@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import dynamic from 'next/dynamic';
-import { X, Trash2 } from 'lucide-react';
+import { X, Trash2, RotateCcw } from 'lucide-react';
 import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,7 @@ interface Props {
   stages: Stage[];
   onSaved: (updated: WorkflowItem) => void;
   onBeforeSave?: (itemId: string) => void;
+  onRestart?: (itemId: string) => void;
 }
 
 const STATUSES: ItemStatus[] = ['Todo', 'In Progress', 'Done', 'Failed'];
@@ -57,6 +58,8 @@ function formatSummary(entry: ActivityEntry): string {
       return `Status changed: ${d.before} \u2192 ${d.after}`;
     case 'body-changed':
       return `Description updated (~${d.beforeLength} \u2192 ~${d.afterLength} chars)`;
+    case 'restart':
+      return `Restarted: ${d.before.stage} ${d.before.status} \u2192 ${d.after.stage} ${d.after.status}`;
     default:
       return entry.type;
   }
@@ -92,6 +95,7 @@ export function ItemDetailDialog({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingText, setEditingText] = useState('');
   const [deleteConfirmIndex, setDeleteConfirmIndex] = useState<number | null>(null);
+  const [restartConfirmOpen, setRestartConfirmOpen] = useState(false);
 
   const itemId = item?.id;
   const activityItemIdRef = useRef<string | null>(null);
@@ -296,6 +300,38 @@ export function ItemDetailDialog({
     } catch {
       setComments(prevComments);
       setError('Failed to update comment');
+    }
+  }
+
+  const firstStageName = stages.length > 0 ? stages[0].name : '';
+  const isRestartDisabled =
+    item &&
+    item.stage === firstStageName &&
+    item.status === 'Todo' &&
+    (item.sessions?.length ?? 0) === 0;
+
+  async function handleRestartConfirm() {
+    if (!item || isRestartDisabled) return;
+    setRestartConfirmOpen(false);
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/workflows/${encodeURIComponent(workflowId)}/items/${encodeURIComponent(item.id)}/restart`,
+        { method: 'POST' }
+      );
+      if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(msg || `Request failed: ${res.status}`);
+      }
+      const updated: WorkflowItem = await res.json();
+      onSaved(updated);
+      onOpenChange(false);
+    } catch (e) {
+      console.error('Failed to restart item:', e);
+      setError(e instanceof Error ? e.message : 'Failed to restart item');
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -505,6 +541,20 @@ export function ItemDetailDialog({
       )}
 
       <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setRestartConfirmOpen(true)}
+          disabled={!!isRestartDisabled || saving}
+          title={
+            isRestartDisabled
+              ? 'Item is already on the first stage with no sessions'
+              : 'Reset item to first stage, clear sessions and agent content'
+          }
+        >
+          <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+          Restart
+        </Button>
         <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
           Close
         </Button>
@@ -512,6 +562,25 @@ export function ItemDetailDialog({
           {saving ? 'Saving\u2026' : 'Save'}
         </Button>
       </div>
+
+      <Dialog open={restartConfirmOpen} onOpenChange={setRestartConfirmOpen}>
+        <div className="flex flex-col gap-3 p-4">
+          <p className="font-medium">Restart this item?</p>
+          <p className="text-sm text-muted-foreground">
+            This will permanently remove all agent-generated content (analysis, specification,
+            implementation notes) and reset the item to the first stage. Title and comments will
+            be preserved.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setRestartConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" variant="destructive" onClick={() => void handleRestartConfirm()}>
+              Restart
+            </Button>
+          </div>
+        </div>
+      </Dialog>
     </Dialog>
   );
 }

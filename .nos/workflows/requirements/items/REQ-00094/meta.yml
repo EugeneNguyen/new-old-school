@@ -1,0 +1,62 @@
+title: >-
+  Add mechanism to "restart a item" by clean up everything but title, desc and
+  comment, and move it to the first stages
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis complete for REQ-00094. I appended an `## Analysis` section to the
+    item's `index.md` covering scope (preserve title/desc/comments, clear
+    sessions and agent-generated content, reset to first stage), feasibility
+    (high — most infrastructure exists, main risk is body content parsing to
+    separate original text from agent sections), dependencies (touches ~10
+    internal modules, no external deps), and four open questions — most
+    critically, what exactly "desc" means to preserve and whether active
+    sessions should be killed on restart.
+  - >-
+    Specification complete for REQ-00094. I appended a `## Specification`
+    section to `index.md` covering: four user stories (restart action, content
+    cleanup, confirmation UX, activity logging); eight numbered acceptance
+    criteria with Given/When/Then structure covering the meta.yml reset,
+    index.md truncation, activity log entry, no-op guard, confirmation dialog,
+    SSE event emission, auto-advance compatibility, and error handling; detailed
+    technical constraints including the new `POST
+    /api/workflows/[id]/items/[itemId]/restart` endpoint shape, data shapes for
+    meta.yml/index.md/activity after restart, the convention-based body parsing
+    strategy (`split` at `## Analysis`), race condition mitigation via session
+    clearing, and a file-change inventory touching five files; explicit
+    out-of-scope items (bulk restart, arbitrary stage restart, undo, session
+    killing, marker-based parsing, Kanban context menu); an RTM entry with
+    implementation and test fields left as placeholders; and WBS mapping to
+    packages 1.1.3, 1.1.5, 1.3.2, 1.4.4, and 1.6.1. The next stage
+    (Implementation) has everything it needs to build this feature.
+  - >-
+    [runtime] session log stalled; Now I'll add the restart handler function and
+    update the footer with the restart button. Let me find the right spots.
+  - >-
+    [runtime] session log stalled; The file was modified by another process. Let
+    me read the full current state.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 5f23d81f-339e-429a-a900-c4e4f648ca56
+    startedAt: '2026-04-22T13:02:38.765Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 31eea366-543e-4a9c-bf1a-883b72919ab9
+    startedAt: '2026-04-22T13:02:40.058Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: b15626ff-dd7c-49dd-afc4-7c84bb0586c3
+    startedAt: '2026-04-22T13:05:42.213Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 44807636-9e71-4a19-8620-7c441f8af86b
+    startedAt: '2026-04-22T13:07:58.453Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: b4dcb2d1-33f4-4696-b454-4d99f1530c5f
+    startedAt: '2026-04-22T13:17:27.092Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-22T13:22:29.586Z'
