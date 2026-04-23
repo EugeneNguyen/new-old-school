@@ -167,5 +167,4 @@
 | GAP-16 | Remaining reuse opportunities | Code Quality | Partial (extractions adopted, remaining deferred) |
 | GAP-17 | Null-safety in `createItem` | TS §4 | Resolved |
 | GAP-18 | ListView EmptyState | UI §1 | Resolved |
-| GAP-19 | mapStageError utility not adopted | API §7 | Resolved |
-| GAP-19 | mapStageError adoption | API §7 | Resolved |
+| GAP-19 | mapStageError utility adoption | API §7 | Resolved |

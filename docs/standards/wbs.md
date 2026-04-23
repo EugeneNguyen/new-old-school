@@ -1,6 +1,6 @@
 # Work Breakdown Structure (WBS)
 
-> Last updated: 2026-04-23
+> Last updated: 2026-04-24 (skill field in stages per REQ-00110)
 
 ---
 
@@ -8,7 +8,7 @@
 
 ### 1.1 Core Workflow Engine
 - 1.1.1 Workflow CRUD (create, read, update, delete workflows)
-- 1.1.2 Stage Pipeline (ordered stage definitions, prompts, agent assignment)
+- 1.1.2 Stage Pipeline (ordered stage definitions, prompts, agent assignment, skill/slash-command assignment with `[Skill: /<skill-name>]` directive injection, and auto-advance flag)
 - 1.1.3 Item Lifecycle (create items, status transitions, stage movement)
 - 1.1.4 Auto-Advance System (heartbeat sweeper, session completion detection, auto-start)
 - 1.1.5 Activity Logging (JSONL append-only log, per-workflow and per-item activity)
@@ -22,15 +22,18 @@
 - 1.2.5 Session Tracking (session ID extraction, output capture, stream registry)
 - 1.2.6 Routine Scheduler (recurring task triggers for workflows)
 
-### 1.3 REST API Surface (8 route groups, 42+ handlers)
+### 1.3 REST API Surface (10 route groups, 50+ handlers)
 - 1.3.1 Workflow Routes (`/api/workflows` — CRUD, list)
-- 1.3.2 Item Routes (`/api/workflows/[id]/items` — CRUD, content, comments)
-- 1.3.3 Stage Routes (`/api/workflows/[id]/stages` — CRUD, reorder)
+- 1.3.2 Item Routes (`/api/workflows/[id]/items` — CRUD, content, comments, restart)
+- 1.3.3 Stage Routes (`/api/workflows/[id]/stages` — CRUD, reorder, skill assignment)
 - 1.3.4 Agent Routes (`/api/agents` — CRUD, reference checking)
 - 1.3.5 Activity Routes (`/api/activity`, per-workflow, per-item, SSE events)
 - 1.3.6 Session & Chat Routes (`/api/chat`, `/api/claude/sessions` — spawn, stream, status)
 - 1.3.7 Settings Routes (`/api/settings/*` — system prompt, heartbeat, default agent)
 - 1.3.8 System Routes (`/api/shell`, `/api/system`, `/api/adapters`, `/api/workspaces`)
+- 1.3.9 Analytics Routes (`/api/analytics/sessions` — session count aggregation)
+- 1.3.10 Template Routes (`/api/templates` — list, detail, install)
+- 1.3.11 Health Routes (`/api/health` — server health check)
 
 ### 1.4 Web Dashboard (UI)
 - 1.4.1 Dashboard Shell (layout, sidebar, navigation, workspace switcher)

@@ -8,7 +8,7 @@
 
 | Technology | Version | Notes |
 |---|---|---|
-| **Next.js** | 16.2.1-canary.45 (App Router) | Server-first architecture; Next.js 16 stable is available |
+| **Next.js** | ^16.0.0 (App Router) | Server-first architecture; stable release |
 | **React** | 19.2.5 | Server Components by default; React 19 stable |
 | **TypeScript** | ^5.0 | `strict: true` enabled |
 | **Tailwind CSS** | ^3.0 | CSS variable-based theme via `hsl(var(--*))` |
@@ -51,9 +51,8 @@
 
 ### Version-Specific Notes
 
-- Running Next.js **16.2.1-canary.45** (Next.js 16 is stable as of 2026). Consider moving to `next@^16` stable.
 - **React 19.2.5** (stable). Server Components, Server Actions, `use` hook, and ref-as-prop are production-ready.
-- **Next.js 16 key changes**:
+- **Next.js ^16.0.0** (stable). Key changes:
   - `params` and `searchParams` are `Promise<>` types that must be awaited.
   - **React Compiler** is built-in and stable — automatically memoizes components, reducing unnecessary re-renders. Enabled via `reactCompiler: true` in `next.config.mjs` (GAP-14 resolved).
   - **Turbopack** is stable and the default bundler for `next dev` and `next build`.
