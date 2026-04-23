@@ -35,7 +35,7 @@
     "dev": "next dev -p 30128",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "biome check .",
     "test": "node --test lib/**/*.test.ts"
   },
   "dependencies": {
@@ -53,7 +53,7 @@
     "cron-parser": "^5.5.0",
     "js-yaml": "^4.1.1",
     "lucide-react": "^1.8.0",
-    "next": "16.2.1-canary.45",
+    "next": "^16.0.0",
     "next-themes": "^0.4.6",
     "open": "^10.1.0",
     "react": "^19.2.5",
@@ -64,6 +64,7 @@
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.13",
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

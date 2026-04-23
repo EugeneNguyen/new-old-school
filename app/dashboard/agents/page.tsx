@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { Agent } from '@/types/workflow';
+import { useApiList } from '@/lib/hooks/use-api-list';
 
 const ItemDescriptionEditor = dynamic(
   () => import('@/components/dashboard/ItemDescriptionEditor').then(mod => mod.ItemDescriptionEditor),
@@ -69,9 +70,13 @@ function resolveModel(choice: string, customModel: string): string | null {
 }
 
 export default function MembersPage() {
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const { items: agents, loading, error: loadError, reload } = useApiList<Agent>({
+    url: '/api/agents',
+    parse: (data) => {
+      const d = data as { agents?: Agent[] };
+      return Array.isArray(d.agents) ? d.agents : [];
+    },
+  });
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -85,25 +90,6 @@ export default function MembersPage() {
   const [modelsLoading, setModelsLoading] = useState(false);
   const [modelsError, setModelsError] = useState<string | null>(null);
   const modelsFetchId = useRef(0);
-
-  const reload = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    try {
-      const res = await fetch('/api/agents', { cache: 'no-store' });
-      if (!res.ok) throw new Error(`Failed to load (${res.status})`);
-      const data = (await res.json()) as { agents?: Agent[] };
-      setAgents(Array.isArray(data.agents) ? data.agents : []);
-    } catch (err) {
-      setLoadError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void reload();
-  }, [reload]);
 
   const loadAdapters = useCallback(async () => {
     try {
@@ -266,7 +252,7 @@ export default function MembersPage() {
       const msg = await res.text();
       throw new Error(msg || `Delete failed (${res.status})`);
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : String(err));
+      console.error('Failed to delete agent:', err);
     } finally {
       setPendingDeleteId(null);
     }

@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { FolderOpen, Plus, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import FileBrowser, { type BrowseEntry } from '@/components/dashboard/FileBrowser';
-import FileViewer from '@/components/dashboard/FileViewer';
+import { FileBrowser, type BrowseEntry } from '@/components/dashboard/FileBrowser';
+import { FileViewer } from '@/components/dashboard/FileViewer';
 
 interface Workspace {
   id: string;

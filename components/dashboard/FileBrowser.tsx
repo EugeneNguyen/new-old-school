@@ -77,7 +77,7 @@ function getRelativePath(fullPath: string, workspaceRoot: string): string {
   return relative.startsWith('/') ? relative : '/' + relative;
 }
 
-export default function FileBrowser({ workspaceRoot, onFileSelect, selectedPath }: FileBrowserProps) {
+export function FileBrowser({ workspaceRoot, onFileSelect, selectedPath }: FileBrowserProps) {
   const [data, setData] = useState<BrowseResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

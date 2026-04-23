@@ -1,6 +1,6 @@
 # NOS Project Standards
 
-> Last audited: 2026-04-23 (AUDIT-005 audit)
+> Last audited: 2026-04-24 (AUDIT-008 audit)
 
 ---
 
@@ -55,9 +55,9 @@
 - **React 19.2.5** (stable). Server Components, Server Actions, `use` hook, and ref-as-prop are production-ready.
 - **Next.js 16 key changes**:
   - `params` and `searchParams` are `Promise<>` types that must be awaited.
-  - **React Compiler** is built-in and stable — automatically memoizes components, reducing unnecessary re-renders. Enable via `reactCompiler: true` in `next.config.mjs`. **Gap**: Not yet enabled in this project (see GAP-14).
+  - **React Compiler** is built-in and stable — automatically memoizes components, reducing unnecessary re-renders. Enabled via `reactCompiler: true` in `next.config.mjs` (GAP-14 resolved).
   - **Turbopack** is stable and the default bundler for `next dev` and `next build`.
-  - **`next lint` has been removed.** Use standalone ESLint or Biome directly. `next build` no longer runs linting. **Gap**: The project's `npm run lint` script still calls `next lint` (see GAP-13).
+  - **`next lint` has been removed.** Project uses Biome via `npm run lint` (GAP-13 resolved).
   - `cacheLife` and `cacheTag` are stable (no `unstable_` prefix).
 - The project's `serverExternalPackages` includes `chokidar` and `fsevents`.
 - Dev server runs on port **30128**.
@@ -252,11 +252,8 @@ The following deviations from current best practices should be tracked for remed
 - **Recommendation**: Run `npx @tailwindcss/upgrade` on a branch. The project's CSS-variable theme approach is already v4-aligned, making migration smoother. Most migrations complete in 1-2 hours.
 
 ### GAP-03: No ESLint / Biome / Prettier Configuration
-- **Status**: OPEN (elevated priority due to Next.js 16)
-- **Current**: No `.eslintrc.*`, `eslint.config.*`, `.prettierrc`, or `biome.json` found. The `next lint` command has been **removed** in Next.js 16, so the project currently has no linting path at all.
-- **Standard**: Next.js 16 projects should set up standalone ESLint (ESLint 9 flat config with `@next/eslint-plugin-next`) or Biome as a faster alternative. Prettier with `prettier-plugin-tailwindcss` for formatting and Tailwind class sorting.
-- **Impact**: No automated code quality enforcement. The `npm run lint` script is broken (calls removed `next lint`).
-- **Recommendation**: Choose ESLint 9 flat config or Biome. Add `eslint.config.mjs` with `@next/eslint-plugin-next` and `@typescript-eslint/eslint-plugin`, or add `biome.json`. Update the `lint` script in `package.json` accordingly.
+- **Status**: RESOLVED (AUDIT-006 follow-up)
+- **Resolution**: Biome installed as `@biomejs/biome`, configured via `biome.json` with linter and formatter settings. `npm run lint` now calls `biome check .`.
 
 ### GAP-04: Incomplete Suspense Boundaries
 - **Status**: RESOLVED (AUDIT-003)
@@ -299,36 +296,24 @@ The following deviations from current best practices should be tracked for remed
 - **Recommendation**: Evaluate whether Next.js canary features are still required. If not, move to `next@^16` stable.
 
 ### GAP-11: `@types/react` v18 with React 19 stable
-- **Status**: OPEN
-- **Current**: `@types/react@18.3.28` installed (verified in node_modules), but React is 19.2.5 stable. `package.json` specifies `^19.0.0` but older version is resolved.
-- **Standard**: Type definitions should match the React version in use. React 19 APIs (`use()`, `useFormStatus`, ref-as-prop) have different type signatures.
-- **Impact**: Type mismatches for React 19-specific APIs; IDE may flag valid React 19 code. With `strict: true` now enabled, these mismatches are more likely to surface.
-- **Recommendation**: Run `npm install @types/react@^19.0.0 @types/react-dom@^19.0.0` to update. Verify types resolve correctly after update.
+- **Status**: RESOLVED (AUDIT-007)
+- **Resolution**: `@types/react@19.2.14` now installed (was 18.3.28 in prior audits). Types now match React 19.2.5.
 
 ### GAP-12: `Logo.tsx` naming inconsistency in `components/ui/`
 - **Status**: RESOLVED (AUDIT-003)
 - **Resolution**: File renamed to `logo.tsx`, consistent with shadcn/ui lowercase convention.
 
 ### GAP-13: Broken `npm run lint` Script (NEW)
-- **Status**: OPEN (high priority)
-- **Current**: `package.json` defines `"lint": "next lint"`, but `next lint` has been removed in Next.js 16.
-- **Standard**: The lint script should invoke a standalone linter (ESLint or Biome) directly.
-- **Impact**: `npm run lint` will fail. No linting is possible without manual intervention.
-- **Recommendation**: After resolving GAP-03 (setting up a linter), update the script to `"lint": "eslint ."` or `"lint": "biome check ."` as appropriate.
+- **Status**: RESOLVED (AUDIT-006 follow-up)
+- **Resolution**: `package.json` lint script updated to `biome check .`. Biome installed and configured.
 
 ### GAP-14: React Compiler Not Enabled (NEW)
-- **Status**: OPEN (medium priority)
-- **Current**: `next.config.mjs` does not enable the React Compiler (`reactCompiler: true`).
-- **Standard**: Next.js 16 ships with a stable, built-in React Compiler that automatically memoizes components, eliminating the need for manual `useMemo`, `useCallback`, and `React.memo` usage.
-- **Impact**: Missing automatic memoization optimizations. Components may re-render unnecessarily.
-- **Recommendation**: Add `reactCompiler: true` to `next.config.mjs`. Test thoroughly — the compiler may surface issues in components that rely on referential identity in non-standard ways.
+- **Status**: RESOLVED (AUDIT-006 follow-up)
+- **Resolution**: `reactCompiler: true` added to `next.config.mjs`.
 
-### GAP-15: `next-themes` phantom dependency (NEW)
-- **Status**: OPEN
-- **Current**: `next-themes` (v0.4.6) is imported in `app/layout.tsx` and `components/ui/theme-toggle.tsx` but is not listed in `package.json` dependencies.
-- **Standard**: All direct imports must be listed as explicit dependencies in `package.json`.
-- **Impact**: Installation on a clean machine may fail if `next-themes` is not resolved as a transitive dependency. Version is unpinned and uncontrolled.
-- **Recommendation**: Add `"next-themes": "^0.4.6"` to `dependencies` in `package.json`.
+### GAP-15: `next-themes` phantom dependency
+- **Status**: RESOLVED (AUDIT-007)
+- **Resolution**: `next-themes` now listed in `package.json:57` with version `^0.4.6`.
 
 ### AUDIT-004 (2026-04-22) Summary
 - **Tech stack unchanged** from AUDIT-003.
@@ -348,22 +333,58 @@ The following deviations from current best practices should be tracked for remed
 - **Totals**: 6 resolved, 1 partial, 10 open.
 - **Verified**: `@types/react@18.3.28` still installed despite `package.json` specifying `^19.0.0`.
 
-### GAP-16: Remaining Reuse Opportunities (NEW)
-- **Status**: OPEN (low-medium priority)
-- **Current**: Several duplicated patterns remain across the codebase after AUDIT-005 extractions.
-- **Flagged opportunities**:
-  - **Sidebar NavLink component**: 7 near-identical nav link blocks in `components/dashboard/Sidebar.tsx`. Extract to a `NavLink` component.
-  - **EmptyState component**: Identical "no stages" placeholder in `KanbanBoard.tsx` and `ListView.tsx`. Extract to `components/ui/empty-state.tsx`.
-  - **`useApiList<T>` hook**: 4 dashboard pages (`workflows`, `agents`, `activity`, `workspaces`) repeat the same `reload` function pattern (loading state, error state, fetch/parse/setState). Extract to `lib/hooks/use-api-list.ts`.
-  - **`mapStageError` utility**: 3 route files (`stages/route.ts`, `stages/order/route.ts`, `stages/[stageName]/route.ts`) duplicate `StageError.code` → HTTP status code mapping. Extract to `app/api/utils/errors.ts`.
-  - **`withErrorHandler` HOF**: ~15 API route handlers have identical outer try/catch → `console.error` → `createErrorResponse` blocks. Extract a wrapper function.
-  - **`parseBody<T>` utility**: ~10 API routes duplicate the same `req.json()` try/catch with 400 error response. Extract to `app/api/utils/parse-body.ts`.
+### AUDIT-007 (2026-04-24) Summary
+- **Tech stack**: Next.js 16.2.1-canary.45, React 19.2.5, TypeScript 5, Tailwind CSS 3, @types/react 19.2.14.
+- **Previous extractions fully adopted**:
+  - `app/api/utils/stage-error.ts` — all 3 stages routes now use `mapStageError()` (GAP-19 resolved).
+  - `components/ui/empty-state.tsx` — both KanbanBoard and ListView now use the shared component (GAP-18 resolved).
+- **Previous extraction partially adopted**:
+  - `lib/hooks/use-api-list.ts` — hook exists but **not used** by any dashboard pages (GAP-16 partial).
+- **New gaps resolved**: GAP-11 (`@types/react` updated to 19.2.14), GAP-15 (`next-themes` added to package.json).
+- **Identified reuse opportunities** (not yet implemented):
+  - **Sidebar NavLink**: 7 near-identical nav link blocks in Sidebar.tsx with identical className logic.
+  - **withErrorHandler HOF**: 24 API routes have `console.error` + `createErrorResponse` pattern.
+  - **parseBody utility**: Multiple API routes duplicate `await req.json()` error handling.
+- **Prior gaps**: 6 resolved, 1 partial, 10 open.
+- **New gaps resolved**: GAP-11, GAP-15, GAP-18, GAP-19.
+- **Totals**: 10 resolved, 1 partial, 8 open.
+
+### AUDIT-008 (2026-04-24) Summary
+- **Tech stack**: Next.js 16.2.1-canary.45, React 19.2.5, TypeScript 5 (strict), Tailwind CSS v3.4.19. All 10 previously open gaps remain open.
+- **Previous extractions verified adopted**: `mapStageError` (GAP-19) and `EmptyState` component (GAP-18) confirmed in use.
+- **Confirmed resolved**: GAP-11 (`@types/react@19.2.14`) and GAP-15 (`next-themes@0.4.6` in node_modules).
+- **Reuse opportunities**: GAP-16 remains partial. Four dashboard pages still have local `reload` patterns. Sidebar NavLink (7 blocks), withErrorHandler HOF (24 routes), parseBody utility (20 routes) all still unactioned.
+- **New findings**:
+  - **eslint-disable with no linter**: 5 `eslint-disable-next-line react-hooks/exhaustive-deps` comments exist with no active ESLint/Biome config to enforce them.
+  - **Default exports**: 2 feature components (`FileBrowser.tsx`, `FileViewer.tsx`) use default exports instead of named exports.
+- **Totals**: 11 resolved, 1 partial, 10 open (2 new low-priority findings not tracked as gaps).
+
+### GAP-16: Reuse Opportunities — Partially Addressed
+- **Status**: PARTIAL (progress since AUDIT-005)
+- **Resolved (AUDIT-007 + follow-up)**:
+  - **`mapStageError` utility**: All 3 stages routes now import and use `mapStageError()` from `app/api/utils/stage-error.ts`.
+  - **`EmptyState` component**: Both KanbanBoard and ListView now use the shared `<EmptyState>` component.
+  - **`useApiList<T>` hook**: Adopted in `app/dashboard/workflows/page.tsx` and `app/dashboard/agents/page.tsx`.
+- **Remaining (not yet adopted)**:
+  - **`useApiList` hook**: Not yet adopted by `activity` and `workspaces` pages.
+- **Not yet implemented (flagged)**:
+  - **Sidebar NavLink extraction**: 7 near-identical nav link blocks in `components/dashboard/Sidebar.tsx` with identical className logic. Extract to a `NavLink` component.
+  - **`withErrorHandler` HOF**: 24 API route handlers have `console.error` → `createErrorResponse("Failed to...")` blocks. Extract a wrapper function.
+  - **`parseBody<T>` utility**: 20 API routes use `await req.json()` without shared error handling. Extract to `app/api/utils/parse-body.ts`.
 - **Impact**: Maintenance burden; changes to shared patterns require updating multiple files.
-- **Recommendation**: Address incrementally. Highest-value targets are `useApiList` hook and `withErrorHandler` HOF.
+- **Recommendation**: Adopt the existing `useApiList` hook in remaining dashboard pages, then address remaining opportunities.
 
 ### GAP-17: Null-safety Issue in `createItem`
 - **Status**: RESOLVED (AUDIT-005)
 - **Resolution**: Null guard `if (!config) return null;` added at `lib/workflow-store.ts:787`, before `config.idPrefix` access.
+
+### GAP-18: ListView Inconsistent with EmptyState Pattern
+- **Status**: RESOLVED (AUDIT-007)
+- **Resolution**: `ListView.tsx` updated to use `<EmptyState>` component for both the "no stages" and "no items" empty states, matching KanbanBoard's pattern.
+
+### GAP-19: `mapStageError` Utility Not Adopted
+- **Status**: RESOLVED (AUDIT-007)
+- **Resolution**: All 3 stages routes (`stages/route.ts`, `stages/order/route.ts`, `stages/[stageName]/route.ts`) now import and use `mapStageError` from `app/api/utils/stage-error.ts`.
 
 ---
 

@@ -25,7 +25,7 @@ interface FileViewerProps {
   onClose: () => void;
 }
 
-export default function FileViewer({ entry, onClose }: FileViewerProps) {
+export function FileViewer({ entry, onClose }: FileViewerProps) {
   const [previewData, setPreviewData] = useState<PreviewResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

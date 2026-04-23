@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Plus, Trash2, Edit3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import type { Workflow } from '@/types/workflow';
 import { WORKFLOW_ID_REGEX as ID_REGEX, WORKFLOW_PREFIX_REGEX as PREFIX_REGEX } from '@/lib/validators';
+import { useApiList } from '@/lib/hooks/use-api-list';
 
 interface FormState {
   id: string;
@@ -34,9 +35,10 @@ function validateName(v: string): string | null {
 }
 
 export default function WorkflowsPage() {
-  const [workflows, setWorkflows] = useState<Workflow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const { items: workflows, loading, error: loadError, reload } = useApiList<Workflow>({
+    url: '/api/workflows',
+    parse: (data) => (Array.isArray(data) ? data as Workflow[] : []),
+  });
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
@@ -51,25 +53,6 @@ export default function WorkflowsPage() {
   const [editForm, setEditForm] = useState<{ name: string; idPrefix: string }>({ name: '', idPrefix: '' });
   const [editError, setEditError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-
-  const reload = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    try {
-      const res = await fetch('/api/workflows', { cache: 'no-store' });
-      if (!res.ok) throw new Error(`Failed to load (${res.status})`);
-      const data = (await res.json()) as Workflow[];
-      setWorkflows(Array.isArray(data) ? data : []);
-    } catch (err) {
-      setLoadError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void reload();
-  }, [reload]);
 
   function openCreate() {
     setForm({ id: '', name: '', idPrefix: '' });
