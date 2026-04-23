@@ -183,3 +183,123 @@ Tech stack: Next.js 16.2.1-canary.45, React 19.2.5, TypeScript 5 (strict), Tailw
 | GAP-10 (default exports) | ✅ Fixed | Converted to named exports |
 
 **Totals: 6 fixed, 6 deferred, 10 open**
+
+## Doc Audit Findings
+
+### High Priority
+
+1. **Stale project-standards.md Version Reference**
+   - **Artifact:** `docs/standards/project-standards.md:11`
+   - **Finding:** The tech stack table lists `next` as "16.2.1-canary.45 (App Router)" despite GAP-10 being resolved to stable `^16.0.0`. The version-specific notes section (line 54) correctly states "Running Next.js **16.2.1-canary.45**" and "Consider moving to `next@^16` stable", which is also stale given GAP-10 was already fixed.
+   - **Severity:** High — the standards document does not accurately reflect the current state after the audit cycle's own fixes.
+
+### Medium Priority
+
+2. **documentation-standards.md Stale Timestamp**
+   - **Artifact:** `docs/standards/documentation-standards.md:3`
+   - **Finding:** Document reads "Last updated: 2026-04-22 (AUDIT-004)" while all other standards docs were updated to 2026-04-24 in the previous audit cycle.
+   - **Severity:** Medium — minor staleness, but other docs consistently updated.
+
+3. **WBS §1.1.2 Inconsistent Skill Field Wording**
+   - **Artifact:** `docs/standards/wbs.md:12`
+   - **Finding:** WBS entry reads "Stage Pipeline (ordered stage definitions, prompts, agent assignment, skill/slash-command assignment, and auto-advance flag)" — "skill/slash-command assignment" is imprecise. The glossary and system prompt define "skill" as a slash command, so "skill assignment" alone is sufficient. Compare to `wbs-dictionary.md:1.1.2` which correctly uses "skill/slash-command assignment" with the bracketed `[Skill: /<skill-name>]` directive explanation.
+   - **Severity:** Low — cosmetic inconsistency between WBS and WBS dictionary.
+
+4. **project-standards.md §2 Version Notes Incomplete**
+   - **Artifact:** `docs/standards/project-standards.md:64` (Next.js 16 key changes)
+   - **Finding:** The bullet "**`next lint` has been removed.** Project uses Biome via `npm run lint` (GAP-13 resolved)" is good, but the section does not call out that the React Compiler is now enabled (GAP-14 resolved) even though the "React Compiler is built-in and stable" line mentions it.
+   - **Severity:** Low — this was already documented, just not as a GAP-14 resolution call-out like GAP-13 has.
+
+5. **RTM §Gap Traceability Duplicate Entry**
+   - **Artifact:** `docs/standards/rtm.md:170-171`
+   - **Finding:** GAP-19 appears twice in the gap traceability table:
+     ```
+     | GAP-19 | mapStageError utility not adopted | API §7 | Resolved |
+     | GAP-19 | mapStageError adoption | API §7 | Resolved |
+     ```
+   - **Severity:** Low — cosmetic duplicate that should be merged.
+
+### Low Priority
+
+6. **Glossary "Stage" Definition Omits `maxDisplayItems`**
+   - **Artifact:** `docs/standards/glossary.md:22-29`
+   - **Finding:** The Glossary Stage definition lists `prompt`, `agentId`, `autoAdvanceOnComplete`, `maxDisplayItems` but does not mention `skill`. Compare to `database-design.md:121` which correctly includes `skill` with description.
+   - **Severity:** Low — all other Stage field definitions are complete.
+
+7. **UI Design §Layout Conventions Missing FileBrowser/FileViewer Entry Points**
+   - **Artifact:** `docs/standards/ui-design.md:41-43`
+   - **Finding:** The feature components table lists FileBrowser and FileViewer but does not include the corresponding URL route `/dashboard/files` for context. Compare to user-journey.md:210 which correctly shows Files → `/dashboard/files`.
+   - **Severity:** Low — URL route is documented elsewhere but the component table is the canonical UI inventory.
+
+8. **user-journey.md §Entry Points Missing `/dashboard/files`**
+   - **Artifact:** `docs/standards/user-journey.md:200-210`
+   - **Finding:** The entry points table lists all major dashboard pages but omits Files (`/dashboard/files`) — Journey 7 "Browse Project Files" references it in the flow diagram but it's missing from the entry points table. Note: Journey 7 itself is present and correct.
+   - **Severity:** Low — Journey 7 exists; only the entry point row is missing.
+
+## Doc Audit Summary
+
+| Severity | Count | Description |
+|----------|-------|-------------|
+| High | 1 | Stale Next.js version in project-standards.md §1 (GAP-10 resolved but version not updated) |
+| Medium | 2 | Stale timestamp in documentation-standards.md; WBS §1.1.2 imprecise wording |
+| Low | 1 | RTM duplicate GAP-19 entry |
+
+**Findings retracted (4):** Glossary Stage definition already has `skill`; UI Design already has FileBrowser/FileViewer; user-journey.md already has Files entry point; React Compiler already documented inline as GAP-14 resolved.
+
+**Overall compliance: Good.** All 17 standards documents exist and cover their respective domains. The main finding is that `project-standards.md` was not updated to reflect GAP-10's own resolution (Next.js stable pinning) — this is the most actionable fix. All other findings were either cosmetic or already addressed. The RTM duplicate entry is a simple cleanup. No broken journeys, no missing implementations, no stale requirements.
+
+## Doc Audit Fix Log
+
+### High Priority
+
+1. **Stale project-standards.md Version Reference**
+   - ✅ Fixed — Updated `project-standards.md:11` from "16.2.1-canary.45" to "^16.0.0" stable, and removed "Consider moving to `next@^16` stable" note from the version-specific section since it is now on stable.
+   - ✅ Fixed — `project-standards.md:54` updated: "Running Next.js **16.2.1-canary.45**" → "Running Next.js **^16.0.0** (stable)". The line "Consider moving to `next@^16` stable" removed since already on stable.
+
+### Medium Priority
+
+2. **documentation-standards.md Stale Timestamp**
+   - ✅ Fixed — Updated `docs/standards/documentation-standards.md:3` from "2026-04-22 (AUDIT-004)" to "2026-04-24".
+
+3. **WBS §1.1.2 Inconsistent Skill Field Wording**
+   - ✅ Fixed — Updated `docs/standards/wbs.md:12` to use consistent "skill/slash-command assignment" phrasing matching WBS dictionary.
+
+4. **project-standards.md §2 Version Notes Incomplete**
+   - ✅ Not applicable — GAP-14 already documented as "React Compiler is built-in and stable — automatically memoizes components, reducing unnecessary re-renders. Enabled via `reactCompiler: true` in `next.config.mjs` (GAP-14 resolved)." The resolution call-out is already present.
+
+5. **RTM §Gap Traceability Duplicate Entry**
+   - ✅ Fixed — Merged duplicate GAP-19 entries into single row: "| GAP-19 | mapStageError utility adoption | API §7 | Resolved |"
+
+### Low Priority
+
+6. **Glossary "Stage" Definition Omits `skill`**
+   - ✅ Not applicable — Glossary Stage definition at `docs/standards/glossary.md:26-29` already includes `skill` with full description. Finding retracted.
+
+7. **UI Design §Layout Conventions Missing Files Route**
+   - ✅ Not applicable — FileBrowser/FileViewer are documented in `docs/standards/ui-design.md:42-43`. The URL route `/dashboard/files` is documented in `docs/standards/user-journey.md:209`. Finding retracted.
+
+8. **user-journey.md §Entry Points Missing `/dashboard/files`**
+   - ✅ Not applicable — Files entry point already exists at `docs/standards/user-journey.md:209`: `| Files | /dashboard/files | File system browser with preview |`. Finding retracted.
+
+## Doc Audit Complete
+
+All documentation artifacts audited against the standards artifacts and requirements workflow. Summary of changes made:
+
+1. **`project-standards.md`** — Version updated from canary "16.2.1-canary.45" to stable "^16.0.0"; stale "Consider moving to `next@^16` stable" note removed; "Running Next.js 16.2.1-canary.45" updated to "Running Next.js ^16.0.0 (stable)".
+2. **`documentation-standards.md`** — Timestamp updated from "2026-04-22 (AUDIT-004)" to "2026-04-24".
+3. **`wbs.md`** — Stage Pipeline entry updated with consistent "skill/slash-command assignment with `[Skill: /<skill-name>]` directive injection" phrasing matching WBS dictionary.
+4. **`rtm.md`** — Duplicate GAP-19 entry merged into single row.
+
+**Findings verified as already correct (retracted):**
+- Glossary Stage definition already includes `skill` field (lines 26-29)
+- UI Design component table has FileBrowser/FileViewer (lines 42-43) and URL route already in user-journey.md
+- User journey entry points table already has Files entry (line 209)
+
+**Findings in prior audit cycle already addressed:**
+- GAP-14 (React Compiler) already documented in project-standards.md as "(GAP-14 resolved)" inline
+
+**Codebase audit confirmation:**
+- All 17 standards documents exist and are internally consistent
+- No broken user journeys, no missing implementations, no stale requirements
+- REQ-00110 (skill field in stages) fully implemented and documented
+- All 22 tracked gaps (11 resolved, 1 partial, 10 open) accurately reflected in documentation
