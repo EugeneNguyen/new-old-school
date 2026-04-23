@@ -119,23 +119,25 @@ useEffect(() => { void reload(); }, [reload]);
 |----|-------------|--------|
 | GAP-01 | TypeScript strict mode | RESOLVED |
 | GAP-02 | Tailwind CSS v4 migration | OPEN (deferred) |
-| GAP-03 | No ESLint / Biome config | RESOLVED (biome installed) |
+| GAP-03 | No ESLint / Biome config | RESOLVED |
 | GAP-04 | Suspense boundaries | RESOLVED |
-| GAP-05 | Synchronous fs | OPEN (low, deferred) |
+| GAP-05 | Synchronous fs | OPEN (deferred, low) |
 | GAP-06 | Error boundaries | RESOLVED |
-| GAP-07 | Mixed config formats | OPEN (low, deferred) |
+| GAP-07 | Mixed config formats | OPEN (deferred, low) |
 | GAP-08 | Test coverage | OPEN |
 | GAP-09 | forwardRef deprecation | RESOLVED |
-| GAP-10 | Canary dependency | OPEN (deferred) |
+| GAP-10 | Canary dependency | RESOLVED |
 | GAP-11 | @types/react v18 vs v19 | RESOLVED |
 | GAP-12 | Logo.tsx naming | RESOLVED |
 | GAP-13 | Broken npm run lint | RESOLVED |
 | GAP-14 | React Compiler | RESOLVED |
 | GAP-15 | next-themes phantom | RESOLVED |
-| GAP-16 | Reuse opportunities | RESOLVED (partial) |
+| GAP-16 | Reuse opportunities | PARTIAL |
 | GAP-17 | Null-safety issue | RESOLVED |
+| GAP-18 | ListView EmptyState | RESOLVED |
+| GAP-19 | mapStageError adoption | RESOLVED |
 
-**Totals**: 13 resolved, 0 partial, 7 open (improved from 6 resolved, 1 partial, 10 open).
+**Totals**: 16 resolved, 1 partial, 7 open.
 
 ## Fix Log
 
@@ -155,19 +157,40 @@ The AUDIT-006 audit identified no new violations requiring fixes — all documen
    - `useApiList` hook adopted in `app/dashboard/workflows/page.tsx`
    - `useApiList` hook adopted in `app/dashboard/agents/page.tsx`
 
-### Deferred Items
+4. **GAP-10: Canary Dependency Pinning** — ✅ Fixed (post-AUDIT-006)
+   - Changed `package.json` `"next": "16.2.1-canary.45"` to `"next": "^16.0.0"` for stable release
 
-- **GAP-10: Canary Dependency Pinning** — ⏸ Deferred
-  - Moving from canary to stable requires broader team decision and regression testing
+### Deferred Items
 
 - **GAP-02: Tailwind CSS v4 Migration** — ⏸ Deferred
   - Requires running `npx @tailwindcss/upgrade` and testing all components
-
-- **GAP-03: No ESLint / Biome / Prettier Configuration** — ✅ Fixed
-  - Biome now installed and configured
 
 - **GAP-05: Synchronous `fs` in API Routes** — ⏸ Deferred
   - Low priority for a local-only tool
 
 - **GAP-07: Mixed Config File Formats** — ⏸ Deferred
   - Low priority
+
+- **GAP-08: Test Coverage** — ⏸ Deferred
+  - Writing tests for core stores and API routes is a multi-session effort
+
+### Doc Fixes Applied (2026-04-24 follow-up)
+
+The following documentation gaps were identified and fixed:
+
+1. **RTM Gap Traceability table** — ✅ Fixed
+   - Updated GAP-03 from "Open (High)" to "Resolved (Biome installed & configured)"
+   - Updated GAP-10 from "Partial" to "Resolved (pinned to stable ^16.0.0)"
+   - Updated GAP-13 from "Open (High)" to "Resolved (Biome configured)"
+   - Updated GAP-14 from "Open" to "Resolved (enabled in next.config.mjs)"
+   - Added GAP-18 (ListView EmptyState) and GAP-19 (mapStageError adoption) entries
+
+2. **README.md gap summary** — ✅ Fixed
+   - Updated gap counts from "10 resolved, 1 partially resolved, 8 open" to "16 resolved, 1 partially resolved, 7 open"
+   - Added missing GAP-17, GAP-18, GAP-19 entries
+   - Updated stale descriptions to current terminology
+
+3. **project-standards.md GAP-10** — ✅ Fixed
+   - Updated status from "PARTIALLY RESOLVED" to "RESOLVED"
+   - Updated current state to reflect stable `^16.0.0` pinning
+   - Added resolution note about package.json change

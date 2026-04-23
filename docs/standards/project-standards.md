@@ -289,11 +289,10 @@ The following deviations from current best practices should be tracked for remed
 - **Resolution**: All 14 `forwardRef` usages migrated to React 19 ref-as-prop pattern across 5 UI files (`button.tsx`, `toast.tsx`, `input.tsx`, `scroll-area.tsx`, `card.tsx`).
 
 ### GAP-10: Canary Dependency Pinning
-- **Status**: PARTIALLY RESOLVED
-- **Current**: `react` (19.2.5) and `react-dom` (19.2.5) are on stable releases. `next` remains on canary (`16.2.1-canary.45`) but is pinned to a specific version.
-- **Standard**: Next.js 16 is now the stable release. Consider whether canary is still needed.
-- **Impact**: Canary builds may introduce unexpected behavior changes vs stable.
-- **Recommendation**: Evaluate whether Next.js canary features are still required. If not, move to `next@^16` stable.
+- **Status**: RESOLVED (AUDIT-008 follow-up)
+- **Current**: `react` (19.2.5) and `react-dom` (19.2.5) are on stable releases. `next` pinned to `^16.0.0` stable.
+- **Standard**: Next.js 16 is now the stable release.
+- **Resolution**: Changed `package.json` next version from `16.2.1-canary.45` to `^16.0.0`.
 
 ### GAP-11: `@types/react` v18 with React 19 stable
 - **Status**: RESOLVED (AUDIT-007)

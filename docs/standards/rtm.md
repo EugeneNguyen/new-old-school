@@ -1,6 +1,6 @@
 # Requirement Traceability Matrix (RTM)
 
-> Last updated: 2026-04-23
+> Last updated: 2026-04-24
 
 ---
 
@@ -118,6 +118,8 @@
 | REQ-00108 | Workspace switch redirects to dashboard instead of showing 404 | Bug report | `docs/standards/ux-design.md`, `docs/standards/system-architecture.md` | `components/dashboard/WorkspaceSwitcher.tsx` | Manual validation — all 6 ACs pass (see REQ-00108 Validation section) | Done |
 | REQ-00109 | File system — Create Folder function | Feature request | `docs/standards/api-reference.md`, `docs/standards/system-architecture.md`, `docs/standards/rtm.md`, `docs/standards/glossary.md` (FileBrowser), `docs/standards/ui-design.md` | `app/api/workspaces/mkdir/route.ts` (new), `components/dashboard/FileBrowser.tsx` (modified) | Manual validation — all 8 ACs pass (see REQ-00109 Validation section) | Done |
 | REQ-00110 | Allow setting slash command/skill in the stages | Feature request | `docs/standards/wbs.md` (1.1.2, 1.3.3, 1.4.5), `docs/standards/glossary.md` (Stage) | `types/workflow.ts` (`Stage`), `lib/workflow-store.ts` (`StagePatch`, `readStages`, `updateStage`, `addStage`), `app/api/workflows/[id]/stages/[stageName]/route.ts`, `lib/system-prompt.ts` (`buildAgentPrompt`), `lib/stage-pipeline.ts` (`triggerStagePipeline`), `components/dashboard/StageDetailDialog.tsx` | Manual validation — all 7 ACs pass (see REQ-00110 Validation section) | Done |
+| REQ-00106 | File system: Able to upload file | Feature request | `docs/standards/ui-design.md`, `docs/standards/security-design.md`, `docs/standards/api-reference.md` | `app/api/workspaces/upload/route.ts`, `components/dashboard/FileBrowser.tsx` | Manual validation — all 9 ACs pass (see REQ-00106 Validation section) | Done |
+| REQ-00104 | NOS server stability & diagnostics | Operator report | `docs/standards/system-architecture.md`, `docs/standards/error-handling-strategy.md` | `lib/auto-advance-sweeper.ts`, `lib/auto-advance.ts`, `lib/stage-pipeline.ts`, `bin/cli.mjs`, `app/api/health/route.ts` | Manual validation — all 6 ACs pass | Done |
 
 ---
 
@@ -148,19 +150,22 @@
 | Gap ID | Description | Standard Section | Remediation Status |
 |--------|-------------|-----------------|-------------------|
 | GAP-01 | TypeScript strict: false | TS §4 | Resolved |
-| GAP-02 | Tailwind CSS v3 (v4 available) | Tailwind §5 | Open |
-| GAP-03 | No linter config | Infra §8 | Open (High) |
+| GAP-02 | Tailwind CSS v3 (v4 available) | Tailwind §5 | Open (deferred) |
+| GAP-03 | No linter config | Infra §8 | Resolved (Biome installed & configured) |
 | GAP-04 | Incomplete Suspense boundaries | Next.js §2 | Resolved |
-| GAP-05 | Synchronous fs in routes | Data §10 | Open |
+| GAP-05 | Synchronous fs in routes | Data §10 | Open (deferred, low priority) |
 | GAP-06 | Incomplete error boundaries | Next.js §2 | Resolved |
-| GAP-07 | Mixed config formats | Data §10 | Open |
+| GAP-07 | Mixed config formats | Data §10 | Open (deferred, low priority) |
 | GAP-08 | Limited test coverage | Testing §6 | Open |
 | GAP-09 | forwardRef deprecation | React §3 | Resolved |
-| GAP-10 | Canary dependency pinning | Next.js §2 | Partial |
-| GAP-11 | @types/react v18 mismatch | TS §4 | Open |
+| GAP-10 | Canary dependency pinning | Next.js §2 | Resolved (pinned to stable ^16.0.0) |
+| GAP-11 | @types/react v18 mismatch | TS §4 | Resolved (updated to 19.2.14) |
 | GAP-12 | Logo.tsx naming | File Org §8 | Resolved |
-| GAP-13 | Broken lint script | Next.js §2 | Open (High) |
-| GAP-14 | React Compiler not enabled | Next.js §2 | Open |
-| GAP-15 | next-themes phantom dep | Infra §8 | Open |
-| GAP-16 | Remaining reuse opportunities (NavLink, EmptyState, useApiList, mapStageError, withErrorHandler, parseBody) | Code Quality | Open |
-| GAP-17 | Null-safety in `createItem` (workflow-store.ts:798 `config` may be null) | TS §4 | Open |
+| GAP-13 | Broken lint script | Next.js §2 | Resolved (Biome configured) |
+| GAP-14 | React Compiler not enabled | Next.js §2 | Resolved (enabled in next.config.mjs) |
+| GAP-15 | next-themes phantom dep | Infra §8 | Resolved (added to package.json) |
+| GAP-16 | Remaining reuse opportunities | Code Quality | Partial (extractions adopted, remaining deferred) |
+| GAP-17 | Null-safety in `createItem` | TS §4 | Resolved |
+| GAP-18 | ListView EmptyState | UI §1 | Resolved |
+| GAP-19 | mapStageError utility not adopted | API §7 | Resolved |
+| GAP-19 | mapStageError adoption | API §7 | Resolved |
