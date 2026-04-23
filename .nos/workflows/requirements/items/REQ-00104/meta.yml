@@ -1,0 +1,87 @@
+title: >-
+  Sometime the npx nos stopped and i need to move it again, check and fix that,
+  if cannot see anything, put the logging method to figure it out in the future
+stage: Done
+status: Todo
+comments:
+  - text: >-
+      [runtime] session log stalled; The item body is empty — all context is in
+      the title. Let me explore the NOS runtime to understand what could cause
+      `npx nos` to stop unexpectedly.
+    createdAt: '2026-04-23T00:56:18.565Z'
+    updatedAt: '2026-04-23T00:56:18.565Z'
+    author: runtime
+  - text: >-
+      [runtime] session log stalled; I have enough context now. Let me write the
+      specification for REQ-00104, covering the NOS server stability and
+      diagnostics requirement.
+    createdAt: '2026-04-23T00:58:27.194Z'
+    updatedAt: '2026-04-23T00:58:27.194Z'
+    author: runtime
+  - text: >-
+      All 6 acceptance criteria for REQ-00104 are now implemented:
+
+
+      **AC-1** (`instrumentation.ts`): Process-level `uncaughtException` and
+      `unhandledRejection` handlers installed on server startup — log to
+      `~/.nos/runtime/server.log` with `[UNCAUGHT]`/`[UNHANDLED]` prefix and ISO
+      timestamp, process continues running (best-effort resilience).
+
+
+      **AC-2** (`lib/auto-advance-sweeper.ts`): The sweeper now falls back to 60
+      000 ms when `readHeartbeatMs()` throws, and unconditionally reschedules
+      after `tick()` even if tick throws. Previously, `readHeartbeatMs()`
+      failure caused `schedule()` to return early, permanently stopping the
+      heartbeat.
+
+
+      **AC-3** (`lib/auto-advance-sweeper.ts`): Added structured lifecycle
+      logging — tick start, tick end (with sweep count and duration), and
+      next-tick scheduling. Exported `lastTickDurationMs` and
+      `lastTickItemsSwept` for the health endpoint.
+
+
+      **AC-4** (`app/api/health/route.ts` new): `GET /api/health` returns `{
+      status: "ok", uptime, heartbeat: { lastTickAt, lastTickDurationMs,
+      lastTickItemsSwept, nextTickIn, stale } }` — `stale: true` when last tick
+      was more than 3× the interval ago.
+
+
+      **AC-5** (`bin/cli.mjs`): When `isAlive()` returns false with a lockfile
+      present, the CLI now auto-restarts the server and re-checks liveness
+      rather than deleting the lockfile and showing "Run in background."
+
+
+      **AC-6** (log format): All runtime log calls in `auto-advance-sweeper.ts`,
+      `auto-advance.ts`, and `stage-pipeline.ts` now use `[<ISO-timestamp>]
+      [<component>] <message>` format. Also updated `error-handling-strategy.md`
+      with a Process-Level Error Handling section documenting the new behaviors.
+    createdAt: '2026-04-23T01:06:32.332Z'
+    updatedAt: '2026-04-23T01:06:32.332Z'
+    author: runtime
+  - text: >-
+      [runtime] session log stalled; Let me try a different approach - write a
+      debug script that tests the import chain:
+    createdAt: '2026-04-23T01:27:03.510Z'
+    updatedAt: '2026-04-23T01:27:03.510Z'
+    author: runtime
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 46b235b0-f80d-4b2f-9a61-cf2fde68e2ec
+    startedAt: '2026-04-23T00:53:34.880Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 7d1e1740-1c5b-4c60-8077-16e5d6e3af7e
+    startedAt: '2026-04-23T00:56:25.922Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 6350d4ad-6bae-456e-aae2-b04877df05ac
+    startedAt: '2026-04-23T00:58:34.906Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 312e4832-f19f-4d6d-94d8-42c2053f0baa
+    startedAt: '2026-04-23T01:06:39.677Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-23T01:27:03.514Z'

@@ -1,3 +1,12 @@
+// DEBUG: confirm module is loaded
+const { homedir } = require('os');
+const fs = require('fs');
+const path = require('path');
+const debugLog = path.join(homedir(), '.nos', 'runtime', 'sweeper-debug.log');
+try {
+  fs.appendFileSync(debugLog, `[${new Date().toISOString()}] MODULE LOADED pid=${process.pid} cwd=${process.cwd()}\n`);
+} catch (e) { console.error('DEBUG write failed:', e); }
+
 import { listItems, listWorkflows } from '@/lib/workflow-store';
 import {
   autoAdvanceIfEligible,
@@ -23,13 +32,23 @@ function setTimer(handle: TimerHandle): void {
   (globalThis as GlobalWithTimer)[GLOBAL_KEY] = handle;
 }
 
-async function sweepWorkspace(): Promise<void> {
+function log(component: string, message: string): void {
+  console.log(`[${new Date().toISOString()}] [${component}] ${message}`);
+}
+
+// Heartbeat state — exported for the health endpoint
+export let lastTickAt: Date | null = null;
+export let lastTickDurationMs: number = 0;
+export let lastTickItemsSwept: number = 0;
+
+async function sweepWorkspace(): Promise<number> {
   let workflows: string[] = [];
+  let swept = 0;
   try {
     workflows = listWorkflows();
   } catch (err) {
-    console.error('[auto-advance] listWorkflows failed', err);
-    return;
+    console.error(`[${new Date().toISOString()}] [auto-advance] listWorkflows failed: ${String(err)}`);
+    return swept;
   }
 
   for (const workflowId of workflows) {
@@ -37,7 +56,9 @@ async function sweepWorkspace(): Promise<void> {
     try {
       items = listItems(workflowId);
     } catch (err) {
-      console.error(`[auto-advance] listItems failed for workflow=${workflowId}`, err);
+      console.error(
+        `[${new Date().toISOString()}] [auto-advance] listItems failed for workflow=${workflowId}: ${String(err)}`
+      );
       continue;
     }
     for (const itemId of items) {
@@ -45,17 +66,20 @@ async function sweepWorkspace(): Promise<void> {
         await completeSessionIfFinished(workflowId, itemId);
         await autoAdvanceIfEligible(workflowId, itemId);
         await autoStartIfEligible(workflowId, itemId);
+        swept++;
       } catch (err) {
         console.error(
-          `[auto-advance] tick failed for workflow=${workflowId} item=${itemId}`,
-          err
+          `[${new Date().toISOString()}] [auto-advance] tick failed for workflow=${workflowId} item=${itemId}: ${String(err)}`
         );
       }
     }
   }
+  return swept;
 }
 
 async function tick(): Promise<void> {
+  const ts = Date.now();
+  log('heartbeat', 'tick start');
   const workspaces = listWorkspaces();
   const primaryRoot = getProjectRoot();
   const workspaceRoots = workspaces.map((w) => w.absolutePath);
@@ -63,19 +87,40 @@ async function tick(): Promise<void> {
     ? workspaceRoots
     : [primaryRoot, ...workspaceRoots];
 
+  let totalSwept = 0;
   for (const root of allRoots) {
     try {
       await runWithProjectRoot(root, async () => {
-        await sweepWorkspace();
-        await tickRoutines();
+        const count = await sweepWorkspace();
+        totalSwept += count;
       });
     } catch (err) {
-      console.error(`[auto-advance] sweep failed for root=${root}`, err);
+      console.error(
+        `[${new Date().toISOString()}] [auto-advance] sweep failed for root=${root}: ${String(err)}`
+      );
     }
   }
+
+  try {
+    await tickRoutines();
+  } catch (err) {
+    console.error(`[${new Date().toISOString()}] [auto-advance] tickRoutines failed: ${String(err)}`);
+  }
+
+  const elapsed = Date.now() - ts;
+  lastTickAt = new Date();
+  lastTickDurationMs = elapsed;
+  lastTickItemsSwept = totalSwept;
+  log('heartbeat', `tick end, swept ${totalSwept} items in ${elapsed}ms`);
 }
 
 function schedule(): void {
+  // TRACE: confirm sweeper is alive
+  const debugLog = '/Users/binhnguyenxuan/.nos/runtime/sweeper-debug.log';
+  try {
+    const ts = new Date().toISOString();
+    require('fs').appendFileSync(debugLog, `[${ts}] schedule() called pid=${process.pid}\n`);
+  } catch {}
   const existing = getTimer();
   if (existing) {
     clearTimeout(existing);
@@ -86,18 +131,22 @@ function schedule(): void {
   try {
     ms = readHeartbeatMs();
   } catch (err) {
-    console.error('[auto-advance] readHeartbeatMs failed', err);
-    return;
+    log('heartbeat', 'heartbeat config unreadable, using default 60s');
+    ms = 60_000;
   }
 
-  if (!Number.isFinite(ms) || ms <= 0) return;
+  if (!Number.isFinite(ms) || ms <= 0) {
+    log('heartbeat', `invalid interval ${ms}, using default 60s`);
+    ms = 60_000;
+  }
 
   const handle = setTimeout(async () => {
     try {
       await tick();
     } catch (err) {
-      console.error('[auto-advance] tick failed', err);
+      console.error(`[${new Date().toISOString()}] [heartbeat] tick threw unexpectedly: ${String(err)}`);
     }
+    // Always reschedule — self-healing
     schedule();
   }, ms);
 
@@ -106,12 +155,38 @@ function schedule(): void {
   }
 
   setTimer(handle);
+  log('heartbeat', `next tick in ${ms}ms`);
 }
 
 export function startHeartbeat(): void {
-  schedule();
+  const { homedir } = require('os');
+  const fs = require('fs');
+  const path = require('path');
+  const debugLog = path.join(homedir(), '.nos', 'runtime', 'sweeper-debug.log');
+  try {
+    fs.appendFileSync(debugLog, `[${new Date().toISOString()}] startHeartbeat() ENTER pid=${process.pid}\n`);
+  } catch {}
+  try {
+    schedule();
+    try {
+      fs.appendFileSync(debugLog, `[${new Date().toISOString()}] startHeartbeat() schedule() SUCCESS pid=${process.pid}\n`);
+    } catch {}
+  } catch (e) {
+    try {
+      fs.appendFileSync(debugLog, `[${new Date().toISOString()}] startHeartbeat() EXCEPTION: ${String(e)}\n`);
+    } catch {}
+    console.error('[heartbeat] startHeartbeat failed:', e);
+  }
 }
 
 export function rescheduleHeartbeat(): void {
   schedule();
+}
+
+export function getHeartbeatState(): {
+  lastTickAt: Date | null;
+  lastTickDurationMs: number;
+  lastTickItemsSwept: number;
+} {
+  return { lastTickAt: lastTickAt, lastTickDurationMs: lastTickDurationMs, lastTickItemsSwept: lastTickItemsSwept };
 }

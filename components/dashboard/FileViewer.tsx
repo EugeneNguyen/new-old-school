@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { X, Loader2, AlertCircle, FileText, Music, FileQuestion } from 'lucide-react';
+import { X, Loader2, AlertCircle, FileText, Music, FileQuestion, Download } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -97,6 +97,16 @@ export default function FileViewer({ entry, onClose }: FileViewerProps) {
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/40 shrink-0">
         <div className="truncate text-sm font-medium flex-1">{previewData?.name ?? entry.name}</div>
+        <a
+          href={`/api/workspaces/serve?path=${encodeURIComponent(entry.absolutePath)}&download=true`}
+          target="_blank"
+          rel="noopener noreferrer"
+          type="button"
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium border border-transparent bg-transparent hover:bg-accent hover:text-accent-foreground h-8 px-2 transition-colors mr-1"
+          title="Download file"
+        >
+          <Download className="w-4 h-4" />
+        </a>
         <Button type="button" size="sm" variant="ghost" onClick={onClose}>
           <X className="w-4 h-4" />
         </Button>
@@ -207,6 +217,7 @@ export default function FileViewer({ entry, onClose }: FileViewerProps) {
           {!loading && !error && previewData && (classification.category === 'unsupported' || isBinaryTooLarge) && (
             <MetadataCard
               name={entry.name}
+              absolutePath={entry.absolutePath}
               size={previewData.size}
               modified={previewData.modified}
               extension={getFileExtension(entry.name)}
@@ -221,12 +232,14 @@ export default function FileViewer({ entry, onClose }: FileViewerProps) {
 
 function MetadataCard({
   name,
+  absolutePath,
   size,
   modified,
   extension,
   reason,
 }: {
   name: string;
+  absolutePath: string;
   size: number;
   modified: string;
   extension: string;
@@ -258,6 +271,18 @@ function MetadataCard({
         <div className="flex items-center gap-2 pt-2 border-t border-border text-sm text-muted-foreground">
           <AlertCircle className="w-4 h-4" />
           <span>{reason}</span>
+        </div>
+        <div className="pt-3 border-t border-border">
+          <a
+            href={`/api/workspaces/serve?path=${encodeURIComponent(absolutePath)}&download=true`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            title="Download file"
+          >
+            <Download className="w-4 h-4" />
+            Download
+          </a>
         </div>
       </CardContent>
     </Card>

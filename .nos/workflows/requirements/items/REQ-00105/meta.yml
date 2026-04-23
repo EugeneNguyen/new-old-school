@@ -1,0 +1,173 @@
+title: 'Dashboard: Adding visualization'
+stage: Done
+status: Todo
+comments:
+  - text: >-
+      Appended the analysis to `REQ-00105/index.md`. Key findings:
+
+
+      1. **Data source identified:** `ItemSession.startedAt` in `meta.yml` files
+      — but there is **no completion/end timestamp** in the current schema.
+      "Executed" must be scoped to sessions that *started* in the window.
+
+
+      2. **No charting library installed** — recharts (or equivalent) needs to
+      be added as a dependency during implementation.
+
+
+      3. **Six open questions** flagged, the most critical being whether
+      "executed" means "session started" (currently available) or "session
+      completed" (requires a schema change first).
+    createdAt: '2026-04-23T01:06:39.685Z'
+    updatedAt: '2026-04-23T01:06:39.685Z'
+    author: runtime
+  - text: >-
+      Appended the `## Specification` section to `REQ-00105/index.md`. The spec
+      resolves all 6 open questions from the analysis:
+
+
+      - **"Executed" → "Sessions tracked"** (AC-5) — label makes clear sessions
+      *started*, not completed
+
+      - **Default window** — 24h with hourly buckets; segmented control for 30d
+      (daily) and 1y (monthly)
+
+      - **Chart type** — Bar chart via recharts; all three windows
+
+      - **Real-time updates** — 30s `useEffect` polling
+
+      - **Empty state** — zero-height bars, not blanks (AC-4, AC-9)
+
+      - **Per-workflow filter** — deferred to future; API aggregates all
+      workflows (AC-8)
+
+
+      The spec also covers the API shape, file layout, WBS mapping (1.4.10
+      Activity Feed, 1.3.9 new sub-route), and 9 numbered ACs with test methods.
+      Ready for the next stage.
+    createdAt: '2026-04-23T01:08:55.533Z'
+    updatedAt: '2026-04-23T01:08:55.533Z'
+    author: runtime
+  - text: >-
+      All acceptance criteria are satisfied. Here's a summary of the
+      implementation:
+
+
+      **Files created:**
+
+      - `app/api/analytics/sessions/route.ts` — API endpoint aggregating
+      `ItemSession.startedAt` from all `meta.yml` files across all workflows,
+      returning bucketed counts for `24h`/`30d`/`1y` windows (zeros included for
+      empty buckets)
+
+      - `components/dashboard/SessionsChart.tsx` — Recharts bar chart with
+      segmented control for window switching, "Sessions tracked" label, 30s
+      polling via `useEffect`, and empty-state placeholder
+
+      - `app/api/analytics/sessions/route.test.ts` — Integration test suite
+
+
+      **Files modified:**
+
+      - `package.json` — added `recharts ^2.15.3`
+
+      - `app/dashboard/page.tsx` — added `<SessionsChart />` below status cards
+
+      - `docs/standards/api-reference.md` — documented the new endpoint
+
+      - `REQ-00105/index.md` — added implementation notes with AC coverage
+
+
+      **AC coverage:**
+
+      | AC | Status |
+
+      |----|--------|
+
+      | AC-1: Bar per bucket | ✓ |
+
+      | AC-2: Default 24h hourly | ✓ |
+
+      | AC-3: Segmented control | ✓ |
+
+      | AC-4: Zero-height bars | ✓ |
+
+      | AC-5: "Sessions tracked" label | ✓ |
+
+      | AC-6: 30s polling | ✓ |
+
+      | AC-7: API response shape | ✓ |
+
+      | AC-8: All workflows aggregated | ✓ |
+
+      | AC-9: Empty state | ✓ |
+    createdAt: '2026-04-23T01:15:53.115Z'
+    updatedAt: '2026-04-23T01:15:53.115Z'
+    author: runtime
+  - text: >-
+      All 9 acceptance criteria pass. Here's the validation summary:
+
+
+      | AC | Verdict | Evidence |
+
+      |----|---------|----------|
+
+      | AC-1 Bar per bucket | ✅ pass | `<BarChart data={buckets}><Bar
+      dataKey="count" /></>` — one bar per bucket |
+
+      | AC-2 Default 24h hourly | ✅ pass | `useState<Window>('24h')`;
+      `buildBuckets('24h')` produces 24 hourly buckets |
+
+      | AC-3 Segmented control | ✅ pass | Button group maps `['24h','30d','1y']`
+      to `setWindow()`; `fetchData()` re-fetches on change |
+
+      | AC-4 Zero-height bars | ✅ pass | `buildBuckets()` pre-populates all keys
+      with `count: 0`; no empty-slot blanks |
+
+      | AC-5 "Sessions tracked" label | ✅ pass | `<CardTitle>Sessions
+      tracked</CardTitle>` |
+
+      | AC-6 30s polling | ✅ pass | `setInterval(fetchData, 30_000)` in
+      `useEffect` |
+
+      | AC-7 API response shape | ✅ pass | Returns `{ window, buckets: [{ts,
+      count}], total, generatedAt }` exactly per spec |
+
+      | AC-8 All workflows aggregated | ✅ pass | `listWorkflows()` iterated with
+      no per-workflow filter |
+
+      | AC-9 Empty state | ✅ pass | `buckets.length === 0` renders "No session
+      data" placeholder |
+
+
+      **Documentation updates committed**: `## Validation` section appended to
+      `REQ-00105/index.md` with per-AC verdicts and evidence; RTM entry added
+      for REQ-00105 with "Done" status and all implementation files listed. Push
+      successful to `main`.
+    createdAt: '2026-04-23T01:20:03.664Z'
+    updatedAt: '2026-04-23T01:20:03.664Z'
+    author: runtime
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: adfc7478-5d25-4659-9bdc-0fc40726e5ac
+    startedAt: '2026-04-23T01:03:47.072Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 467e0868-b8f5-4773-aa66-54502f29aa94
+    startedAt: '2026-04-23T01:03:53.513Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: fe40a0fa-bb39-444a-8c43-bea339afda4a
+    startedAt: '2026-04-23T01:06:47.067Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 550b8c2d-f3cc-466b-9a74-fd6edb3d36c9
+    startedAt: '2026-04-23T01:09:02.920Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: b96fb5c0-28a9-4402-a7af-d834bf627b97
+    startedAt: '2026-04-23T01:16:00.916Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-23T01:20:03.669Z'

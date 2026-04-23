@@ -34,7 +34,7 @@ export async function PATCH(
         return createErrorResponse(`No comment at index ${idx}`, 'NotFound', 404);
       }
 
-      return NextResponse.json({ ok: true, text: updated });
+      return NextResponse.json({ ok: true, comment: updated });
     } catch (error) {
       console.error('Error updating comment:', error);
       return createErrorResponse('Failed to update comment');

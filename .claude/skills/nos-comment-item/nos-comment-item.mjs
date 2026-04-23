@@ -51,7 +51,7 @@ async function main() {
 
   const wf = encodeURIComponent(args.workflow);
   const item = encodeURIComponent(args.item);
-  const res = await httpJson('POST', `/api/workflows/${wf}/items/${item}/comments`, { text: args.text });
+  const res = await httpJson('POST', `/api/workflows/${wf}/items/${item}/comments`, { text: args.text, author: "agent" });
   if (!res.ok) {
     const msg = res.data?.error ?? res.text ?? `HTTP ${res.status}`;
     if (res.status === 404) {

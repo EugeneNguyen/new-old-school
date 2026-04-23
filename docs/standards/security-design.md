@@ -1,6 +1,6 @@
 # Security Design / Threat Model
 
-> Last updated: 2026-04-21
+> Last updated: 2026-04-23
 
 NOS is a **local-only** tool running on the operator's machine. It does not expose services to the network in production. Security considerations are primarily around local process safety and input validation.
 
@@ -80,7 +80,12 @@ NOS is a **local-only** tool running on the operator's machine. It does not expo
 - **Risk**: Unbounded file creation filling disk
 - **Mitigation**: Settings file capped at 64KB; workspace registry capped at 1MB; no other explicit limits (acceptable for local tool)
 
-### 6. Activity Limit Parameter
+### 6. File Browser Path Traversal
+- **Risk**: `/api/workspaces/browse`, `/api/workspaces/serve`, `/api/workspaces/preview` could be used to read files outside workspace root
+- **Mitigation**: Sandbox enforcement using `startsWith` check with path-separator suffix (hardened in REQ-00096 validation). Resolved path must begin with `<workspace-root>/`
+- **Binary guard**: Files over 100MB rejected by `/api/workspaces/serve` to prevent memory exhaustion
+
+### 7. Activity Limit Parameter
 - **Risk**: Extremely large `limit` values causing memory exhaustion
 - **Mitigation**: Clamped to `Math.max(1, Math.min(500, ...))` (F-06 fix)
 

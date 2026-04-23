@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { PanelLeftClose, PanelLeftOpen, Folder, ChevronDown, ChevronRight, Activity, CalendarClock } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Folder, ChevronDown, ChevronRight, Activity, CalendarClock, Package } from 'lucide-react';
 import { ToolRegistry } from '@/lib/tool-registry';
 import { cn } from '@/lib/utils';
 import { useSidebar } from './SidebarContext';
@@ -106,12 +106,6 @@ export function Sidebar() {
         </button>
         {!collapsed && workflowsExpanded && (
           <div className="pl-4 space-y-1">
-            <Link
-              href="/dashboard/workflows"
-              className="flex items-center px-3 py-2 rounded-md transition-colors text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-            >
-              All workflows…
-            </Link>
             {workflows.map((wf) => {
               const href = `/dashboard/workflows/${wf.id}`;
               const active = isActive(href, pathname);
@@ -134,6 +128,12 @@ export function Sidebar() {
                 </Link>
               );
             })}
+            <Link
+              href="/dashboard/workflows"
+              className="flex items-center px-3 py-2 rounded-md transition-colors text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            >
+              All workflows…
+            </Link>
           </div>
         )}
 
@@ -231,6 +231,29 @@ export function Sidebar() {
             >
               <Activity className="w-4 h-4 shrink-0" />
               {!collapsed && <span className="whitespace-nowrap overflow-hidden">Activity</span>}
+            </Link>
+          );
+        })()}
+
+        {/* Templates */}
+        {(() => {
+          const href = '/dashboard/templates';
+          const active = isActive(href, pathname);
+          return (
+            <Link
+              href={href}
+              title="Templates"
+              aria-current={active ? 'page' : undefined}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium',
+                'hover:bg-accent hover:text-accent-foreground',
+                'text-muted-foreground',
+                collapsed && 'justify-center px-0',
+                active && 'bg-accent text-accent-foreground'
+              )}
+            >
+              <Package className="w-4 h-4 shrink-0" />
+              {!collapsed && <span className="whitespace-nowrap overflow-hidden">Templates</span>}
             </Link>
           );
         })()}

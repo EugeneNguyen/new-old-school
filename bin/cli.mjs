@@ -379,7 +379,14 @@ async function runTUI(nextBin) {
     process.stdout.write(ESC + '[2J' + ESC + '[H');
 
     const lf = readLockfile();
-    const alive = await isAlive(lf);
+    let alive = await isAlive(lf);
+    if (!alive && lf) {
+      // AC-5: auto-restart on dead server
+      console.log(`[${new Date().toISOString()}] [nos] Server died (was started at ${lf.startedAt}). Restarting...`);
+      startDetachedServer(nextBin);
+      // Re-check after restart
+      alive = await isAlive(lf);
+    }
     if (!alive && lf) deleteLockfile();
 
     const firstLaunch = !alive;

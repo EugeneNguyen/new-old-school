@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { buildAgentPrompt } from './system-prompt.ts';
+import type { Comment } from '@/types/workflow';
 
 const BASE = {
   systemPrompt: 'sys',
@@ -10,6 +11,11 @@ const BASE = {
   workflowId: 'wf',
   itemId: 'it',
 };
+
+function makeComment(text: string, author = 'agent'): Comment {
+  const now = new Date().toISOString();
+  return { text, createdAt: now, updatedAt: now, author };
+}
 
 function extractItemContent(prompt: string): string {
   const match = prompt.match(/<item-content>\n([\s\S]*?)\n<\/item-content>/);
@@ -48,7 +54,7 @@ test('empty array produces byte-identical output to undefined', () => {
 test('all-blank comments produce byte-identical output to undefined', () => {
   const baseline = buildAgentPrompt({ ...BASE });
   assert.equal(
-    buildAgentPrompt({ ...BASE, comments: ['', '   ', '\n\t\n'] }),
+    buildAgentPrompt({ ...BASE, comments: [makeComment(''), makeComment('   '), makeComment('\n\t\n')] }),
     baseline
   );
 });
@@ -56,7 +62,7 @@ test('all-blank comments produce byte-identical output to undefined', () => {
 test('comments render between body and trailing ID lines, numbered from 1', () => {
   const prompt = buildAgentPrompt({
     ...BASE,
-    comments: ['first comment', 'second comment'],
+    comments: [makeComment('first comment'), makeComment('second comment')],
   });
   const item = extractItemContent(prompt);
   const expected = [
@@ -85,7 +91,7 @@ test('comments render between body and trailing ID lines, numbered from 1', () =
 test('blank comments are skipped and do not consume a number', () => {
   const prompt = buildAgentPrompt({
     ...BASE,
-    comments: ['first', '', '   ', 'second'],
+    comments: [makeComment('first'), makeComment(''), makeComment('   '), makeComment('second')],
   });
   const item = extractItemContent(prompt);
   assert.ok(item.includes('### Comment 1\nfirst'));
@@ -104,7 +110,7 @@ test('multi-line markdown inside a comment is preserved verbatim', () => {
     '',
     'and a trailing paragraph',
   ].join('\n');
-  const prompt = buildAgentPrompt({ ...BASE, comments: [complex] });
+  const prompt = buildAgentPrompt({ ...BASE, comments: [makeComment(complex)] });
   const item = extractItemContent(prompt);
   assert.ok(item.includes(`### Comment 1\n${complex}`));
   const lines = item.split('\n');
@@ -116,7 +122,7 @@ test('comments render even when body is absent', () => {
   const prompt = buildAgentPrompt({
     ...BASE,
     body: undefined,
-    comments: ['only a comment'],
+    comments: [makeComment('only a comment')],
   });
   const item = extractItemContent(prompt);
   const expected = [

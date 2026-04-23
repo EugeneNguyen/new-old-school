@@ -1,6 +1,6 @@
 title: Reorder sidemenu
-stage: Validation
-status: In Progress
+stage: Done
+status: Todo
 comments:
   - >-
     Analysis appended to `REQ-00099/index.md`. The key finding is that the
@@ -40,6 +40,14 @@ comments:
     remaining a Link to `/dashboard/activity`. The `config/tools.json` order was
     not modified. The collapsed sidebar displays icons in the same top-to-bottom
     sequence.
+  - >-
+    All 8 acceptance criteria for REQ-00099 pass. The sidebar now renders in the
+    required order (Dashboard → Workflows → Files → Claude Terminal → Members →
+    Activity → Settings), with Workflows remaining a collapsible `<button>`,
+    Activity remaining a `<Link>` to `/dashboard/activity`, `config/tools.json`
+    unchanged, active highlighting intact, and the expand/collapse state fully
+    preserved. The RTM has been updated with the implementation file and status
+    set to Done. Changes committed and pushed.
 sessions:
   - stage: Analysis
     adapter: claude
@@ -59,4 +67,4 @@ sessions:
     sessionId: fe8f4503-1ce1-4928-8917-c21c9f871d55
     startedAt: '2026-04-22T16:13:05.263Z'
     agentId: martin-senior-engineer
-updatedAt: '2026-04-22T16:13:05.274Z'
+updatedAt: '2026-04-22T16:15:06.347Z'

@@ -96,6 +96,24 @@ export async function PATCH(
       }
     }
 
+    if (body.skill !== undefined) {
+      if (body.skill !== null && typeof body.skill !== 'string') {
+        return createErrorResponse('"skill" must be a string or null', 'BadRequest', 400);
+      }
+      if (typeof body.skill === 'string') {
+        const trimmed = body.skill.trim();
+        if (trimmed.length === 0) {
+          patch.skill = null;
+        } else if (trimmed.length > 128) {
+          return createErrorResponse('"skill" must be at most 128 characters', 'BadRequest', 400);
+        } else {
+          patch.skill = trimmed;
+        }
+      } else {
+        patch.skill = null;
+      }
+    }
+
     if (Object.keys(patch).length === 0) {
       return createErrorResponse('No recognized fields in request body', 'BadRequest', 400);
     }

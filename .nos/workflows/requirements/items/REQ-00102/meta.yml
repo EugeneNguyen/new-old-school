@@ -1,0 +1,41 @@
+title: 'comment: we need more information'
+stage: Done
+status: Todo
+comments:
+  - >-
+    Analysis complete and appended to `index.md`. The requirement is a
+    well-scoped schema evolution — upgrading `comments: string[]` to `comments:
+    Comment[]` with `createdAt`, `updatedAt`, and `author` fields — touching ~15
+    files across types, store, API, UI, agent prompt rendering, and the CLI
+    skill. The main risks are around migration ordering (must normalize before
+    validation to avoid silent item drops) and YAML quoting of nested ISO
+    timestamps. Five open questions remain, the most consequential being the
+    author taxonomy and migration strategy.
+  - >-
+    [runtime] session log stalled; Now I have full context. Let me write the
+    specification section. I'll resolve the open questions using the analysis's
+    recommendations and trace into the RTM and WBS.
+  - >-
+    Implementation complete for REQ-00102. All acceptance criteria satisfied,
+    TypeScript clean, tests passing.
+  - 'API Error: Unable to connect to API (ConnectionRefused)'
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: f2321e89-d86d-467c-a33b-841fa80363da
+    startedAt: '2026-04-23T00:08:39.327Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 345c26c8-779f-4de4-8277-24d702c38a39
+    startedAt: '2026-04-23T00:13:11.688Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: f5c5f005-e124-4ed7-9246-7f1e9fe05d38
+    startedAt: '2026-04-23T00:16:28.572Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 379e7172-8769-4184-a4c5-b3e41936dcf3
+    startedAt: '2026-04-23T00:24:11.365Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-23T00:45:34.824Z'

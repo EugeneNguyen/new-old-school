@@ -13,7 +13,7 @@ import {
 } from '@/lib/markdown-preview';
 import { getItemStatusStyle } from '@/lib/item-status-style';
 import { Select } from '@/components/ui/select';
-import type { ItemStatus, Stage, WorkflowItem } from '@/types/workflow';
+import type { ItemStatus, Stage, WorkflowItem, Comment } from '@/types/workflow';
 import type { ActivityEntry } from '@/lib/activity-log';
 
 const ItemDescriptionEditor = dynamic(
@@ -83,7 +83,7 @@ export function ItemDetailDialog({
   const [title, setTitle] = useState('');
   const [stage, setStage] = useState('');
   const [status, setStatus] = useState<ItemStatus>('Todo');
-  const [comments, setComments] = useState<string[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [body, setBody] = useState('');
   const [loadingBody, setLoadingBody] = useState(false);
@@ -182,10 +182,23 @@ export function ItemDetailDialog({
     setSaving(true);
     setError(null);
     try {
-      const trimmedNew = newComment.trim();
-      const finalComments = trimmedNew ? [...comments, trimmedNew] : comments;
-
       onBeforeSave?.(item.id);
+
+      const trimmedNew = newComment.trim();
+      if (trimmedNew) {
+        const res = await fetch(
+          `/api/workflows/${encodeURIComponent(workflowId)}/items/${encodeURIComponent(item.id)}/comments`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: trimmedNew, author: 'user' }),
+          }
+        );
+        if (!res.ok) {
+          throw new Error((await res.text()) || `Comment failed: ${res.status}`);
+        }
+        setNewComment('');
+      }
 
       const metaRes = await fetch(
         `/api/workflows/${encodeURIComponent(workflowId)}/items/${encodeURIComponent(item.id)}`,
@@ -196,7 +209,6 @@ export function ItemDetailDialog({
             title: title.trim() || item.title,
             stage,
             status,
-            comments: finalComments,
           }),
         }
       );
@@ -257,7 +269,7 @@ export function ItemDetailDialog({
     const prevComments = [...comments];
     setComments((prev) => {
       const next = [...prev];
-      next[editingIndex] = trimmed;
+      next[editingIndex] = { ...next[editingIndex], text: trimmed };
       return next;
     });
     setEditingIndex(null);
@@ -272,6 +284,14 @@ export function ItemDetailDialog({
         }
       );
       if (!res.ok) throw new Error(`Failed to update comment: ${res.status}`);
+      const data: { comment?: Comment } = await res.json();
+      if (data.comment) {
+        setComments((prev) => {
+          const next = [...prev];
+          next[editingIndex] = data.comment!;
+          return next;
+        });
+      }
     } catch {
       setComments(prevComments);
       setError('Failed to update comment');
@@ -396,22 +416,29 @@ export function ItemDetailDialog({
                   key={idx}
                   className="group relative rounded-md border bg-secondary/40 px-3 py-2 text-sm"
                 >
+                  <div className="mb-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <span className="rounded bg-secondary px-1 py-0.5 font-medium">{c.author}</span>
+                    <span className="shrink-0">{formatRelativeTs(c.createdAt)}</span>
+                    {c.updatedAt !== c.createdAt && (
+                      <span className="shrink-0 italic" title={`Edited ${formatRelativeTs(c.updatedAt)}`}>edited</span>
+                    )}
+                  </div>
                   <div className="flex items-start gap-2">
                     <div
                       className={cn('min-w-0 flex-1', editingIndex === idx && 'hidden')}
-                      onClick={() => startEdit(idx, c)}
+                      onClick={() => startEdit(idx, c.text)}
                       role="button"
                       tabIndex={0}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
-                          startEdit(idx, c);
+                          startEdit(idx, c.text);
                         }
                       }}
                     >
-                      {c.trim() ? (
+                      {c.text.trim() ? (
                         <MarkdownPreview
-                          source={c}
+                          source={c.text}
                           remarkPlugins={commentRemarkPlugins}
                           rehypePlugins={commentRehypePlugins}
                           wrapperElement={{ 'data-color-mode': 'light' }}

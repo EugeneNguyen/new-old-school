@@ -1,6 +1,6 @@
 # Error Handling & Logging Strategy
 
-> Last updated: 2026-04-21
+> Last updated: 2026-04-23
 
 ---
 
@@ -65,6 +65,8 @@ The activity JSONL (`activity.jsonl`) records workflow mutations:
 | `stage-changed` | itemId, before, after | Track stage moves |
 | `status-changed` | itemId, before, after | Track status transitions |
 | `body-changed` | itemId, beforeHash, afterHash, lengthDiff | Track content edits (hashed for privacy) |
+| `routine-item-created` | itemId, workflowId | Track routine-created items |
+| `restart` | itemId, before (stage), after (first stage) | Track item restarts |
 
 ### Console Logging
 
@@ -146,3 +148,27 @@ Priority: Low (single-user local tool; request volume is minimal)
 | Failed stage pipeline | Item stays as Todo; operator can re-trigger |
 | Corrupted YAML | `js-yaml` throws; caught and returned as 500 |
 | Missing `.nos/` directory | Created on first write (store functions) |
+| Item restart at first stage | No-op: API returns 400 when item already at first stage with Todo status |
+| File preview too large | 100MB guard: FileViewer shows metadata card instead of loading binary content |
+| Workspace path escape | API returns 400 when browse/serve/preview path escapes workspace root (path-separator suffix check) |
+
+## Process-Level Error Handling
+
+The NOS server installs process-level error handlers during startup (via `instrumentation.ts`) for resilience:
+
+| Event | Handler Action | Process Exit? |
+|-------|----------------|---------------|
+| `uncaughtException` | Log `[UNCAUGHT]` + stack trace to `~/.nos/runtime/server.log` + stderr | No (best-effort) |
+| `unhandledRejection` | Log `[UNHANDLED]` + reason to `~/.nos/runtime/server.log` + stderr | No (best-effort) |
+
+The handlers do **not** terminate the process — this is intentional for a local dev tool. The goal is graceful degradation rather than hard crash.
+
+Heartbeat sweeper self-healing:
+- If `readHeartbeatMs()` throws, falls back to 60 000 ms
+- If `tick()` rejects, catches the error and reschedules anyway
+- Logs `[heartbeat] next tick in Xms` after every schedule call
+
+Health-check endpoint (`GET /api/health`):
+- Returns `{ status: "ok", uptime: <seconds>, heartbeat: { lastTickAt, nextTickIn, stale } }`
+- `stale: true` when last tick was more than 3× the heartbeat interval ago
+- Used by the CLI TUI for auto-restart detection

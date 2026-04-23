@@ -55,6 +55,7 @@ export async function triggerStagePipeline(
     comments: item.comments,
     workflowId,
     itemId,
+    skill: stage.skill ?? null,
   });
 
   try {
@@ -69,14 +70,14 @@ export async function triggerStagePipeline(
     if (resolvedAgentId) entry.agentId = resolvedAgentId;
     appendItemSession(workflowId, itemId, entry);
     const updated = updateItemMeta(workflowId, itemId, { status: 'In Progress' });
+    const ts4 = new Date().toISOString();
     console.log(
-      `[stage-pipeline] workflow=${workflowId} item=${itemId} stage=${stage.name} session=${sessionId} -> In Progress`
+      `[${ts4}] [stage-pipeline] workflow=${workflowId} item=${itemId} stage=${stage.name} session=${sessionId} -> In Progress`
     );
     return updated ?? item;
   } catch (err) {
     console.error(
-      `Stage pipeline failed for workflow=${workflowId} item=${itemId} stage=${stage.name}:`,
-      err
+      `[${new Date().toISOString()}] [stage-pipeline] Stage pipeline failed for workflow=${workflowId} item=${itemId} stage=${stage.name}: ${String(err)}`
     );
     return item;
   }

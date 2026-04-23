@@ -1,6 +1,6 @@
 # Database Design
 
-> Last updated: 2026-04-21
+> Last updated: 2026-04-23
 
 NOS uses a **file-based data model** with no external database. All state is persisted as YAML metadata files, Markdown content files, JSON configuration, and JSONL activity logs on the local filesystem. Atomic writes (temp file + rename) ensure consistency.
 
@@ -34,6 +34,7 @@ erDiagram
         string id PK
         string name
         string idPrefix UK
+        boolean routineEnabled "derived from routine.yaml"
     }
 
     STAGE {
@@ -80,7 +81,7 @@ erDiagram
 
     ACTIVITY_LOG {
         datetime timestamp PK
-        string type "title-changed|stage-changed|status-changed|body-changed|routine-item-created"
+        string type "title-changed|stage-changed|status-changed|body-changed|routine-item-created|restart"
         string itemId FK
         string before
         string after
@@ -148,7 +149,7 @@ erDiagram
 ### ActivityLog
 - **Storage**: `.nos/workflows/<id>/activity.jsonl` (append-only, line-delimited JSON)
 - **Fields per entry**: `timestamp` (ISO 8601), `type` (enum), `itemId`, `title`, type-specific before/after fields
-- **Entry types**: `title-changed`, `stage-changed`, `status-changed`, `body-changed`
+- **Entry types**: `title-changed`, `stage-changed`, `status-changed`, `body-changed`, `routine-item-created`, `restart`
 - **Query**: Supports `before` cursor and `limit` (clamped 1u2013500) for pagination
 
 ### Settings

@@ -30,8 +30,24 @@
     them.
 
 
-    End with a one-paragraph summary of the tech stack identified and the
-    standards documented or updated.
+    5. **Identify reusable opportunities** — Scan the codebase for duplicated or
+    near-identical logic, components, and utilities across different parts of the
+    program (e.g. repeated data-fetching patterns, copy-pasted validation logic,
+    inline styles repeated across components, identical error handling blocks).
+    For each opportunity found:
+       - Note the files/locations where the duplication exists
+       - Propose a shared component, hook, utility function, or helper that
+         consolidates the pattern
+       - Implement the abstraction in the appropriate shared location (e.g.
+         `lib/`, `components/ui/`, `hooks/`) if it is safe and non-breaking
+       - Update all call sites to use the new shared abstraction
+       - If implementation is too risky to do in this stage, flag it as a
+         `## Reuse Opportunity` in the item's `index.md` with file references
+         and a proposed solution for the Fix stage to address
+
+
+    End with a one-paragraph summary of the tech stack identified, the standards
+    documented or updated, and any reusable abstractions extracted or flagged.
   autoAdvanceOnComplete: true
   agentId: null
 - name: Audit with the technology standard
@@ -56,6 +72,8 @@
        - Deprecated APIs or patterns that should be replaced
        - Anti-patterns explicitly called out in the standards document
        - Structural conventions (folder layout, module boundaries, export styles)
+       - Duplicated logic, components, or utilities across the codebase that
+         should be consolidated into shared abstractions (flag as `Medium`)
 
 
     3. **Document findings** — For each violation found, record it in the item's

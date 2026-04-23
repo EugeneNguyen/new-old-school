@@ -1,6 +1,6 @@
 title: Update sidemenu
-stage: Validation
-status: In Progress
+stage: Done
+status: Todo
 comments:
   - >-
     Analysis complete for REQ-00100. The requirement is a straightforward JSX
@@ -29,6 +29,32 @@ comments:
     (AC-3), active-state styling is unchanged (AC-4), empty workflow list shows
     only "All workflows…" (AC-5), and collapsed mode is unaffected (AC-6). No
     deviations from standards.
+  - >-
+    Validation complete and pushed. All 6 acceptance criteria for REQ-00100
+    pass:
+
+
+    - **AC-1** ✅ `workflows.map(...)` renders at lines 109–130, above the "All
+    workflows…" link at lines 131–136 — confirmed by code inspection.
+
+    - **AC-2** ✅ `setWorkflows(data)` stores the API response array directly; no
+    sort applied.
+
+    - **AC-3** ✅ `{wf.routineEnabled && <CalendarClock .../>}` inside the map is
+    unchanged.
+
+    - **AC-4** ✅ `active && 'bg-accent text-accent-foreground'` via `cn()` on
+    each workflow link is unchanged.
+
+    - **AC-5** ✅ Empty array renders zero items from `map()`; static "All
+    workflows…" link is unconditional within the expanded guard.
+
+    - **AC-6** ✅ Entire block wrapped in `!collapsed && workflowsExpanded &&`.
+
+
+    No regressions in adjacent sidebar sections. The `## Validation` section was
+    appended to the item's `index.md`, the RTM updated with REQ-00100 (Done),
+    and changes committed and pushed.
 sessions:
   - stage: Analysis
     adapter: claude
@@ -52,4 +78,4 @@ sessions:
     sessionId: 9655a000-37d5-4bc4-aafb-a4ba6c029412
     startedAt: '2026-04-22T22:58:11.524Z'
     agentId: martin-senior-engineer
-updatedAt: '2026-04-22T22:58:11.535Z'
+updatedAt: '2026-04-22T23:00:12.531Z'

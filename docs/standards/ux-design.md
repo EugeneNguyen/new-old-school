@@ -1,6 +1,6 @@
 # UX Design
 
-> Last updated: 2026-04-21
+> Last updated: 2026-04-23
 
 ---
 
@@ -26,9 +26,26 @@
 - **Stage settings**: Inline form fields in stage detail dialog
 
 ### Navigation
-- **Sidebar**: Persistent left sidebar with workspace/workflow hierarchy
-- **Breadcrumbs**: Implied by sidebar active state (no explicit breadcrumb trail)
+- **Sidebar**: Persistent left sidebar with workspace/workflow hierarchy; order: Dashboard u2192 Workflows u2192 Files u2192 Claude Terminal u2192 Members u2192 Activity u2192 Settings
+- **Breadcrumbs**: Explicit breadcrumb trail on workflow list and detail pages (Dashboard u2192 Workflows u2192 [name])
 - **Deep linking**: App Router URLs map directly to dashboard views
+- **Routine indicator**: Workflows with routine enabled show a `CalendarClock` icon in the sidebar
+- **Icon-only toolbar**: Workflow toolbar buttons (Add Item, Kanban, List, Settings) are icon-only with `aria-label` and `title` for accessibility
+
+### File Browser
+- **Two-panel layout**: Left panel (FileBrowser) shows directory tree; right panel (FileViewer) shows file preview
+- **Folder-first sorting**: Directories appear before files, both sorted alphabetically
+- **File type icons**: Visual icons per file extension category
+- **Size formatting**: Human-readable sizes (KB, MB, GB)
+- **Navigation controls**: Up button (parent directory), Refresh button, real-time search filter
+- **Preview support**: Text (syntax-highlighted), images, audio players, video players
+- **Binary guard**: Files over 100MB show metadata card instead of loading preview
+- **Empty state**: Shown when no workspace is active
+
+### Item Restart
+- **Confirmation dialog**: Restart button in ItemDetailDialog triggers a confirmation prompt before resetting
+- **Reset behavior**: Item moves to first stage, status set to Todo, sessions cleared, body truncated at `## Analysis`
+- **No-op guard**: Restart is disabled when item is already at first stage with Todo status
 
 ---
 

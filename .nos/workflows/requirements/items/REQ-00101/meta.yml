@@ -1,0 +1,134 @@
+title: Fix YAML date-quoting guidance & defensive coercion
+stage: Done
+status: Todo
+comments:
+  - >-
+    The file already has an Analysis section — it looks like a previous session
+    was already started on this item and wrote an analysis. Let me check if this
+    is complete or if I should update it. The existing analysis is thorough and
+    covers all four required sections (Scope, Feasibility, Dependencies, Open
+    Questions). Let me verify the content aligns with my findings and see if
+    anything needs correction or enhancement.
+
+
+    The existing analysis is solid and aligns with my investigation. However,
+    there are a couple of findings from my deeper exploration that could
+    strengthen it — specifically:
+
+
+    1. The `startedAt` field in sessions also has the same vulnerability (line
+    235)
+
+    2. The agents-store and workspace-store have the same pattern
+
+
+    The existing analysis already mentions both of these at lines 39 and 44. The
+    analysis is comprehensive and accurate.
+
+
+    Since the analysis is already appended and covers all four required areas
+    (Scope, Feasibility, Dependencies, Open Questions), there's no need to
+    duplicate or overwrite it.
+
+
+    Analysis for REQ-00101 is already complete in the item's `index.md`. My
+    investigation confirmed all findings are accurate: the root cause is YAML
+    implicit typing converting unquoted ISO-8601 dates to Date objects, which
+    fails the `typeof !== 'string'` validation in `readItemFolder()`
+    (workflow-store.ts:206) and `parseSessions()` (:235). The fix involves
+    updating `.nos/system-prompt.md` and `.nos/workflows/CLAUDE.md` with quoting
+    guidance, with an optional defensive coercion in the validation code. The
+    `nos-create-item` skill is already safe since it routes through the server's
+    `writeMeta` path. No code changes needed beyond documentation — the previous
+    session's analysis correctly identified all scope, feasibility,
+    dependencies, and open questions.
+  - >-
+    Specification for REQ-00101 has been appended to `index.md`. The spec
+    defines 3 user stories (agent guidance, schema documentation, defensive
+    coercion), 6 acceptance criteria covering the three documentation files and
+    two code-level coercion points with console warnings, technical constraints
+    identifying exact files and functions to modify, explicit out-of-scope items
+    to prevent creep, an RTM row ready for the traceability matrix, and WBS
+    mapping to packages 1.2.4 (System Prompt Management), 1.6.1 (Workflow
+    Store), and 1.8.7 (Standards & Auditing). The title was also updated from
+    the generic "Fix error" to "Fix YAML date-quoting guidance & defensive
+    coercion". The open questions from the analysis phase were resolved in favor
+    of: coerce with a logged warning (AC-4/5/6), keep manual edits for now but
+    document quoting rules (out of scope #4), and use explicitly quoted examples
+    in the schema (AC-2).
+  - >-
+    All 6 acceptance criteria for REQ-00101 have been implemented. Here's a
+    summary of what was done:
+
+
+    **Documentation changes (AC-1, AC-2, AC-3):**
+
+    - `.nos/system-prompt.md` — Added a "YAML writing rules" section with the
+    single-quote ISO date rule, implicit typing warning, and guidance to prefer
+    NOS skills over manual meta.yml edits.
+
+    - `.nos/workflows/CLAUDE.md` — Updated the meta.yml schema example to use
+    single-quoted ISO strings and added a YAML pitfall callout.
+
+    - `.nos/CLAUDE.md` — Added YAML date quoting guidance under "Agent
+    Constraints".
+
+
+    **Code changes (AC-4, AC-5, AC-6):**
+
+    - `lib/workflow-store.ts` — Added `instanceof Date` coercion in
+    `readItemFolder()` (line 206) and `parseSessions()` (line 245) with
+    `console.warn()` messages identifying the affected item/field.
+
+    - Fixed TypeScript type safety by extracting the validated `updatedAt` to a
+    typed `const` variable.
+  - >-
+    Validation for REQ-00101 is complete. All 6 acceptance criteria pass:
+
+
+    - **AC-1 ✅** — `.nos/system-prompt.md` lines 56–60 contain a "YAML writing
+    rules" section explicitly requiring single-quoted ISO-8601 strings.
+
+    - **AC-2 ✅** — `.nos/workflows/CLAUDE.md` shows `startedAt` and `updatedAt`
+    in single-quoted form in the schema example, plus a pitfall callout block.
+
+    - **AC-3 ✅** — `.nos/CLAUDE.md` line 45 adds a "YAML date quoting:" note
+    under "Agent Constraints".
+
+    - **AC-4 ✅** — `readItemFolder()` (workflow-store.ts:206–216) coerces `Date`
+    instances via `.toISOString()` instead of returning null.
+
+    - **AC-5 ✅** — `parseSessions()` (workflow-store.ts:246–256) applies the
+    same coercion to `session.startedAt`.
+
+    - **AC-6 ✅** — Both coercion branches emit `console.warn()` identifying the
+    affected item/field.
+
+
+    No regressions detected. The write path (`writeMeta`) was untouched, the
+    coercion is purely additive for previously-dropped items, and TypeScript
+    typing is sound. RTM updated and changes pushed.
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: f3ec0fc1-039e-4b3a-81b6-a228564b0ba0
+    startedAt: '2026-04-22T23:20:26.322Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 965584b1-3c06-45f2-980a-7791b6023a46
+    startedAt: '2026-04-22T23:20:30.022Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 3ca3cdfa-8660-44e3-be93-c1afd3771f0b
+    startedAt: '2026-04-22T23:24:40.456Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: d9744b9a-71c8-4570-a651-29cfbd9ff520
+    startedAt: '2026-04-22T23:27:49.698Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 33b00377-e202-47d3-804f-3e5da100f1c1
+    startedAt: '2026-04-22T23:30:44.207Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-22T23:33:23.849Z'

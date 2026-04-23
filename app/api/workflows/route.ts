@@ -9,6 +9,8 @@ import { withWorkspace } from '@/lib/workspace-context';
 import { readRoutineConfig } from '@/lib/routine-scheduler';
 import { WORKFLOW_ID_REGEX as ID_REGEX, WORKFLOW_PREFIX_REGEX as PREFIX_REGEX } from '@/lib/validators';
 
+export const runtime = 'nodejs';
+
 interface CreateBody {
   id?: unknown;
   name?: unknown;

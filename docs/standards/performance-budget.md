@@ -1,6 +1,6 @@
 # Performance Budget
 
-> Last updated: 2026-04-21
+> Last updated: 2026-04-23
 
 NOS is a local-only developer tool. Performance budgets are calibrated for the local development context, not public-facing web applications.
 
@@ -68,6 +68,9 @@ NOS is a local-only developer tool. Performance budgets are calibrated for the l
 | Item detail dialog open | < 300ms | Includes MDXEditor initialization |
 | SSE event propagation | < 100ms | From file write to UI update |
 | Heartbeat sweeper memory | < 50MB | Single-threaded scan, no item caching |
+| File browser directory listing | < 200ms | Local filesystem stat calls; folder-first sort |
+| File preview load (text < 1MB) | < 500ms | Direct file read + syntax classification |
+| File serve (media < 100MB) | < 2s | Streamed from local disk; 100MB guard prevents memory issues |
 
 ---
 

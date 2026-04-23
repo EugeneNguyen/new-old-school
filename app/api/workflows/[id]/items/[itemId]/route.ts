@@ -6,6 +6,7 @@ import {
   workflowExists,
   type ItemMetaPatch,
 } from '@/lib/workflow-store';
+import type { Comment } from '@/types/workflow';
 import { triggerStagePipeline } from '@/lib/stage-pipeline';
 import { autoAdvanceIfEligible } from '@/lib/auto-advance';
 import { ItemStatus } from '@/types/workflow';
@@ -19,6 +20,7 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
+  console.log('[GET /items/[itemId]] handler reached');
   return withWorkspace(async () => {
   try {
     const { id, itemId } = await params;
@@ -26,6 +28,7 @@ export async function GET(
       return createErrorResponse(`Workflow '${id}' not found`, 'NotFound', 404);
     }
     const item = readItem(id, itemId);
+    console.log('[DEBUG readItem]', { id, itemId, found: item !== null, itemStage: item?.stage });
     if (!item) {
       return createErrorResponse(`Item '${itemId}' not found`, 'NotFound', 404);
     }
@@ -89,10 +92,15 @@ export async function PATCH(
     }
 
     if (body.comments !== undefined) {
-      if (!Array.isArray(body.comments) || !body.comments.every((c) => typeof c === 'string')) {
-        return createErrorResponse('"comments" must be an array of strings', 'BadRequest', 400);
+      if (!Array.isArray(body.comments)) {
+        return createErrorResponse('"comments" must be an array', 'BadRequest', 400);
       }
-      patch.comments = body.comments;
+      for (const c of body.comments) {
+        if (typeof c !== 'object' || c === null || typeof (c as Record<string, unknown>).text !== 'string') {
+          return createErrorResponse('"comments" must be an array of Comment objects', 'BadRequest', 400);
+        }
+      }
+      patch.comments = body.comments as Comment[];
     }
 
     if (Object.keys(patch).length === 0) {

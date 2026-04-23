@@ -45,9 +45,12 @@ Each item has:
 title: <item-title>
 stage: <stage-name>     # Current stage
 status: Todo            # Current status
-comments:               # Append-only comments
-  - >-
-    Comment text...
+comments:               # Append-only comments (Comment objects, not strings)
+  - text: >-
+      Comment text...
+    createdAt: '2026-04-22T14:02:41.000Z'   # Always quote ISO-8601 strings
+    updatedAt: '2026-04-22T14:02:41.000Z'   # Always quote ISO-8601 strings
+    author: agent                           # conventional: agent | runtime | user
 sessions:               # Session history
   - stage: <stage>
     adapter: claude

@@ -1,7 +1,91 @@
 title: Remove workspace menu item in side menu.
-stage: Analysis
-status: In Progress
-comments: []
+stage: Done
+status: Todo
+comments:
+  - >-
+    The analysis for REQ-00097 has been appended to `index.md`. The item's title
+    ("Remove workspace menu item in side menu") is ambiguous — the sidebar has
+    two workspace-adjacent elements: the `WorkspaceSwitcher` component
+    (dedicated dropdown section at the top) and the "Workspaces" tool entry in
+    `config/tools.json` (a nav link in the tool list). 
+
+
+    The analysis resolves this by determining that "menu item" most likely
+    refers to the `tools.json` entry (Interpretation B), since that's a "menu
+    item" in the nav list sense, while `WorkspaceSwitcher` is its own component.
+    Under that interpretation, this is a trivial one-line JSON deletion. The
+    analysis also notes the cross-requirement conflict with REQ-00096, which
+    explicitly added the "Workspaces" entry, and flags the discoverability
+    regression risk and open questions around documentation alignment.
+  - >-
+    The `## Specification` section has been appended to `REQ-00097/index.md`.
+    The specification covers:
+
+
+    1. **User stories** — three stories covering the operator experience
+    (reduced clutter, retained accessibility via fallback paths, maintainer
+    cleanliness).
+
+    2. **Acceptance criteria** — six numbered, testable ACs covering the config
+    deletion, sidebar rendering, fallback access paths, non-regression of
+    remaining entries, TypeScript integrity, and array stability.
+
+    3. **Technical constraints** — config shape reference to `lib/tools.ts`,
+    deletion scope, no-code-required rationale, RTM alignment note.
+
+    4. **Out of scope** — explicit exclusions for switcher removal, workspace
+    page/API deletion, backend changes, icon references, and breadcrumbs.
+
+    5. **RTM entry** — mapped with REQ-00097 ID, source, design artifacts,
+    implementation file, and placeholders for test coverage and implementation
+    file(s) to be filled after validation.
+
+    6. **WBS mapping** — anchored to WBS 1.7.3 (Tool Registry) with downstream
+    deliverables called out as unaffected.
+  - >-
+    All six acceptance criteria have been satisfied. The implementation is
+    complete:
+
+
+    - Removed the `"id": "workspaces"` entry from `config/tools.json` (the
+    object at index 2, between "Files" and "Claude Terminal").
+
+    - No code changes to `Sidebar.tsx` — the config-driven
+    `ToolRegistry.getAllTools()` automatically excludes the entry.
+
+    - `/dashboard/workspaces` remains accessible via the WorkspaceSwitcher
+    dropdown and direct URL.
+
+    - TypeScript check is clean (pre-existing errors in
+    `lib/scaffolding.test.ts` are unrelated).
+
+    - Updated RTM with REQ-00097 row and an annotation on REQ-00096 noting the
+    partial revert.
+  - >-
+    Validation of REQ-00097 is complete. All 6 acceptance criteria passed:
+
+
+    - **AC-1 ✅** `config/tools.json` has 5 entries (dashboard, files, terminal,
+    members, settings) — workspaces entry absent
+
+    - **AC-2 ✅** Sidebar renders via `ToolRegistry.getAllTools()` — entry gone
+    means no "Workspaces" nav link
+
+    - **AC-3 ✅** `/dashboard/workspaces` accessible via WorkspaceSwitcher
+    dropdown (line 113), Files page, and direct URL
+
+    - **AC-4 ✅** All 5 remaining entries have correct href, icon, and category
+    fields; array index stability preserved
+
+    - **AC-5 ✅** `tsc --noEmit` clean — pre-existing errors in
+    `lib/scaffolding.test.ts` are unrelated to this change
+
+    - **AC-6 ✅** Only the workspaces entry removed; no other entry disturbed
+
+
+    Updated `index.md` with a `## Validation` section recording all verdicts and
+    evidence. RTM updated with REQ-00097 row plus an annotation on REQ-00096
+    noting the partial revert. Commit pushed to main.
 sessions:
   - stage: Analysis
     adapter: claude
@@ -11,4 +95,18 @@ sessions:
     adapter: claude
     sessionId: 134d492d-e39b-487f-93b2-9d4a5dbfada6
     startedAt: '2026-04-22T15:38:29.821Z'
-updatedAt: '2026-04-22T15:38:29.822Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 0b59e135-41fb-46d6-ad86-24fc88de3a66
+    startedAt: '2026-04-22T15:42:39.894Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 7e5c59cf-4803-4dcb-ad00-8d3146b146f5
+    startedAt: '2026-04-22T15:44:33.116Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: e31e9ced-0134-46cc-b385-9f7045b45e2c
+    startedAt: '2026-04-22T15:46:56.677Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-22T15:48:57.806Z'

@@ -438,6 +438,33 @@ Get the active workspace for the current session.
 - **Response**: `200 OK` with workspace object
 - **Errors**: `404` (no active workspace)
 
+### `POST /api/workspaces/mkdir`
+Create a new directory (folder) inside a workspace directory.
+
+- **Auth**: Workspace context required (via `nos_workspace` cookie)
+- **Request Body**:
+```json
+{
+  "path": "/absolute/path/to/parent/dir",
+  "name": "my-folder"
+}
+```
+- **Response**: `201 Created`
+```json
+{
+  "name": "my-folder",
+  "absolutePath": "/absolute/path/to/parent/dir/my-folder",
+  "isDirectory": true
+}
+```
+- **Errors**:
+  - `400 ValidationError` — `path` missing/empty, `name` empty, `name` contains `/`, `\`, NUL, or whitespace only
+  - `403 Forbidden` — `path` resolves outside workspace root
+  - `404 NotFound` — `path` does not exist
+  - `409 ConflictError` — a directory with `name` already exists inside `path` (case-insensitive)
+
+- **Security**: Path must resolve within active workspace root; path traversal (`..`) is rejected
+
 ---
 
 ## Routine

@@ -1,6 +1,6 @@
 # UI Design
 
-> Last updated: 2026-04-21
+> Last updated: 2026-04-23
 
 ---
 
@@ -39,14 +39,25 @@
 | SidebarContext | React context for sidebar state |
 | WorkspaceSwitcher | Workspace selection dropdown |
 | ChatWidget | Chat interface for agent interaction |
+| FileBrowser | Directory tree with folder-first sort, file icons, size formatting |
+| FileViewer | File preview panel supporting text, image, audio, video, binary metadata |
+
+### Chat Components (`components/chat/`)
+
+| Component | Purpose |
+|-----------|--------|
+| ChatBubble | Shared message bubble (user/assistant) used by Terminal and ChatWidget |
+| MessageList | Scrollable message list with auto-scroll |
+| TypingIndicator | Animated dots shown during agent response |
+| ChatInput | Text input with send button and keyboard submit |
+| ToolUseCard | Tool invocation display with collapsible input/result |
+| QuestionCard | Interactive question rendering with option buttons |
 
 ### Terminal Components (`components/terminal/`)
 
 | Component | Purpose |
 |-----------|--------|
 | SessionPanel | Claude session display with streaming output |
-| QuestionCard | Interactive question rendering |
-| ToolUseCard | Tool invocation display with results |
 | SlashPopup | Slash command palette |
 
 ---

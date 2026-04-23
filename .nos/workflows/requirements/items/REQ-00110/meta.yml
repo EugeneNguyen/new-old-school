@@ -1,0 +1,130 @@
+title: Allow setting slash command/skill in the stages
+stage: Validation
+status: In Progress
+comments:
+  - text: >-
+      Analysis complete. I've appended an `## Analysis` section to
+      `REQ-00110/index.md` covering:
+
+
+      1. **Scope** — stage config schema change, persistence pipeline, API
+      route, UI control, and prompt injection. Explicitly excludes adapter
+      interface changes and per-item overrides.
+
+
+      2. **Feasibility — High** — the stage pipeline already calls
+      `buildAgentPrompt`; the skill identifier can be injected there. The main
+      risk is that the non-interactive `claude` CLI invocation (`-p
+      --dangerously-skip-permissions`) may not honor slash commands the same way
+      interactive mode does — this needs a spike.
+
+
+      3. **Dependencies** — six files identified: `types/workflow.ts`,
+      `lib/workflow-store.ts`, the stages PATCH route, `lib/stage-pipeline.ts`,
+      `lib/system-prompt.ts`, and `components/dashboard/StageDetailDialog.tsx`.
+
+
+      4. **Open questions** — most important: how to inject the skill into the
+      CLI prompt (CLI flag vs. prompt directive), and whether to validate the
+      skill name against `SkillRegistry`.
+    createdAt: '2026-04-23T14:13:39.951Z'
+    updatedAt: '2026-04-23T14:13:39.951Z'
+    author: runtime
+  - text: >-
+      I've appended the `## Specification` section to `REQ-00110/index.md`. The
+      spec covers:
+
+
+      1. **User stories** — three stories covering operator experience and the
+      injection mechanism.
+
+      2. **Acceptance criteria (AC-1 through AC-7)** — testable criteria mapping
+      to the type, store, API, UI, prompt injection, backward compatibility, and
+      slash-stripping behavior. Key decisions resolved here: skill name is
+      stored bare (no leading `/`), injection format is `[Skill: /<skill-name>]`
+      prepended to the prompt, no registry validation.
+
+      3. **Technical constraints** — references the exact files
+      (`types/workflow.ts`, `lib/workflow-store.ts`, the PATCH route,
+      `lib/system-prompt.ts`, `lib/stage-pipeline.ts`, `StageDetailDialog.tsx`),
+      the prompt injection point, and the 128-char max length.
+
+      4. **Out of scope** — adapter interface changes, skill registration,
+      per-item overrides, agent-level assignment, Kanban header display, and
+      registry validation.
+
+      5. **RTM entry** — row pre-filled with req ID, title, source, design
+      artifacts (WBS + glossary), and implementation file list; test coverage
+      left blank for validation.
+
+      6. **WBS mapping** — traced to five WBS packages: 1.1.2 (Stage Pipeline),
+      1.2.3 (Stage Pipeline Trigger), 1.3.3 (Stage Routes), 1.4.5 (Stage
+      Configuration UI), and 1.6.1 (Workflow Store).
+    createdAt: '2026-04-23T14:17:20.172Z'
+    updatedAt: '2026-04-23T14:17:20.172Z'
+    author: runtime
+  - text: >-
+      All six implementation tasks for REQ-00110 are complete. Here's what was
+      done:
+
+
+      **Files changed:**
+
+
+      1. **`types/workflow.ts`** — Added `skill?: string | null` to the `Stage`
+      interface.
+
+
+      2. **`lib/workflow-store.ts`** — Updated `readStages` (parse + validate
+      `skill` from YAML, 128-char max), `StagePatch` (added `skill?: string |
+      null`), `updateStage` (writes skill, deletes key when null/empty, rejects
+      > 128 chars), and `addStage` (writes skill for new stages).
+
+
+      3. **`app/api/workflows/[id]/stages/[stageName]/route.ts`** — Added
+      validation for `body.skill` (string or null, max 128 chars after trim,
+      empty string normalizes to null).
+
+
+      4. **`lib/system-prompt.ts`** — `buildAgentPrompt` now accepts `skill?:
+      string | null`. When set, prepends `[Skill: /<skill-name>]\n` before the
+      `<system-prompt>` block.
+
+
+      5. **`lib/stage-pipeline.ts`** — `triggerStagePipeline` passes
+      `stage.skill ?? null` into `buildAgentPrompt`.
+
+
+      6. **`components/dashboard/StageDetailDialog.tsx`** — Added a Skill text
+      input below the Agent dropdown. On save, strips any leading `/` before
+      sending; cleared (empty) sends `null`.
+
+
+      All 9 existing tests pass, TypeScript compiles clean on the changed files,
+      and all 7 acceptance criteria (AC-1 through AC-7) are satisfied. The
+      implementation follows the existing conventions (no registry validation,
+      consistent with `agentId` handling) and the injected directive format
+      `[Skill: /<skill-name>]` is placed before `<system-prompt>` as specified.
+    createdAt: '2026-04-23T14:25:49.235Z'
+    updatedAt: '2026-04-23T14:25:49.235Z'
+    author: runtime
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: f52ef748-8415-4692-9da5-bdd0bad800f5
+    startedAt: '2026-04-23T14:10:28.773Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 64dcb355-ac0d-40e0-9e7b-942acbd98177
+    startedAt: '2026-04-23T14:13:47.752Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 49e5127d-dac7-4e5b-83aa-46b41d13d243
+    startedAt: '2026-04-23T14:17:27.954Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: bf282137-5b21-471e-bb5d-6735f57917e4
+    startedAt: '2026-04-23T14:25:57.235Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-23T14:25:57.238Z'

@@ -1,0 +1,100 @@
+title: 'File system: Create Folder function'
+stage: Done
+status: Todo
+comments:
+  - text: >-
+      Analyzed REQ-00109 ("File system: Create Folder function") and appended a
+      full `## Analysis` section to `index.md`. Identified the core feasibility
+      risk as the unspecified storage backend (OS filesystem,
+      virtual/model-based, or cloud). Flagged six open questions covering
+      storage model, naming conflict policy, UI pattern (inline vs. modal),
+      which UI surface is "Files", workspace scoping, and whether follow-on
+      folder ops are in scope — these need clarification before implementation
+      can proceed. No implementation was started.
+    createdAt: '2026-04-23T14:00:09.190Z'
+    updatedAt: '2026-04-23T14:00:09.190Z'
+    author: runtime
+  - text: >-
+      Specification written and artifact references updated. Here's what was
+      resolved and documented:
+
+
+      **Open questions resolved by examining existing code:**
+
+      - **Storage model**: OS-level directories within workspace root — already
+      established by the existing browse/upload routes
+
+      - **Naming conflict policy**: Block with `409 Conflict` — simple and
+      consistent with existing patterns
+
+      - **UI pattern**: Inline text input in toolbar (no modal) — mirrors the
+      adjacent Upload flow
+
+      - **"Files" module**: The File System Browser at `/dashboard/files` —
+      `components/dashboard/FileBrowser.tsx`
+
+      - **Access/scope**: Workspace-scoped, within the currently browsed
+      directory
+
+      - **Follow-on ops**: Out of scope
+
+
+      **Artifacts updated:**
+
+      - `REQ-00109/index.md` — `## Specification` section appended (8 ACs, API
+      design, naming rules, data shapes, WBS mapping, RTM entry)
+
+      - `docs/standards/rtm.md` — REQ-00109 row added to traceability matrix
+
+      - `docs/standards/wbs-dictionary.md` — WBS sub-item `1.4.12a` (Create
+      Folder) added under 1.4.12
+
+
+      **Key design decisions:**
+
+      - `POST /api/workspaces/mkdir` endpoint with sandboxed workspace
+      validation and case-insensitive duplicate detection
+
+      - Inline input in FileBrowser toolbar; Escape cancels; error persists
+      inline on conflict
+
+      - 8 acceptance criteria covering happy path, conflicts, validation, and
+      cancellation
+    createdAt: '2026-04-23T14:04:33.834Z'
+    updatedAt: '2026-04-23T14:04:33.834Z'
+    author: runtime
+  - text: >-
+      **Implementation of REQ-00109 (File system — Create Folder function) is
+      complete.** Created the `POST /api/workspaces/mkdir` endpoint with
+      workspace sandboxing, name sanitization, and case-insensitive duplicate
+      detection; added the "New Folder" button with inline text input to the
+      FileBrowser toolbar; and documented the new endpoint in the API reference.
+      All 8 acceptance criteria are satisfied: button visible, inline input
+      auto-focuses, folder creation and refresh works, error displays on
+      duplicate name, empty/invalid name validation before API call, Escape
+      cancels without API call, and new folders appear in folder-first sorted
+      listing. TypeScript compiles cleanly on all modified files. No deviations
+      from the specification.
+    createdAt: '2026-04-23T14:11:15.682Z'
+    updatedAt: '2026-04-23T14:11:15.682Z'
+    author: runtime
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: ad1e2ad7-520d-41da-b722-2853e54a2d36
+    startedAt: '2026-04-23T13:58:32.112Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 8c146568-0a58-479a-b569-6dbaf112ebee
+    startedAt: '2026-04-23T14:00:16.597Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 39e21cda-b377-41bb-8586-6dcbdf423c9f
+    startedAt: '2026-04-23T14:04:41.238Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: e84be202-74b7-4dcd-87d1-358c4753c86a
+    startedAt: '2026-04-23T14:11:23.519Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-23T14:14:53.887Z'

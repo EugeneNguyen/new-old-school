@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
-import type { Stage, WorkflowItem, ItemStatus, WorkflowDetail, ItemSession } from '@/types/workflow';
+import type { Stage, WorkflowItem, ItemStatus, WorkflowDetail, ItemSession, Comment } from '@/types/workflow';
 import { emitItemCreated, emitItemUpdated } from '@/lib/workflow-events';
 import { getProjectRoot } from '@/lib/project-root';
 import { appendActivity, hashBody, type ActivityActor } from '@/lib/activity-log';
@@ -153,6 +153,8 @@ export function readStages(id: string): Stage[] {
       if (typeof s.maxDisplayItems !== 'number') return [];
       if (!Number.isInteger(s.maxDisplayItems) || s.maxDisplayItems <= 0) return [];
     }
+    if (s.skill !== undefined && s.skill !== null && typeof s.skill !== 'string') return [];
+    if (typeof s.skill === 'string' && s.skill.length > 128) return [];
 
     const name = s.name.trim();
     if (seenNames.has(name)) return [];
@@ -168,6 +170,11 @@ export function readStages(id: string): Stage[] {
     };
     if (typeof s.maxDisplayItems === 'number') {
       stage.maxDisplayItems = s.maxDisplayItems;
+    }
+    if (typeof s.skill === 'string' && s.skill.trim()) {
+      stage.skill = s.skill.trim();
+    } else {
+      stage.skill = null;
     }
     stages.push(stage);
   }
@@ -199,8 +206,33 @@ function readItemFolder(workflowId: string, itemId: string): WorkflowItem | null
   const status = parseStatus(data.status);
   if (!status) return null;
 
-  if (!Array.isArray(data.comments) || !data.comments.every((comment) => typeof comment === 'string')) {
+  if (!Array.isArray(data.comments)) {
     return null;
+  }
+  // Migrate legacy string comments to Comment objects before validation
+  const now = new Date().toISOString();
+  const migrated: Comment[] = [];
+  for (const c of data.comments) {
+    if (typeof c === 'string') {
+      migrated.push({ text: c, createdAt: now, updatedAt: now, author: 'agent' });
+    } else if (c && typeof c === 'object' && !Array.isArray(c)) {
+      const comment = c as Record<string, unknown>;
+      if (typeof comment.text !== 'string') return null;
+      let createdAt = String(comment.createdAt ?? now);
+      let updatedAt = String(comment.updatedAt ?? now);
+      if (createdAt === 'undefined' || createdAt === 'null') createdAt = now;
+      if (updatedAt === 'undefined' || updatedAt === 'null') updatedAt = now;
+      if ((createdAt as unknown) instanceof Date) createdAt = (createdAt as unknown as Date).toISOString();
+      if ((updatedAt as unknown) instanceof Date) updatedAt = (updatedAt as unknown as Date).toISOString();
+      migrated.push({
+        text: comment.text as string,
+        createdAt,
+        updatedAt,
+        author: typeof comment.author === 'string' ? comment.author : 'agent',
+      });
+    } else {
+      return null;
+    }
   }
 
   if (typeof data.updatedAt !== 'string' || !data.updatedAt.trim()) {
@@ -227,7 +259,7 @@ function readItemFolder(workflowId: string, itemId: string): WorkflowItem | null
     title: data.title,
     stage: data.stage,
     status,
-    comments: data.comments,
+    comments: migrated,
     body: body || undefined,
     sessions,
     updatedAt,
@@ -331,7 +363,7 @@ export interface ItemMetaPatch {
   title?: string;
   stage?: string;
   status?: ItemStatus;
-  comments?: string[];
+  comments?: Comment[];
   actor?: ActivityActor;
 }
 
@@ -466,18 +498,23 @@ export function appendItemSession(
 export function appendItemComment(
   workflowId: string,
   itemId: string,
-  comment: string
+  text: string,
+  author: string = 'agent'
 ): WorkflowItem | null {
-  const text = comment.trim();
-  if (!text) return null;
+  const trimmed = text.trim();
+  if (!trimmed) return null;
   const metaPath = path.join(itemDir(workflowId, itemId), META_FILE);
   if (!fs.existsSync(metaPath)) return null;
   const meta = (yaml.load(fs.readFileSync(metaPath, 'utf-8')) as Record<string, unknown>) ?? {};
 
+  const now = new Date().toISOString();
   const existing = Array.isArray(meta.comments)
-    ? (meta.comments as unknown[]).filter((c): c is string => typeof c === 'string')
+    ? (meta.comments as unknown[]).filter((c): c is Comment =>
+        c !== null && typeof c === 'object' && typeof (c as Record<string, unknown>).text === 'string'
+      )
     : [];
-  meta.comments = [...existing, text];
+  const newComment: Comment = { text: trimmed, createdAt: now, updatedAt: now, author };
+  meta.comments = [...existing, newComment];
 
   // NOTE: comment additions intentionally do not produce an activity entry (AC-34).
   return writeMeta(workflowId, itemId, meta, 'updated');
@@ -488,7 +525,7 @@ export function updateItemComment(
   itemId: string,
   index: number,
   text: string
-): string | null {
+): Comment | null {
   const trimmed = text.trim();
   if (!trimmed) return null;
   const metaPath = path.join(itemDir(workflowId, itemId), META_FILE);
@@ -496,28 +533,32 @@ export function updateItemComment(
   const meta = (yaml.load(fs.readFileSync(metaPath, 'utf-8')) as Record<string, unknown>) ?? {};
 
   const existing = Array.isArray(meta.comments)
-    ? (meta.comments as unknown[]).filter((c): c is string => typeof c === 'string')
+    ? (meta.comments as unknown[]).filter((c): c is Comment =>
+        c !== null && typeof c === 'object' && typeof (c as Record<string, unknown>).text === 'string'
+      )
     : [];
 
   if (index < 0 || index >= existing.length) return null;
-  existing[index] = trimmed;
+  existing[index] = { ...existing[index], text: trimmed, updatedAt: new Date().toISOString() };
   meta.comments = existing;
 
   const result = writeMeta(workflowId, itemId, meta, 'updated');
-  return result ? trimmed : null;
+  return result ? existing[index] : null;
 }
 
 export function deleteItemComment(
   workflowId: string,
   itemId: string,
   index: number
-): string[] | null {
+): Comment[] | null {
   const metaPath = path.join(itemDir(workflowId, itemId), META_FILE);
   if (!fs.existsSync(metaPath)) return null;
   const meta = (yaml.load(fs.readFileSync(metaPath, 'utf-8')) as Record<string, unknown>) ?? {};
 
   const existing = Array.isArray(meta.comments)
-    ? (meta.comments as unknown[]).filter((c): c is string => typeof c === 'string')
+    ? (meta.comments as unknown[]).filter((c): c is Comment =>
+        c !== null && typeof c === 'object' && typeof (c as Record<string, unknown>).text === 'string'
+      )
     : [];
 
   if (index < 0 || index >= existing.length) return null;
@@ -572,6 +613,7 @@ export interface StagePatch {
   autoAdvanceOnComplete?: boolean | null;
   agentId?: string | null;
   maxDisplayItems?: number | null;
+  skill?: string | null;
 }
 
 export function updateStage(
@@ -620,6 +662,17 @@ export function updateStage(
       delete current.maxDisplayItems;
     } else {
       current.maxDisplayItems = patch.maxDisplayItems;
+    }
+  }
+  if (patch.skill !== undefined) {
+    if (patch.skill === null || patch.skill.trim() === '') {
+      delete current.skill;
+    } else {
+      const trimmed = patch.skill.trim();
+      if (trimmed.length > 128) {
+        return null;
+      }
+      current.skill = trimmed;
     }
   }
 
@@ -692,6 +745,10 @@ export function addStage(workflowId: string, stage: Omit<Stage, 'name'> & { name
   if (stage.agentId) newEntry.agentId = stage.agentId;
   if (typeof stage.maxDisplayItems === 'number' && stage.maxDisplayItems > 0) {
     newEntry.maxDisplayItems = stage.maxDisplayItems;
+  }
+  if (typeof stage.skill === 'string' && stage.skill.trim()) {
+    const trimmed = stage.skill.trim();
+    if (trimmed.length <= 128) newEntry.skill = trimmed;
   }
 
   list.push(newEntry);
@@ -830,7 +887,7 @@ export function createItem(
     title,
     stage: stageName,
     status: 'Todo' as ItemStatus,
-    comments: [] as string[],
+    comments: [] as Comment[],
     sessions: [] as ItemSession[],
   };
   const item = writeMeta(workflowId, finalId, meta, 'created');

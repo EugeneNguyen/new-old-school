@@ -479,3 +479,182 @@ The "Audit with the doc standard" stage did not produce formal findings (session
 | D-03 | Key Files Reference incomplete | ✅ Fixed — added 6 lib files: `settings.ts`, `routine-scheduler.ts`, `auto-advance.ts`, `auto-advance-sweeper.ts`, `activity-log.ts`, `workflow-events.ts` |
 | D-04 | Audit findings path | ✅ Fixed — changed `meta.yml` to `index.md` in Section 12 Document Types table |
 | D-05 | Missing `components/chat/` | ✅ Fixed — added `chat/` directory to Section 8 project structure tree |
+
+---
+
+## Doc Audit Findings (Stage: Audit with Doc Standard)
+
+Audited 2026-04-23 against all 18 artifacts in `docs/standards/` plus 8 ADRs, cross-referenced with all 90 requirements in `.nos/workflows/requirements/items/`.
+
+### DA-01: API Reference missing 9 implemented endpoints
+- **Artifact affected**: API Reference (`docs/standards/api-reference.md`)
+- **Gap**: 9 API endpoints exist in the codebase but are absent from the API reference. The doc was last updated 2026-04-21 and has not been updated for REQ-00081, REQ-00092, REQ-00094, or REQ-00096.
+- **Missing (High — fully implemented routes with no documentation):**
+  - `GET/PUT /api/workflows/[id]/routine` — routine config (REQ-00081)
+  - `POST /api/workflows/[id]/items/[itemId]/restart` — item restart (REQ-00094)
+  - `GET /api/workspaces/serve` — binary file serving with Range support (REQ-00096)
+  - `GET /api/workspaces/active` — returns active workspace from cookie (REQ-00096)
+  - `GET /api/workspaces/preview` — text file preview (REQ-00092)
+- **Missing (Medium — partially documented or underdocumented):**
+  - `POST /api/claude` — Claude session spawner (distinct from `/api/chat`)
+  - `GET /api/workspaces/[id]` — workspace detail
+  - `PATCH /api/workspaces/[id]` — workspace update
+  - `POST /api/chat/answer` — question answer submission (REQ-00089)
+- **File path**: `docs/standards/api-reference.md`
+- **Severity**: High
+
+### DA-02: RTM missing implementation file references
+- **Artifact affected**: RTM (`docs/standards/rtm.md`)
+- **Gap**: Several implementation files created during REQ-00081–REQ-00099 are not attributed in the RTM:
+  - `lib/workspace-store.ts` — core data-layer module backing workspace CRUD, unattributed
+  - `lib/fs-utils.ts` — shared utility from AUDIT-005, unattributed
+  - `lib/validators.ts` — shared validation from AUDIT-005, unattributed
+  - `components/dashboard/RoutineSettingsDialog.tsx` — routine UI from REQ-00081, not in RTM
+  - `components/dashboard/WorkflowSettingsView.tsx` — settings view, not in RTM
+  - `components/dashboard/SidebarContext.tsx` — context provider, not in RTM
+  - `components/dashboard/WorkspaceSwitcher.tsx` — workspace UI, not in RTM
+- **File path**: `docs/standards/rtm.md`
+- **Severity**: Medium
+
+### DA-03: User Journey missing 3 implemented journeys
+- **Artifact affected**: User Journey (`docs/standards/user-journey.md`)
+- **Gap**: Three fully implemented user journeys have no documentation:
+  1. **File Browser Journey** — browse workspace files, navigate directories, preview files (text/image/audio/video), sandboxed security (REQ-00092, REQ-00096)
+  2. **Routine Scheduling Journey** — enable routine mode per workflow, configure cron expression, auto-item creation (REQ-00081)
+  3. **Item Restart Journey** — restart item from detail dialog, confirmation, reset to first stage (REQ-00094)
+- **File path**: `docs/standards/user-journey.md`
+- **Severity**: High
+
+### DA-04: UX Design missing interaction patterns for newer features
+- **Artifact affected**: UX Design (`docs/standards/ux-design.md`)
+- **Gap**: No interaction patterns documented for:
+  - File browser: breadcrumb navigation, file preview panel, search filtering, responsive two-panel layout, sandbox enforcement UX
+  - Routine settings dialog: toggle enable/disable, cron expression input, validation feedback
+  - Item restart: confirmation dialog, disabled-state logic
+- **File path**: `docs/standards/ux-design.md`
+- **Severity**: Medium
+
+### DA-05: Glossary missing 10+ domain terms
+- **Artifact affected**: Glossary (`docs/standards/glossary.md`)
+- **Gap**: The following domain concepts are used in code/types but have no glossary entry:
+  - **Routine** — `RoutineConfig`, `RoutineState`, cron-scheduled auto-item-creation (`lib/routine-scheduler.ts`)
+  - **File Browser / File Viewer** — `BrowseEntry`, `BrowseResponse`, workspace sandboxing (`components/dashboard/FileBrowser.tsx`, `FileViewer.tsx`)
+  - **File Sandboxing** — security-relevant workspace root containment enforcement
+  - **ChatMessage** — `types/chat.ts`, core type for the chat component library
+  - **ToolDefinition / ToolRegistry** — config-driven nav items (`types/tool.ts`, `lib/tool-registry.ts`)
+  - **Cron Expression** — fundamental configuration for routines
+  - **FileCategory** — extension-to-category mapping (`lib/file-types.ts`)
+  - **SkillDefinition** — `types/skill.ts`
+  - **routine.yaml / routine-state.json** — data files analogous to `meta.yml`/`stages.yaml` but not listed
+- **File path**: `docs/standards/glossary.md`
+- **Severity**: High
+
+### DA-06: WBS missing 2 work packages for implemented features
+- **Artifact affected**: WBS (`docs/standards/wbs.md`, `docs/standards/wbs-dictionary.md`)
+- **Gap**: Two fully implemented features have no WBS work package:
+  1. **File Browser** (should be ~1.4.12 + 1.3.9): `app/dashboard/files/`, `components/dashboard/FileBrowser.tsx`, `FileViewer.tsx`, `lib/file-types.ts`, plus 3 API routes (`browse`, `preview`, `serve`)
+  2. **Chat Component Library** (should be ~1.5.5): `components/chat/` (7 files — `ChatBubble`, `MessageList`, `TypingIndicator`, `ChatInput`, `ToolUseCard`, `QuestionCard`, `index.ts`), `types/chat.ts`
+- **File path**: `docs/standards/wbs.md`, `docs/standards/wbs-dictionary.md`
+- **Severity**: High
+
+### DA-07: 5 architectural decisions in code without ADRs
+- **Artifact affected**: ADRs (`docs/standards/adr/`)
+- **Gap**: The following architectural decisions are implemented but not captured in ADRs:
+  1. **AsyncLocalStorage for workspace scoping** — `lib/project-root.ts` uses `AsyncLocalStorage<{ root: string }>` to thread workspace context. Security-relevant (wrong root = wrong data). **(High)**
+  2. **Cron-based routine scheduling** — `lib/routine-scheduler.ts` piggybacks on the heartbeat sweep cycle via `cron-parser`. Coupling decision undocumented. **(High)**
+  3. **File browser workspace sandboxing** — `realpathSync + startsWith` pattern in 3 route files for path traversal prevention. Security architecture undocumented. **(High)**
+  4. **Chat component extraction/reuse** — `components/chat/` extracted from `components/terminal/` as shared library. **(Medium)**
+  5. **Config-driven sidebar navigation** — `config/tools.json` defines nav items; `Sidebar.tsx` accesses by array index (fragile). **(Medium)**
+- **File path**: `docs/standards/adr/`
+- **Severity**: High (3 High + 2 Medium decisions)
+
+### DA-08: Test plan outdated — understates coverage
+- **Artifact affected**: Test Plan (`docs/standards/test-plan.md`)
+- **Gap**: The test plan documents only 2 test files and ~8% coverage. Actual state:
+  - 4 test files exist: `system-prompt.test.ts` (8 tests), `workflow-view-mode.test.ts` (8 tests), `use-workflow-items.test.ts` (5 tests), `scaffolding.test.ts` (11 tests)
+  - `system-prompt.test.ts` and `workflow-view-mode.test.ts` are completely absent from the document
+  - Priority targets (workflow-store, auto-advance, stage-pipeline) remain genuinely untested
+- **File path**: `docs/standards/test-plan.md`
+- **Severity**: Medium
+
+### DA-09: Error handling strategy missing 2 activity entry types
+- **Artifact affected**: Error Handling Strategy (`docs/standards/error-handling-strategy.md`)
+- **Gap**: The Activity Log Entry Types table lists only 4 types (`title-changed`, `stage-changed`, `status-changed`, `body-changed`). Two implemented types are missing:
+  - `restart` — added by REQ-00094 in `lib/activity-log.ts`
+  - `routine-item-created` — added by REQ-00081 in `lib/activity-log.ts`
+- **File path**: `docs/standards/error-handling-strategy.md`
+- **Severity**: Medium
+
+### DA-10: Database design missing newer entity types
+- **Artifact affected**: Database Design (`docs/standards/database-design.md`)
+- **Gap**: Entity specifications are missing:
+  - `BrowseEntry` / `BrowseResponse` — file browser response types (defined inline in both `FileBrowser.tsx` and `browse/route.ts` — duplicated, not in `types/`)
+  - `FileCategory` / `FileTypeClassification` — `lib/file-types.ts` exports
+  - `ChatMessage` — `types/chat.ts` core type
+  - Note: `Routine` entity IS documented (ERD + dedicated section) — no gap there
+- **File path**: `docs/standards/database-design.md`
+- **Severity**: Medium
+
+### DA-11: Deployment design missing environment variables
+- **Artifact affected**: Deployment Design (`docs/standards/deployment-design.md`)
+- **Gap**: Two runtime-affecting env vars are used in code but absent from the Environment Variables table:
+  - `NOS_HOME` — used in `lib/workspace-store.ts` and `bin/cli.mjs` to override workspace registry location
+  - `NOS_PORT` — used in `bin/cli.mjs` to override dev server port
+- **File path**: `docs/standards/deployment-design.md`
+- **Severity**: Medium
+
+### DA-12: Security design understates /api/shell protections
+- **Artifact affected**: Security Design (`docs/standards/security-design.md`)
+- **Gap**: The doc states shell mitigation is `typeof !== 'string'` validation only. The actual implementation enforces an `ALLOWED_COMMANDS` whitelist (`ls`, `pwd`, `whoami`, `date`, `git status`, `git log`, `npm list`). This is a positive discrepancy — security is stronger than documented — but the doc should reflect actual controls.
+- **File path**: `docs/standards/security-design.md`
+- **Severity**: Low (positive gap)
+
+### DA-13: GAP-11 (@types/react version mismatch) appears resolved
+- **Artifact affected**: Project Standards (`docs/standards/project-standards.md`), Security Design
+- **Gap**: GAP-11 and the AUDIT-005 item header claim `@types/react@18.3.28` is installed (mismatching React 19). However, `package.json` now declares `@types/react: ^19.0.0` — the major version matches React 19. The gap description and item content are stale.
+- **File path**: `docs/standards/project-standards.md` (GAP-11)
+- **Severity**: Medium (stale gap status)
+
+### DA-14: README.md gap summary table not updated for GAP-16/GAP-17
+- **Artifact affected**: Standards README (`docs/standards/README.md`)
+- **Gap**: The README gap summary table covers GAP-01 through GAP-15 only. GAP-16 (remaining reuse opportunities) and GAP-17 (null-safety in createItem, now RESOLVED) were added in AUDIT-005 but not reflected in the README.
+- **File path**: `docs/standards/README.md`
+- **Severity**: Low
+
+### DA-15: UI design component inventory incomplete
+- **Artifact affected**: UI Design (`docs/standards/ui-design.md`)
+- **Gap**: The Component Inventory sections are missing:
+  - **Chat Components** (`components/chat/`): ChatBubble, MessageList, TypingIndicator, ChatInput — extracted in REQ-00093
+  - **Dashboard Components**: FileBrowser, FileViewer, RoutineSettingsDialog — added in REQ-00081, REQ-00092, REQ-00096
+- **File path**: `docs/standards/ui-design.md`
+- **Severity**: Medium
+
+### DA-16: Partial requirement validation failures not tracked in RTM
+- **Artifact affected**: RTM (`docs/standards/rtm.md`)
+- **Gap**: Several requirements are marked Done in the RTM but have known failing acceptance criteria per their own validation records:
+  - **REQ-00082** (Dark mode): AC-7 ❌ (hardcoded zinc colors), AC-8 ⚠️ (terminal dark forced), TC4 ❌ (next-themes missing)
+  - **REQ-00084** (Logo): AC-5 ❌ (raster favicon absent), AC-6 ⚠️ (apple-icon path)
+  - **REQ-00086** (Terminal tool-use): AC-7 ❌ (parseSessionHistory wrong event type)
+  - **REQ-00093** (Chat refactor): AC-6 ⚠️ (ChatWidget still uses inline input)
+- The RTM does not flag these partial validations.
+- **File path**: `docs/standards/rtm.md`
+- **Severity**: High
+
+---
+
+## Doc Audit Summary
+
+### Findings by Severity
+
+| Severity | Count | Key Areas |
+|----------|-------|-----------|
+| **High** | 6 | API reference (9 missing endpoints), user journeys (3 missing), glossary (10+ missing terms), WBS (2 missing packages), ADRs (5 missing), RTM partial validations (4 reqs) |
+| **Medium** | 8 | RTM file refs, UX design, test plan, error handling, database design, deployment env vars, UI design inventory, stale GAP-11/GAP-13 |
+| **Low** | 2 | Security positive gap, README gap table |
+| **Total** | **16 findings** |
+
+### Overall Compliance Verdict: **Moderate — Documentation Lagging Implementation**
+
+The documentation foundation is solid — all 18 standard artifacts exist and cover the original system architecture thoroughly. However, features delivered since AUDIT-004 (REQ-00081 routine scheduling, REQ-00092/REQ-00096 file browser, REQ-00093 chat refactor, REQ-00094 item restart) have not been propagated to the standards docs. The API reference is missing 9 endpoints (High). Three complete user journeys are undocumented (High). The glossary lacks 10+ domain terms introduced by newer features (High). Five architectural decisions — including security-relevant ones like AsyncLocalStorage workspace scoping and file browser sandboxing — have no ADRs (High). The WBS is missing work packages for two shipped features. The RTM marks 4 requirements as Done despite having documented failing acceptance criteria.
+
+The documentation was comprehensive and accurate as of the initial standards creation (2026-04-21) but has not kept pace with the ~20 requirements delivered since then. A focused documentation sprint updating all 18 artifacts for the REQ-00080–REQ-00099 feature batch would restore compliance.

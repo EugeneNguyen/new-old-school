@@ -1,6 +1,6 @@
 # WBS Dictionary
 
-> Last updated: 2026-04-21
+> Last updated: 2026-04-23
 
 ---
 
@@ -54,6 +54,8 @@
 | 1.4.9 | Settings Pages | System prompt editor, heartbeat config, default agent selector | Frontend | M | 1.3.7 | Read/write settings; immediate feedback |
 | 1.4.10 | Activity Feed | Global and per-workflow activity timeline | Frontend | M | 1.3.5 | Paginated activity list; real-time updates |
 | 1.4.11 | Workspace Management | Browse filesystem, create, activate workspaces | Frontend | M | 1.3.8 | Directory browser; create workspace; activate via cookie |
+| 1.4.12 | File System Browser | Two-panel layout: FileBrowser tree + FileViewer with text/image/audio/video preview; workspace sandboxing; 100MB binary guard; metadata card for unsupported types | Frontend | L | 1.3.8, 1.6.7 | `/dashboard/files` page renders; file types classified; preview works for text/image/audio/video; sandbox enforced at API level |
+| 1.4.12a | Create Folder | "New Folder" button in FileBrowser toolbar; inline name input; `POST /api/workspaces/mkdir` endpoint; duplicate-name conflict handling; Escape to cancel | Frontend + Backend | S | 1.4.12, 1.3.8 | Inline input creates OS directory in current workspace path; 409 on duplicate name; UI refreshes listing on success |
 
 ## 1.5 UI Component Library
 
@@ -63,6 +65,7 @@
 | 1.5.2 | Theme System | CSS variable tokens for 12+ semantic colors; light/dark mode via `next-themes` | Frontend | M | u2014 | `:root` and `.dark` tokens defined; `ThemeProvider` wraps app |
 | 1.5.3 | Markdown Rendering | Preview with rehype-sanitize; MDXEditor for editing; remark-breaks for line breaks | Frontend | M | u2014 | Safe HTML rendering; scoped styles; consistent across dialogs |
 | 1.5.4 | Icon System | lucide-react icons used throughout the dashboard | Frontend | S | u2014 | Consistent icon usage; tree-shakeable imports |
+| 1.5.5 | Chat Components | Shared chat UI components extracted from Terminal and ChatWidget: ChatBubble, MessageList, TypingIndicator, ChatInput, ToolUseCard, QuestionCard | Frontend | M | 1.5.1 | Components reused across Terminal and ChatWidget; barrel export via `components/chat/index.ts` |
 
 ## 1.6 Data Layer
 
@@ -73,6 +76,8 @@
 | 1.6.3 | Workspace Store | Registry at `~/.nos/workspaces.yaml`; path validation; 1MB cap | Backend | S | u2014 | CRUD operations; absolute path validation; size limit |
 | 1.6.4 | Settings Store | YAML-backed global settings with 64KB cap and atomic writes | Backend | S | u2014 | Heartbeat and default agent settings; ENOENT-tolerant reads |
 | 1.6.5 | Workspace Context | Cookie-based workspace resolution via AsyncLocalStorage + `withWorkspace()` wrapper | Backend | M | 1.6.3 | Routes resolve project root from cookie; falls back to env/cwd |
+| 1.6.6 | Shared Utilities | `lib/fs-utils.ts` (atomicWriteFile, atomicWriteFileWithDir, readYamlFile, META_FILE/CONTENT_FILE constants) and `lib/validators.ts` (WORKFLOW_ID_REGEX, WORKFLOW_PREFIX_REGEX) | Backend | S | — | Imported by workflow-store, agents-store, routine-scheduler, settings, workspace-store; eliminates duplication across 5+ files |
+| 1.6.7 | File Type Classification | `lib/file-types.ts` — MIME type detection and category classification (text, image, audio, video, binary) for file browser preview | Backend | S | — | Correct MIME for common extensions; used by FileBrowser and FileViewer |
 
 ## 1.7 CLI
 

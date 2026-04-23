@@ -1,6 +1,6 @@
 # User Journey
 
-> Last updated: 2026-04-21
+> Last updated: 2026-04-23
 
 ---
 
@@ -149,6 +149,48 @@ flowchart TD
     RELOAD --> EXIT([Working in new workspace])
 ```
 
+### Journey 7: Browse Project Files (Operator)
+
+```mermaid
+flowchart TD
+    START([Click Files in sidebar]) --> CHECK{Active workspace?}
+    CHECK -->|No| EMPTY[Show empty state: no workspace selected]
+    CHECK -->|Yes| ROOT[Load workspace root directory]
+    ROOT --> BROWSE[View file listing: folders first, alphabetical]
+    BROWSE --> ACTION{User action?}
+    ACTION -->|Click folder| NAV[Navigate into folder]
+    NAV --> BROWSE
+    ACTION -->|Click file| PREVIEW{File type?}
+    PREVIEW -->|Text| TEXT_VIEW[Show syntax-highlighted text preview]
+    PREVIEW -->|Image| IMG_VIEW[Show image preview]
+    PREVIEW -->|Audio| AUDIO_VIEW[Show audio player]
+    PREVIEW -->|Video| VIDEO_VIEW[Show video player]
+    PREVIEW -->|Binary/Other| META[Show metadata card: name, size, modified date]
+    ACTION -->|Click Up button| PARENT[Navigate to parent directory]
+    PARENT --> BROWSE
+    ACTION -->|Type in search| FILTER[Filter visible files by name]
+    FILTER --> BROWSE
+    ACTION -->|Click Refresh| REFRESH[Reload current directory]
+    REFRESH --> BROWSE
+```
+
+### Journey 8: Restart a Workflow Item (Operator)
+
+```mermaid
+flowchart TD
+    START([Open Item Detail Dialog]) --> CLICK[Click Restart button]
+    CLICK --> CONFIRM[Confirmation dialog: Are you sure?]
+    CONFIRM -->|Cancel| BACK[Return to dialog]
+    CONFIRM -->|Confirm| RESET[API resets item]
+    RESET --> FIRST_STAGE[Item moves to first stage as Todo]
+    FIRST_STAGE --> CLEAR[Sessions cleared, body truncated at Analysis heading]
+    CLEAR --> LOG[Activity log records restart event]
+    LOG --> SSE[SSE event emitted to dashboard]
+    SSE --> PIPELINE{First stage has agent+prompt?}
+    PIPELINE -->|Yes| AUTO[Auto-start triggers new session]
+    PIPELINE -->|No| IDLE[Item waits in first stage as Todo]
+```
+
 ---
 
 ## Entry Points
@@ -164,6 +206,7 @@ flowchart TD
 | Members | `/dashboard/agents` | Agent management |
 | Settings | `/dashboard/settings` | Global settings (system prompt, heartbeat) |
 | Activity | `/dashboard/activity` | Global activity feed |
+| Files | `/dashboard/files` | File system browser with preview |
 | Workspaces | `/dashboard/workspaces` | Workspace management |
 
 ---
@@ -177,6 +220,7 @@ flowchart TD
 | Agent assignment | Assign agent or leave manual | Determines whether pipeline auto-triggers on items |
 | Status override | Manual status change | Bypasses normal lifecycle; useful for stuck items |
 | Workspace switch | Select different workspace | Changes project root; all data context switches |
+| Restart item | Confirm restart | Resets item to first stage; clears sessions; may re-trigger pipeline |
 
 ---
 
@@ -189,3 +233,4 @@ flowchart TD
 | Item Failed | Agent reports FAILED: in summary | Operator investigates, may reset to Todo |
 | Session Stranded | Agent process crashed without clean exit | Heartbeat sweeper detects and marks Done |
 | Pipeline Idle | No Todo items in stages with agents | System quiescent until new items created |
+| Item Restarted | Item reset to first stage as Todo | Pipeline re-triggers if first stage has agent |

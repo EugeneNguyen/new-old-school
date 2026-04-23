@@ -64,9 +64,17 @@ async function validatePath(rawPath: string, workspaceRoot: string): Promise<{ o
   return { ok: true, resolved };
 }
 
+function sanitizeFilenameForHeader(name: string): string {
+  const basename = path.basename(name);
+  return basename
+    .replace(/[\x00-\x1f]/g, '')
+    .replace(/"/g, '\\"');
+}
+
 export async function GET(req: NextRequest) {
   return withWorkspace(async () => {
     const rawPath = req.nextUrl.searchParams.get('path');
+    const download = req.nextUrl.searchParams.get('download') === 'true';
     if (!rawPath) {
       return createErrorResponse('path is required', 'ValidationError', 400);
     }
@@ -112,15 +120,19 @@ export async function GET(req: NextRequest) {
         const buffer = Buffer.alloc(chunkSize);
         fs.readSync(fileHandle, buffer, 0, chunkSize, start);
 
+        const headers: Record<string, string> = {
+          'Content-Type': contentType,
+          'Content-Length': String(chunkSize),
+          'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+          'Accept-Ranges': 'bytes',
+          'X-Content-Type-Options': 'nosniff',
+        };
+        if (download) {
+          headers['Content-Disposition'] = `attachment; filename="${sanitizeFilenameForHeader(resolved)}"`;
+        }
         return new NextResponse(buffer, {
           status: 206,
-          headers: {
-            'Content-Type': contentType,
-            'Content-Length': String(chunkSize),
-            'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-            'Accept-Ranges': 'bytes',
-            'X-Content-Type-Options': 'nosniff',
-          },
+          headers,
         });
       } finally {
         fs.closeSync(fileHandle);
@@ -129,13 +141,17 @@ export async function GET(req: NextRequest) {
 
     // Full file response
     const fileBuffer = fs.readFileSync(resolved);
+    const fullHeaders: Record<string, string> = {
+      'Content-Type': contentType,
+      'Content-Length': String(stat.size),
+      'Accept-Ranges': 'bytes',
+      'X-Content-Type-Options': 'nosniff',
+    };
+    if (download) {
+      fullHeaders['Content-Disposition'] = `attachment; filename="${sanitizeFilenameForHeader(resolved)}"`;
+    }
     return new NextResponse(fileBuffer, {
-      headers: {
-        'Content-Type': contentType,
-        'Content-Length': String(stat.size),
-        'Accept-Ranges': 'bytes',
-        'X-Content-Type-Options': 'nosniff',
-      },
+      headers: fullHeaders,
     });
   });
 }

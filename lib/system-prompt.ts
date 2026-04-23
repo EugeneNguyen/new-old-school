@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import type { Comment } from '@/types/workflow';
 
 export function loadSystemPrompt(projectRoot: string): string | null {
   const filePath = path.join(projectRoot, '.nos', 'system-prompt.md');
@@ -23,17 +24,21 @@ export function buildAgentPrompt(input: {
   memberPrompt?: string | null;
   title: string;
   body: string | null | undefined;
-  comments?: string[] | null;
+  comments?: import('@/types/workflow').Comment[] | null;
   workflowId: string;
   itemId: string;
+  skill?: string | null;
 }): string {
-  const { systemPrompt, stagePrompt, memberPrompt, title, body, comments, workflowId, itemId } =
+  const { systemPrompt, stagePrompt, memberPrompt, title, body, comments, workflowId, itemId, skill } =
     input;
   const bodySection = body ? `\n${body}\n` : '';
   const commentsSection = renderCommentsSection(comments);
   const itemContent = `# ${title}\n${bodySection}${commentsSection}\nworkflowId: ${workflowId}\nitemId: ${itemId}`;
 
   const parts: string[] = [];
+  if (typeof skill === 'string' && skill.trim()) {
+    parts.push(`[Skill: /${skill.trim()}]\n`);
+  }
   if (systemPrompt !== null) {
     parts.push(`<system-prompt>\n${systemPrompt}\n</system-prompt>`);
   }
@@ -45,11 +50,11 @@ export function buildAgentPrompt(input: {
   return parts.join('\n') + '\n';
 }
 
-function renderCommentsSection(comments: string[] | null | undefined): string {
+function renderCommentsSection(comments: Comment[] | null | undefined): string {
   if (!Array.isArray(comments) || comments.length === 0) return '';
   const entries = comments
-    .filter((c): c is string => typeof c === 'string' && c.trim().length > 0)
-    .map((c) => c.replace(/\s+$/, ''));
+    .filter((c): c is Comment => c !== null && typeof c === 'object' && typeof c.text === 'string' && c.text.trim().length > 0)
+    .map((c) => c.text.replace(/\s+$/, ''));
   if (entries.length === 0) return '';
   const body = entries.map((c, i) => `### Comment ${i + 1}\n${c}`).join('\n\n');
   return `\n## Comments\n\n${body}\n`;

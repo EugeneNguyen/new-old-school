@@ -1,6 +1,6 @@
 # Test Plan / Test Strategy
 
-> Last updated: 2026-04-21
+> Last updated: 2026-04-23
 
 ---
 
@@ -10,7 +10,11 @@
 - **Runner**: Node.js built-in test runner (`node --test`)
 - **Command**: `npm test` u2192 `node --test lib/**/*.test.ts`
 - **Convention**: Test files colocated with source using `.test.ts` suffix
-- **Current coverage**: `lib/hooks/use-workflow-items.test.ts` (5 tests), `lib/scaffolding.test.ts` (11 test cases covering resolveWorkspacePath, initWorkspace, updateWorkspace, and integration scenarios)
+- **Current coverage**:
+  - `lib/hooks/use-workflow-items.test.ts` (5 tests)
+  - `lib/scaffolding.test.ts` (15 tests covering resolveWorkspacePath, initWorkspace, updateWorkspace, and integration scenarios)
+  - `lib/system-prompt.test.ts` (9 tests covering system prompt parsing/building)
+  - `lib/workflow-view-mode.test.ts` (view mode toggle logic)
 
 ### Integration Tests
 - **Status**: Not yet implemented (GAP-08)
@@ -76,6 +80,10 @@ lib/
   hooks/
     use-workflow-items.ts
     use-workflow-items.test.ts    # Colocated unit test
+  system-prompt.ts
+  system-prompt.test.ts           # System prompt parsing/building (9 tests)
+  workflow-view-mode.test.ts      # View mode toggle logic
+  scaffolding.test.ts             # Scaffolding init/update (15 tests)
   workflow-store.ts
   workflow-store.test.ts          # (Target) Store unit tests
   auto-advance.test.ts            # (Target) Auto-advance logic tests
@@ -113,7 +121,7 @@ node --test --test-reporter=spec lib/**/*.test.ts
 
 ## Known Gaps (from GAP-08)
 
-- 2 test files exist: `lib/hooks/use-workflow-items.test.ts` (5 tests) and `lib/scaffolding.test.ts` (11 tests, ~8% coverage)
+- 4 test files exist: `lib/hooks/use-workflow-items.test.ts` (5 tests), `lib/scaffolding.test.ts` (15 tests), `lib/system-prompt.test.ts` (9 tests), `lib/workflow-view-mode.test.ts` u2014 ~10% coverage
 - Store functions (`workflow-store.ts`, `agents-store.ts`, `workspace-store.ts`) still lack dedicated test files
 - No integration tests for API routes
 - No E2E tests for dashboard UI

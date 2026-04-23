@@ -14,6 +14,9 @@ export interface Stage {
   // Positive integer limit on how many items to render in the column.
   // `0`, `null`, or absent all mean "no limit".
   maxDisplayItems?: number | null;
+  // Slash command / skill name to inject into the agent prompt on session start.
+  // Stored bare (no leading `/`), injected as `/<skill>` in the prompt.
+  skill?: string | null;
 }
 
 export type ItemStatus = 'Todo' | 'In Progress' | 'Done' | 'Failed';
@@ -26,12 +29,19 @@ export interface ItemSession {
   agentId?: string;
 }
 
+export interface Comment {
+  text: string;
+  createdAt: string;
+  updatedAt: string;
+  author: string;
+}
+
 export interface WorkflowItem {
   id: string;
   title: string;
   stage: string;
   status: ItemStatus;
-  comments?: string[];
+  comments?: Comment[];
   body?: string;
   sessions?: ItemSession[];
   updatedAt: string;

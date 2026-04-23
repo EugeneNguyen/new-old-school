@@ -1,6 +1,6 @@
 # Work Breakdown Structure (WBS)
 
-> Last updated: 2026-04-21
+> Last updated: 2026-04-23
 
 ---
 
@@ -22,7 +22,7 @@
 - 1.2.5 Session Tracking (session ID extraction, output capture, stream registry)
 - 1.2.6 Routine Scheduler (recurring task triggers for workflows)
 
-### 1.3 REST API Surface (8 route groups, 37+ handlers)
+### 1.3 REST API Surface (8 route groups, 42+ handlers)
 - 1.3.1 Workflow Routes (`/api/workflows` — CRUD, list)
 - 1.3.2 Item Routes (`/api/workflows/[id]/items` — CRUD, content, comments)
 - 1.3.3 Stage Routes (`/api/workflows/[id]/stages` — CRUD, reorder)
@@ -36,20 +36,22 @@
 - 1.4.1 Dashboard Shell (layout, sidebar, navigation, workspace switcher)
 - 1.4.2 Kanban Board (drag-drop columns, stage grouping, maxDisplayItems cap)
 - 1.4.3 List View (tabular item listing, sort/filter)
-- 1.4.4 Item Detail Dialog (title, markdown body editor, comments, sessions, status)
+- 1.4.4 Item Detail Dialog (title, markdown body editor, comments, sessions, status, restart)
 - 1.4.5 Stage Configuration (stage detail dialog, prompt editor, agent assignment)
 - 1.4.6 Workflow Settings (name/prefix editing, stage management, routine config)
 - 1.4.7 Agent Management UI (members page, create/edit/delete agents)
-- 1.4.8 Claude Terminal (session panel, streaming output, slash commands, question cards)
+- 1.4.8 Claude Terminal (session panel, streaming output, slash commands, tool-use cards, question cards)
 - 1.4.9 Settings Pages (system prompt editor, heartbeat config, default agent)
 - 1.4.10 Activity Feed (global and per-workflow activity views)
 - 1.4.11 Workspace Management (browse, create, activate workspaces)
+- 1.4.12 File System Browser (two-panel file browser with preview for text/image/audio/video)
 
 ### 1.5 UI Component Library
 - 1.5.1 Primitive Components (Button, Input, Dialog, Select, Badge, ScrollArea, Toast)
 - 1.5.2 Theme System (CSS variable tokens, light/dark mode, `next-themes` integration)
 - 1.5.3 Markdown Rendering (preview with sanitization, MDXEditor integration)
 - 1.5.4 Icon System (lucide-react icon library)
+- 1.5.5 Chat Components (ChatBubble, MessageList, TypingIndicator, ChatInput, ToolUseCard, QuestionCard)
 
 ### 1.6 Data Layer
 - 1.6.1 Workflow Store (file-backed YAML/Markdown CRUD, atomic writes)
@@ -57,6 +59,8 @@
 - 1.6.3 Workspace Store (registry in `~/.nos/workspaces.yaml`)
 - 1.6.4 Settings Store (YAML-backed global settings)
 - 1.6.5 Workspace Context (cookie-based resolution, AsyncLocalStorage scoping)
+- 1.6.6 Shared Utilities (`lib/fs-utils.ts` — atomicWriteFile, readYamlFile; `lib/validators.ts` — regex constants)
+- 1.6.7 File Type Classification (`lib/file-types.ts` — MIME type detection for file browser)
 
 ### 1.7 CLI
 - 1.7.1 CLI Entry Point (`bin/cli.mjs` via Commander.js)

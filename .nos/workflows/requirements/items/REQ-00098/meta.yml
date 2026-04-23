@@ -1,8 +1,8 @@
 title: >-
   the workflow with routine enabled should display different in list workflow in
   side menu
-stage: Validation
-status: In Progress
+stage: Done
+status: Todo
 comments:
   - >-
     The analysis has been appended to `index.md`. Here's the summary:
@@ -80,6 +80,35 @@ comments:
 
     3. `components/dashboard/Sidebar.tsx` — added `CalendarClock` icon and
     conditional rendering
+  - >-
+    Validation complete. All 7 acceptance criteria pass:
+
+
+    - **AC-1** ✅ `routineEnabled?: boolean` confirmed in `types/workflow.ts:5`
+
+    - **AC-2** ✅ `GET /api/workflows` calls `readRoutineConfig(folder)` and
+    includes `routineEnabled` in each workflow object (`route.ts:41-48`)
+
+    - **AC-3** ✅ `CalendarClock` imported and conditionally rendered in
+    `Sidebar.tsx:152-154`
+
+    - **AC-4** ✅ Visibility is conditioned on `wf.routineEnabled` (data), not on
+    hover state — no opacity classes
+
+    - **AC-5** ✅ `readRoutineConfig` returns `null` for missing files;
+    `routineConfig?.enabled === true` correctly maps both `null` and `enabled:
+    false` to `false`
+
+    - **AC-6** ✅ Optional field handled safely in JSX; flex layout stable with
+    or without the icon
+
+    - **AC-7** ✅ No new TypeScript errors in the three modified files; existing
+    errors in `lib/scaffolding.test.ts` and `lib/workflow-store.ts` are
+    pre-existing
+
+
+    RTM updated with implementation files and test coverage. Committed and
+    pushed as `5b364e6`.
 sessions:
   - stage: Analysis
     adapter: claude
@@ -103,4 +132,4 @@ sessions:
     sessionId: 5d3edc71-58c7-4841-b05e-48782bfe9991
     startedAt: '2026-04-22T16:02:37.099Z'
     agentId: martin-senior-engineer
-updatedAt: '2026-04-22T16:02:37.113Z'
+updatedAt: '2026-04-22T16:04:53.297Z'

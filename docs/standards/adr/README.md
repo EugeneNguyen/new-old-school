@@ -1,6 +1,6 @@
 # Architecture Decision Records (ADR)
 
-> Last updated: 2026-04-21
+> Last updated: 2026-04-23
 
 This directory contains Architecture Decision Records for the NOS project. Each ADR documents a significant architectural decision: the context, the decision made, consequences, and alternatives considered.
 
@@ -18,3 +18,4 @@ This directory contains Architecture Decision Records for the NOS project. Each 
 | [ADR-006](ADR-006-nextjs-app-router.md) | Next.js App Router Architecture | Accepted | 2026-04-21 |
 | [ADR-007](ADR-007-yaml-metadata-markdown-content.md) | YAML Metadata + Markdown Content Split | Accepted | 2026-04-21 |
 | [ADR-008](ADR-008-atomic-file-writes.md) | Atomic File Writes via Temp-and-Rename | Accepted | 2026-04-21 |
+| [ADR-009](ADR-009-shared-utility-extraction.md) | Shared Utility Extraction (fs-utils, validators) | Accepted | 2026-04-23 |

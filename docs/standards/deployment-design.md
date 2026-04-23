@@ -1,6 +1,6 @@
 # Deployment & Infrastructure Design
 
-> Last updated: 2026-04-21
+> Last updated: 2026-04-23
 
 NOS is a **local-only** application. All components run on the operator's development machine. There is no cloud deployment, staging environment, or production infrastructure.
 
@@ -54,6 +54,8 @@ If CI/CD were added:
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `NOS_PROJECT_ROOT` | No | `process.cwd()` | Override project root directory |
+| `NOS_PORT` | No | `30128` | Dev server port |
+| `NOS_TEMPLATES_ROOT` | No | CLI install path | Override templates directory for scaffolding |
 | `PORT` | No | `30128` | Dev server port (set via `-p` flag) |
 | `NODE_ENV` | No | `development` | Next.js environment mode |
 
@@ -77,14 +79,24 @@ If CI/CD were added:
 
 ## Startup Sequence
 
+### Via npm
 ```
 1. npm run dev
 2. Next.js starts Turbopack dev server on :30128
-3. instrumentation.ts runs (if configured)
-4. middleware.ts registers API request logger
-5. Auto-advance sweeper starts (heartbeat loop)
+3. middleware.ts registers API request logger
+4. Auto-advance sweeper starts (heartbeat loop)
+5. Routine scheduler starts (if workflows have routines enabled)
 6. Chokidar file watchers initialize for active workflows
 7. Dashboard accessible at localhost:30128
+```
+
+### Via npx nos (CLI)
+```
+1. npx nos (detects existing .nos/ or offers init)
+2. nos init --if-needed (scaffolds workspace if absent)
+3. Resolves Next.js binary from installed location
+4. Launches Next.js dev server with NOS_PROJECT_ROOT set
+5. Same startup sequence as npm run dev from step 2
 ```
 
 ---

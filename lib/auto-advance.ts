@@ -35,8 +35,9 @@ export async function autoAdvanceIfEligible(
   const advanced = updateItemMeta(workflowId, itemId, { stage: next.name, actor: 'runtime' });
   if (!advanced) return null;
 
+  const ts = new Date().toISOString();
   console.log(
-    `[auto-advance] workflow=${workflowId} item=${itemId} ${current.name} -> ${next.name}`
+    `[${ts}] [auto-advance] workflow=${workflowId} item=${itemId} ${current.name} -> ${next.name}`
   );
 
   const afterPipeline = await triggerStagePipeline(workflowId, itemId);
@@ -60,8 +61,9 @@ export async function autoStartIfEligible(
   const alreadyKicked = item.sessions?.some((s) => s.stage === item.stage) === true;
   if (alreadyKicked) return null;
 
+  const ts2 = new Date().toISOString();
   console.log(
-    `[auto-start] workflow=${workflowId} item=${itemId} stage=${item.stage}`
+    `[${ts2}] [auto-start] workflow=${workflowId} item=${itemId} stage=${item.stage}`
   );
 
   try {
@@ -69,8 +71,7 @@ export async function autoStartIfEligible(
     return updated ?? item;
   } catch (err) {
     console.error(
-      `[auto-start] failed for workflow=${workflowId} item=${itemId}`,
-      err
+      `[${new Date().toISOString()}] [auto-start] failed for workflow=${workflowId} item=${itemId}: ${String(err)}`
     );
     return item;
   }
@@ -174,11 +175,12 @@ export async function completeSessionIfFinished(
     extractSummaryFromSessionLog(logPath) ??
     '(no summary captured from session log)';
   const prefix = finished ? '' : '[runtime] session log stalled; ';
-  appendItemComment(workflowId, itemId, `${prefix}${summary}`);
+  appendItemComment(workflowId, itemId, `${prefix}${summary}`, 'runtime');
   const updated = updateItemMeta(workflowId, itemId, { status: 'Done', actor: 'runtime' });
 
+  const ts3 = new Date().toISOString();
   console.log(
-    `[session-complete] workflow=${workflowId} item=${itemId} stage=${item.stage} session=${session.sessionId} -> Done`
+    `[${ts3}] [session-complete] workflow=${workflowId} item=${itemId} stage=${item.stage} session=${session.sessionId} -> Done`
   );
 
   return updated ?? item;

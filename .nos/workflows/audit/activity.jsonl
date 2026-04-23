@@ -77,3 +77,29 @@
 {"ts":"2026-04-21T17:19:27.329Z","workflowId":"audit","itemId":"AUDIT-004","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"In Progress","after":"Done"}}
 {"ts":"2026-04-21T17:19:27.332Z","workflowId":"audit","itemId":"AUDIT-004","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Fix doc audit findings","after":"Done"}}
 {"ts":"2026-04-21T17:19:27.332Z","workflowId":"audit","itemId":"AUDIT-004","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}
+{"ts":"2026-04-22T17:00:13.767Z","workflowId":"audit","itemId":"AUDIT-005","type":"item-created","actor":"runtime","data":{"kind":"item-created","title":"(routine) 2026-04-23 00:00","stageId":"Update technology standard","status":"Todo"}}
+{"ts":"2026-04-22T17:00:13.758Z","workflowId":"audit","itemId":"AUDIT-005","type":"routine-item-created","actor":"runtime","data":{"kind":"routine-item-created","title":"(routine) 2026-04-23 00:00"}}
+{"ts":"2026-04-22T17:00:21.660Z","workflowId":"audit","itemId":"AUDIT-005","type":"status-changed","actor":"unknown","data":{"kind":"status-changed","before":"Todo","after":"In Progress"}}
+{"ts":"2026-04-22T17:03:38.461Z","workflowId":"audit","itemId":"AUDIT-005","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"In Progress","after":"Done"}}
+{"ts":"2026-04-22T17:03:38.464Z","workflowId":"audit","itemId":"AUDIT-005","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Update technology standard","after":"Audit with the technology standard"}}
+{"ts":"2026-04-22T17:03:38.464Z","workflowId":"audit","itemId":"AUDIT-005","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}
+{"ts":"2026-04-22T17:03:46.254Z","workflowId":"audit","itemId":"AUDIT-005","type":"status-changed","actor":"unknown","data":{"kind":"status-changed","before":"Todo","after":"In Progress"}}
+{"ts":"2026-04-22T17:07:18.762Z","workflowId":"audit","itemId":"AUDIT-005","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"In Progress","after":"Done"}}
+{"ts":"2026-04-22T17:07:18.765Z","workflowId":"audit","itemId":"AUDIT-005","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Audit with the technology standard","after":"Fix audit findings"}}
+{"ts":"2026-04-22T17:07:18.765Z","workflowId":"audit","itemId":"AUDIT-005","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}
+{"ts":"2026-04-22T17:07:27.307Z","workflowId":"audit","itemId":"AUDIT-005","type":"status-changed","actor":"unknown","data":{"kind":"status-changed","before":"Todo","after":"In Progress"}}
+{"ts":"2026-04-22T17:10:59.550Z","workflowId":"audit","itemId":"AUDIT-005","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"In Progress","after":"Done"}}
+{"ts":"2026-04-22T17:10:59.553Z","workflowId":"audit","itemId":"AUDIT-005","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Fix audit findings","after":"Update documentation standard"}}
+{"ts":"2026-04-22T17:10:59.553Z","workflowId":"audit","itemId":"AUDIT-005","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}
+{"ts":"2026-04-22T17:11:07.341Z","workflowId":"audit","itemId":"AUDIT-005","type":"status-changed","actor":"unknown","data":{"kind":"status-changed","before":"Todo","after":"In Progress"}}
+{"ts":"2026-04-22T17:15:25.030Z","workflowId":"audit","itemId":"AUDIT-005","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"In Progress","after":"Done"}}
+{"ts":"2026-04-22T17:15:25.033Z","workflowId":"audit","itemId":"AUDIT-005","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Update documentation standard","after":"Audit with the doc standard"}}
+{"ts":"2026-04-22T17:15:25.033Z","workflowId":"audit","itemId":"AUDIT-005","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}
+{"ts":"2026-04-22T17:15:32.737Z","workflowId":"audit","itemId":"AUDIT-005","type":"status-changed","actor":"unknown","data":{"kind":"status-changed","before":"Todo","after":"In Progress"}}
+{"ts":"2026-04-22T17:17:33.993Z","workflowId":"audit","itemId":"AUDIT-005","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"In Progress","after":"Done"}}
+{"ts":"2026-04-22T17:17:33.995Z","workflowId":"audit","itemId":"AUDIT-005","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Audit with the doc standard","after":"Fix doc audit findings"}}
+{"ts":"2026-04-22T17:17:33.995Z","workflowId":"audit","itemId":"AUDIT-005","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}
+{"ts":"2026-04-22T17:17:41.660Z","workflowId":"audit","itemId":"AUDIT-005","type":"status-changed","actor":"unknown","data":{"kind":"status-changed","before":"Todo","after":"In Progress"}}
+{"ts":"2026-04-22T17:24:00.201Z","workflowId":"audit","itemId":"AUDIT-005","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"In Progress","after":"Done"}}
+{"ts":"2026-04-22T17:24:00.204Z","workflowId":"audit","itemId":"AUDIT-005","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Fix doc audit findings","after":"Done"}}
+{"ts":"2026-04-22T17:24:00.204Z","workflowId":"audit","itemId":"AUDIT-005","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}

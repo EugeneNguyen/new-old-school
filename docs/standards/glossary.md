@@ -1,6 +1,6 @@
 # Glossary / Domain Model
 
-> Last updated: 2026-04-21
+> Last updated: 2026-04-23
 
 ---
 
@@ -66,7 +66,7 @@ The **system prompt** is the root prompt loaded from `.nos/system-prompt.md`. It
 An **activity log** is an append-only JSONL file (`.nos/workflows/<id>/activity.jsonl`) that records all mutations to workflow items. Each entry captures the type of change, before/after values, and timestamps.
 
 ### ActivityEntry
-A single line in an activity log. Types: `title-changed`, `stage-changed`, `status-changed`, `body-changed`.
+A single line in an activity log. Types: `title-changed`, `stage-changed`, `status-changed`, `body-changed`, `routine-item-created`, `restart`.
 
 ### WorkflowEvent
 An in-memory **event** emitted by the `workflow-events.ts` EventEmitter. Event types: `item-created`, `item-updated`, `item-deleted`, `item-activity`. Events are streamed to dashboard clients via SSE.
@@ -122,6 +122,18 @@ A UI card that renders an interactive question from an agent, allowing the opera
 ### ToolUseCard
 A UI card that displays a tool invocation made by an agent, showing the tool name, input, and result.
 
+### FileBrowser
+The left panel of the file system browser (`/dashboard/files`) that shows a directory tree with folder-first alphabetical sorting, file type icons, and human-readable size formatting.
+
+### FileViewer
+The right panel of the file system browser that previews file content: text (syntax-highlighted), images, audio, and video. Shows a metadata card for unsupported types and enforces a 100MB binary guard.
+
+### ChatBubble
+A shared chat message component in `components/chat/` used by both the Claude Terminal and the ChatWidget. Renders user and assistant messages with consistent styling.
+
+### Restart (Item)
+The action of resetting a workflow item to its initial state: moving it back to the first stage, clearing sessions, setting status to Todo, and truncating index.md at `## Analysis`. Preserves title, body preamble, and comments. Logged as a `restart` activity event.
+
 ---
 
 ## Data Layer Terms
@@ -156,6 +168,19 @@ A wrapper function that extracts the workspace ID from the `nos_workspace` cooki
 
 ### AsyncLocalStorage
 Node.js mechanism for threading context (workspace project root) through async operations without prop drilling.
+
+---
+
+## Shared Utilities
+
+### fs-utils
+The shared file system utility module (`lib/fs-utils.ts`) providing `atomicWriteFile`, `atomicWriteFileWithDir`, `readYamlFile`, and the `META_FILE`/`CONTENT_FILE` constants. Imported by 5+ store modules, eliminating local duplicates.
+
+### validators
+The shared validation module (`lib/validators.ts`) exporting `WORKFLOW_ID_REGEX` and `WORKFLOW_PREFIX_REGEX`. Used by both the API route handler and the dashboard workflows page.
+
+### file-types
+The file type classification module (`lib/file-types.ts`) that maps file extensions to MIME types and content categories (text, image, audio, video, binary). Used by the file browser components.
 
 ---
 

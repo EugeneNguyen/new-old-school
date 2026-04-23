@@ -30,6 +30,7 @@ export function StageDetailDialog({
   const [prompt, setPrompt] = useState('');
   const [autoAdvance, setAutoAdvance] = useState(false);
   const [agentId, setAgentId] = useState<string>('');
+  const [skill, setSkill] = useState<string>('');
   const [maxDisplayItems, setMaxDisplayItems] = useState<string>('');
   const [agents, setAgents] = useState<Agent[]>([]);
   const [saving, setSaving] = useState(false);
@@ -44,6 +45,7 @@ export function StageDetailDialog({
     setPrompt(stage.prompt ?? '');
     setAutoAdvance(stage.autoAdvanceOnComplete === true);
     setAgentId(stage.agentId ?? '');
+    setSkill(stage.skill ?? '');
     setMaxDisplayItems(
       typeof stage.maxDisplayItems === 'number' && stage.maxDisplayItems > 0
         ? String(stage.maxDisplayItems)
@@ -111,6 +113,7 @@ export function StageDetailDialog({
             autoAdvanceOnComplete: autoAdvance,
             agentId: agentId || null,
             maxDisplayItems: maxDisplayItemsPayload,
+            skill: skill.startsWith('/') ? skill.slice(1).trim() : skill.trim() || null,
           }),
         }
       );
@@ -227,6 +230,18 @@ export function StageDetailDialog({
           </select>
           <p className="text-[11px] text-muted-foreground">
             Items entering this stage use the selected agent&apos;s prompt and model.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-muted-foreground">Skill</label>
+          <Input
+            value={skill}
+            onChange={(e) => setSkill(e.target.value)}
+            placeholder="e.g. skill-name"
+          />
+          <p className="text-[11px] text-muted-foreground">
+            Slash command / skill name to run on each item. Leading / is optional.
           </p>
         </div>
 

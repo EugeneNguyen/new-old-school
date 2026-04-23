@@ -1,0 +1,105 @@
+title: >-
+  When select other workspace and that workspace don't have same workflow, it
+  will show 404
+stage: Done
+status: Todo
+comments:
+  - text: >-
+      Analysis complete for REQ-00108. The bug is in
+      `WorkspaceSwitcher.activate()` — it reloads the current URL after
+      switching workspaces, so if you're viewing a workflow that doesn't exist
+      in the new workspace, the server component calls `notFound()` and you get
+      a 404. The simplest fix is to navigate to `/dashboard` instead of
+      reloading the current page when activating a new workspace. Three open
+      questions remain around exact redirect target, whether to attempt staying
+      on the same workflow if it exists, and whether other deep-linked pages
+      need the same treatment.
+    createdAt: '2026-04-23T09:49:53.502Z'
+    updatedAt: '2026-04-23T09:49:53.502Z'
+    author: runtime
+  - text: >-
+      Specification complete for REQ-00108. Defined 2 user stories, 6 acceptance
+      criteria (redirect on switch, applies from any sub-route, sidebar refresh,
+      no 404, loading state), technical constraints (single-file change in
+      WorkspaceSwitcher.tsx, use window.location.href for full reload), and
+      explicit out-of-scope items (smart same-workflow detection, item URL
+      mismatches). RTM entry and WBS mapping to 1.4.1 Dashboard Shell and 1.4.11
+      Workspace Management documented.
+    createdAt: '2026-04-23T09:51:34.831Z'
+    updatedAt: '2026-04-23T09:51:34.831Z'
+    author: agent
+  - text: >-
+      Comment posted successfully.
+
+
+      Specification complete for REQ-00108. I appended a `## Specification`
+      section to `index.md` covering:
+
+
+      - **2 user stories** — operator expects dashboard landing on workspace
+      switch; sidebar shows new workspace's workflows.
+
+      - **6 acceptance criteria** (Given/When/Then) — redirect to `/dashboard`
+      on switch, applies from any sub-route, sidebar re-fetches, no 404, loading
+      state preserved.
+
+      - **Technical constraints** — single-file change in
+      `WorkspaceSwitcher.tsx`; replace `router.refresh()` +
+      `window.location.reload()` with `window.location.href = '/dashboard'`; no
+      new API calls; cookie mechanism unchanged.
+
+      - **Out of scope** — smart same-workflow detection, mismatched item URLs,
+      activation API changes, non-dashboard routes.
+
+      - **RTM entry** — traced to `ux-design.md` and `system-architecture.md`,
+      implementation in `WorkspaceSwitcher.tsx`.
+
+      - **WBS mapping** — primary: 1.4.1 Dashboard Shell; secondary: 1.4.11
+      Workspace Management; reference: 1.6.5 Workspace Context.
+    createdAt: '2026-04-23T09:52:25.526Z'
+    updatedAt: '2026-04-23T09:52:25.526Z'
+    author: runtime
+  - text: >-
+      Implementation complete. Changed
+      `components/dashboard/WorkspaceSwitcher.tsx` to navigate to `/dashboard`
+      via `window.location.href` instead of reloading the current URL after
+      activating a new workspace. This eliminates the 404 when the target
+      workspace lacks the workflow the operator was viewing. The `useRouter`
+      import and `router` variable were removed since they're no longer used.
+      All six acceptance criteria are satisfied by this single-file change.
+    createdAt: '2026-04-23T09:55:50.913Z'
+    updatedAt: '2026-04-23T09:55:50.913Z'
+    author: runtime
+  - text: >-
+      Validation complete for REQ-00108. All 6 acceptance criteria pass based on
+      code inspection of `components/dashboard/WorkspaceSwitcher.tsx`: the
+      `activate` callback now sets `window.location.href = '/dashboard'`
+      unconditionally after a successful workspace activation, guaranteeing a
+      full-page reload to `/dashboard` from any sub-route, preventing the 404
+      path, and allowing `Sidebar.tsx` to re-fetch workflows for the new
+      workspace on mount. The RTM entry has been added (status: Done) and a `##
+      Validation` section appended to the item's `index.md`. Changes committed
+      and pushed.
+    createdAt: '2026-04-23T09:58:15.438Z'
+    updatedAt: '2026-04-23T09:58:15.438Z'
+    author: runtime
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: e7619704-7d0b-4371-8a16-4782e471be29
+    startedAt: '2026-04-23T09:46:52.016Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 6cdb1d38-3661-47b4-a2ad-1e2f45a859dd
+    startedAt: '2026-04-23T09:50:01.380Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: c75881af-b31b-4ba3-8ce1-67ef13ca031e
+    startedAt: '2026-04-23T09:52:33.360Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 7fc7e1e9-e499-4bf3-8587-7909693aabb5
+    startedAt: '2026-04-23T09:55:58.582Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-23T09:58:15.442Z'

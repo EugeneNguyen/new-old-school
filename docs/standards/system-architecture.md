@@ -1,6 +1,6 @@
 # System Architecture
 
-> Last updated: 2026-04-21
+> Last updated: 2026-04-23
 
 ---
 
@@ -15,7 +15,7 @@ C4Context
 
     System_Boundary(nos, "NOS Platform") {
         Container(webapp, "Web Dashboard", "Next.js 16 / React 19", "Kanban board, item management, terminal, settings")
-        Container(api, "REST API", "Next.js API Routes", "35+ endpoints for CRUD, streaming, events")
+        Container(api, "REST API", "Next.js API Routes", "42+ endpoints for CRUD, streaming, events")
         Container(engine, "Workflow Engine", "TypeScript", "Stage pipeline, auto-advance sweeper, event system")
         Container(adapter, "Agent Adapter", "TypeScript", "Pluggable adapter interface; Claude CLI implementation")
         ContainerDb(fs, "File System", "YAML/MD/JSON/JSONL", "Workflows, items, agents, settings, activity logs")
@@ -47,6 +47,8 @@ flowchart TB
         CT[Claude Terminal]
         SB[Sidebar]
         ST[Settings]
+        FB[FileBrowser + FileViewer]
+        CC[Chat Components]
     end
 
     subgraph API ["API Layer (Next.js Routes)"]
@@ -58,6 +60,7 @@ flowchart TB
         ER["/api/activity/events"]
         SE["/api/settings"]
         SH["/api/shell"]
+        WK["/api/workspaces"]
     end
 
     subgraph Engine ["Workflow Engine (lib/)"]
@@ -69,6 +72,9 @@ flowchart TB
         WE[workflow-events]
         AL[activity-log]
         RS[routine-scheduler]
+        FU[fs-utils]
+        VA[validators]
+        FT[file-types]
     end
 
     subgraph Adapter ["Agent Adapter"]
