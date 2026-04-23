@@ -1,0 +1,164 @@
+title: (routine) 2026-04-24 00:00
+stage: Fix doc audit findings
+status: In Progress
+comments:
+  - text: >-
+      All tests pass. The audit is complete.
+
+
+      **Summary (AUDIT-006):**
+
+
+      **Tech Stack Identified:**
+
+      - Next.js 16.2.1-canary.45 (App Router) — Next.js 16 stable is now
+      available
+
+      - React 19.2.5 — Server Components by default
+
+      - TypeScript ^5.0 with strict mode
+
+      - Tailwind CSS v3 — v4 is current but project uses v3
+
+      - Radix UI, CVA, lucide-react, js-yaml, chokidar
+
+
+      **Standards Documented:**
+
+      - Verified existing standards are current and comprehensive
+
+      - Confirmed Tailwind v4 landscape and Next.js 16 stable status
+
+      - GAP-10 (canary pinning) can be revisited now that Next.js 16 is stable
+
+
+      **Reuse Extractions Implemented:**
+
+      1. **EmptyState component** (`components/ui/empty-state.tsx`) —
+      consolidated duplicate empty state markup in KanbanBoard and ListView
+
+      2. **mapStageError utility** (`app/api/utils/stage-error.ts`) —
+      consolidated StageError → HTTP status mapping across 3 stages route files
+
+      3. **useApiList hook** (`lib/hooks/use-api-list.ts`) — reusable hook for
+      API list fetching with loading/error state
+
+
+      **Flagged but Not Implemented:**
+
+      - Sidebar NavLink component (complex variations make extraction
+      non-trivial)
+
+      - withErrorHandler HOF (~15 route handlers)
+
+      - parseBody utility (~10 route handlers)
+
+
+      **Gaps Status:** 6 resolved, 1 partial, 10 open (unchanged)
+    createdAt: '2026-04-23T17:09:37.790Z'
+    updatedAt: '2026-04-23T17:09:37.790Z'
+    author: runtime
+  - text: >-
+      The audit is complete. Here's a summary of what was done:
+
+
+      ## AUDIT-007: Standards Audit Complete
+
+
+      **Tech Stack Verified:**
+
+      - Next.js 16.2.1-canary.45 (canary pinned)
+
+      - React 19.2.5 with @types/react 19.2.14 (updated from 18.3.28)
+
+      - TypeScript 5 with strict mode enabled
+
+      - Tailwind CSS v3
+
+
+      **Findings by Severity:**
+
+
+      | Severity | Count | Key Issues |
+
+      |----------|-------|------------|
+
+      | High | 1 | GAP-13: `npm run lint` calls removed `next lint` |
+
+      | Medium | 4 | Canary pinning, React Compiler disabled, Tailwind v4
+      migration, partial reuse adoption |
+
+      | Low | 3 | No linter config, sync fs usage, mixed config formats |
+
+
+      **Resolutions Confirmed:**
+
+      - GAP-11: @types/react updated to 19.2.14 ✓
+
+      - GAP-15: next-themes added to package.json ✓
+
+      - GAP-18: ListView uses EmptyState component ✓
+
+      - GAP-19: All 3 stages routes use mapStageError ✓
+
+
+      **Gap Totals:** 10 resolved, 1 partial, 8 open
+
+
+      **Files Updated:**
+
+      - `.nos/workflows/audit/items/AUDIT-007/index.md` — Complete findings with
+      file/line references
+
+      - `docs/standards/README.md` — Gap summary updated
+
+      - `docs/standards/project-standards.md` — GAP-11/GAP-15 marked resolved
+    createdAt: '2026-04-23T17:13:55.142Z'
+    updatedAt: '2026-04-23T17:13:55.142Z'
+    author: runtime
+  - text: >-
+      [runtime] session log stalled; Let me read the current modified files to
+      identify any violations that need fixing.
+    createdAt: '2026-04-23T17:16:03.740Z'
+    updatedAt: '2026-04-23T17:16:03.740Z'
+    author: runtime
+  - text: >-
+      [runtime] session log stalled; Let me check the existing docs/standards
+      and use an agent to efficiently process all the requirements.
+    createdAt: '2026-04-23T17:19:07.060Z'
+    updatedAt: '2026-04-23T17:19:07.060Z'
+    author: runtime
+  - text: >-
+      [runtime] session log stalled; I'll audit the project against the
+      documentation standards by gathering context from both the standards
+      artifacts and the requirements workflow items.
+    createdAt: '2026-04-23T17:21:54.282Z'
+    updatedAt: '2026-04-23T17:21:54.282Z'
+    author: runtime
+sessions:
+  - stage: Update technology standard
+    adapter: claude
+    sessionId: 57725f8c-480c-42fa-b93d-177d7cc68479
+    startedAt: '2026-04-23T17:00:08.763Z'
+  - stage: Audit with the technology standard
+    adapter: claude
+    sessionId: dc369bfe-fd63-4280-87ea-ba9b91b39867
+    startedAt: '2026-04-23T17:09:45.480Z'
+  - stage: Fix audit findings
+    adapter: claude
+    sessionId: 2f376ffe-34fb-44cb-9775-7d5046fded81
+    startedAt: '2026-04-23T17:14:02.475Z'
+  - stage: Update documentation standard
+    adapter: claude
+    sessionId: fd68d9ce-f58f-446b-ab44-55d099383c28
+    startedAt: '2026-04-23T17:16:11.184Z'
+  - stage: Audit with the doc standard
+    adapter: claude
+    sessionId: b912d78a-9c8e-4a8d-9600-2e4b3c4d90df
+    startedAt: '2026-04-23T17:19:14.960Z'
+  - stage: Fix doc audit findings
+    adapter: claude
+    sessionId: 7c57e93f-77d2-4fac-b2a1-f66b07af8f02
+    startedAt: '2026-04-23T17:22:02.301Z'
+updatedAt: '2026-04-23T17:22:02.315Z'
+origin: routine

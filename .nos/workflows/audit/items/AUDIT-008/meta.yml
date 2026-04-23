@@ -1,0 +1,90 @@
+title: (routine) 2026-04-24 00:00
+stage: Fix audit findings
+status: In Progress
+comments:
+  - text: >-
+      ## Standards Audit Complete (AUDIT-007)
+
+
+      **Tech Stack**: Unchanged from AUDIT-005 - Next.js 16.2.1-canary.45, React
+      19.2.5, TypeScript 5, Tailwind CSS 3.
+
+
+      **Standards Documented**: Comprehensive documentation exists in
+      `docs/standards/` covering all major technologies.
+
+
+      ### Fixes Applied
+
+
+      1. **GAP-18 Resolved**: Updated `ListView.tsx` to use the `<EmptyState>`
+      component for both "no stages" and "no items" cases, matching
+      KanbanBoard's pattern.
+
+
+      2. **GAP-19 Verified**: All 3 stages routes already import and use
+      `mapStageError()` from `app/api/utils/stage-error.ts`.
+
+
+      ### Identified Reuse Opportunities (Not Yet Addressed)
+
+
+      1. **`useApiList` hook** - Exists at `lib/hooks/use-api-list.ts` but not
+      used by any dashboard pages (workflows, agents, activity, workspaces still
+      have local `reload` patterns)
+
+
+      2. **Sidebar NavLink extraction** - 7 near-identical nav link blocks in
+      `Sidebar.tsx` with identical className logic
+
+
+      3. **`withErrorHandler` HOF** - 22 API routes have `console.error` +
+      `createErrorResponse` pattern
+
+
+      4. **`parseBody` utility** - 20 API routes use `await req.json()` without
+      shared error handling
+
+
+      ### Gap Summary
+
+
+      | Status | Count |
+
+      |--------|-------|
+
+      | Resolved | 8 |
+
+      | Partial | 1 |
+
+      | Open | 10 |
+
+      | **Total** | **19** |
+
+
+      Documentation updated with new audit findings.
+    createdAt: '2026-04-23T17:11:31.504Z'
+    updatedAt: '2026-04-23T17:11:31.504Z'
+    author: runtime
+  - text: >-
+      [runtime] session log stalled; Now I have a thorough understanding of the
+      codebase. Let me write the updated audit findings to the item's
+      `index.md`.
+    createdAt: '2026-04-23T17:19:14.979Z'
+    updatedAt: '2026-04-23T17:19:14.979Z'
+    author: runtime
+sessions:
+  - stage: Update technology standard
+    adapter: claude
+    sessionId: 414613e6-f32e-41f7-812b-5ff550436e83
+    startedAt: '2026-04-23T17:05:50.430Z'
+  - stage: Audit with the technology standard
+    adapter: claude
+    sessionId: ae11b594-bf91-47c0-add0-a6afd1d47386
+    startedAt: '2026-04-23T17:11:38.890Z'
+  - stage: Fix audit findings
+    adapter: claude
+    sessionId: 98f035b2-8f69-4978-9ac0-c76fb4c4d1b2
+    startedAt: '2026-04-23T17:19:22.425Z'
+updatedAt: '2026-04-23T17:19:22.437Z'
+origin: routine
