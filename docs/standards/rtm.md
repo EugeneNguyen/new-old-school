@@ -115,6 +115,7 @@
 | REQ-00103 | File system — allow download file | Feature request | `docs/standards/api-reference.md`, `docs/standards/security-design.md`, `docs/standards/ui-design.md` | `app/api/workspaces/serve/route.ts`, `components/dashboard/FileViewer.tsx` | Manual validation — all 6 ACs pass | Done |
 | REQ-00105 | Dashboard: Adding visualization | Feature request | `docs/standards/api-reference.md`, `docs/standards/ui-design.md`, `docs/standards/rtm.md` | `app/api/analytics/sessions/route.ts`, `components/dashboard/SessionsChart.tsx`, `app/dashboard/page.tsx`, `package.json` (recharts) | `app/api/analytics/sessions/route.test.ts` (integration); manual validation — all 9 ACs pass | Done |
 | REQ-00107 | Create workflow-templates system | Feature request | `docs/standards/system-architecture.md`, `docs/standards/ui-design.md` | `app/api/templates/route.ts`, `app/api/templates/[id]/route.ts`, `app/api/templates/[id]/install/route.ts`, `app/api/workspaces/update/route.ts`, `app/dashboard/templates/page.tsx`, `components/dashboard/Sidebar.tsx`, `app/dashboard/settings/page.tsx` | Manual validation — all 12 ACs pass (see REQ-00107 Validation section) | Done |
+| REQ-00108 | Workspace switch redirects to dashboard instead of showing 404 | Bug report | `docs/standards/ux-design.md`, `docs/standards/system-architecture.md` | `components/dashboard/WorkspaceSwitcher.tsx` | Manual validation — all 6 ACs pass (see REQ-00108 Validation section) | Done |
 
 ---
 

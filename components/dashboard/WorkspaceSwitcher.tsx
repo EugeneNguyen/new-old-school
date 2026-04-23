@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { Check, ChevronDown, Folder, Plus, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,7 +15,6 @@ function readCookie(name: string): string | null {
 }
 
 export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
-  const router = useRouter();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
@@ -46,14 +44,13 @@ export function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
         if (res.ok) {
           setActiveId(id);
           setOpen(false);
-          router.refresh();
-          setTimeout(() => window.location.reload(), 50);
+          window.location.href = '/dashboard';
         }
       } finally {
         setLoading(false);
       }
     },
-    [router]
+    []
   );
 
   const active = workspaces.find((w) => w.id === activeId) ?? null;
