@@ -24,12 +24,13 @@ import {
   isNewCommentNotificationEnabled,
   isToastMuted,
 } from '@/lib/notifications';
+import { RefreshCw, Check, AlertCircle } from 'lucide-react';
 
 const AUDIO_DONE_KEY = 'nos.notifications.audio.itemDone';
 
 const MAX_BYTES = 65536;
 
-type TabId = 'appearance' | 'system-prompt' | 'heartbeat' | 'notifications' | 'adapter';
+type TabId = 'appearance' | 'system-prompt' | 'heartbeat' | 'notifications' | 'adapter' | 'templates';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'appearance', label: 'Appearance' },
@@ -37,6 +38,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'heartbeat', label: 'Heartbeat Config' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'adapter', label: 'Adapter' },
+  { id: 'templates', label: 'Templates' },
 ];
 
 export default function SettingsPage() {
@@ -702,6 +704,15 @@ export default function SettingsPage() {
       >
         <DefaultAgentSettings />
       </div>
+
+      <div
+        role="tabpanel"
+        id="panel-templates"
+        aria-labelledby="tab-templates"
+        hidden={activeTab !== 'templates'}
+      >
+        <TemplatesSettings />
+      </div>
     </div>
   );
 }
@@ -1030,6 +1041,117 @@ function DefaultAgentSettings() {
           {saveError && (
             <span className="text-sm text-destructive">Save failed: {saveError}</span>
           )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TemplatesSettings() {
+  const [updating, setUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  const [updateSuccess, setUpdateSuccess] = useState<string | null>(null);
+  const [lastAdded, setLastAdded] = useState<string[]>([]);
+
+  async function handleUpdate(force: boolean) {
+    setUpdating(true);
+    setUpdateError(null);
+    setUpdateSuccess(null);
+    setLastAdded([]);
+
+    try {
+      const res = await fetch('/api/workspaces/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force }),
+      });
+
+      if (res.ok) {
+        const data = (await res.json()) as { added?: string[] };
+        const added = data?.added ?? [];
+        setLastAdded(added);
+        if (added.length === 0) {
+          setUpdateSuccess('Already up to date');
+        } else {
+          setUpdateSuccess(`Updated! ${added.length} file${added.length === 1 ? '' : 's'} added.`);
+        }
+        setTimeout(() => setUpdateSuccess(null), 5000);
+      } else {
+        const data = (await res.json().catch(() => null)) as { error?: string; message?: string } | null;
+        if (res.status === 400 && data?.error === 'no_active_workspace') {
+          setUpdateError('No active workspace set');
+        } else {
+          setUpdateError(data?.error || `Update failed (${res.status})`);
+        }
+      }
+    } catch (err) {
+      setUpdateError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setUpdating(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Template Updates</CardTitle>
+        <CardDescription>
+          Sync your workspace&apos;s templates with the latest from the NOS server. This adds new
+          templates and updates existing ones without overwriting your customizations.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {updateError && (
+          <div className="flex items-center gap-2 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {updateError}
+          </div>
+        )}
+        {updateSuccess && (
+          <div className="flex items-center gap-2 rounded-md border border-success/50 bg-success/10 px-3 py-2 text-sm text-green-600 dark:text-green-500">
+            <Check className="h-4 w-4 shrink-0" />
+            {updateSuccess}
+          </div>
+        )}
+        {lastAdded.length > 0 && (
+          <div className="rounded-md border border-border bg-muted/30 px-3 py-2">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Files added/updated:</p>
+            <ul className="text-xs font-mono text-muted-foreground space-y-0.5">
+              {lastAdded.map((file) => (
+                <li key={file}>{file}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <div className="flex flex-col gap-2">
+          <Button
+            onClick={() => handleUpdate(false)}
+            disabled={updating}
+          >
+            {updating ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Updating…
+              </>
+            ) : (
+              'Update Templates'
+            )}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Safe update — skips files that already exist. Your customizations are preserved.
+          </p>
+        </div>
+        <div className="border-t pt-4">
+          <Button
+            variant="destructive"
+            onClick={() => handleUpdate(true)}
+            disabled={updating}
+          >
+            Force Update
+          </Button>
+          <p className="text-xs text-muted-foreground mt-1">
+            Also syncs system-prompt.md (normally skipped). Other customized files are preserved.
+          </p>
         </div>
       </CardContent>
     </Card>
