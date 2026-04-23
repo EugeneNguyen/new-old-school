@@ -111,6 +111,8 @@
 | REQ-00100 | Update sidemenu (workflow order) | Feature request | ux-design.md, wbs.md (1.4.1) | `components/dashboard/Sidebar.tsx` | Visual regression check u2014 all 6 ACs pass | Done |
 | refactor heart beat | Update heartbeat sweeper | Internal refactoring | system-architecture.md | `lib/auto-advance.ts`, `lib/auto-advance-sweeper.ts`, `lib/workflow-store.ts` | Manual validation u2014 all 21 ACs pass | Done |
 | REQ-00101 | Fix YAML date-quoting guidance & defensive coercion | Bug report | system-architecture.md, database-design.md | `.nos/system-prompt.md`, `.nos/workflows/CLAUDE.md`, `.nos/CLAUDE.md`, `lib/workflow-store.ts` | Manual validation u2014 all 6 ACs pass | Done |
+| REQ-00102 | Structured comment metadata (author, timestamps) | Operator request | `docs/standards/api-reference.md`, `docs/standards/system-architecture.md` | *(to be filled after implementation)* | *(to be filled after validation)* | In Progress |
+| REQ-00103 | File system — allow download file | Feature request | `docs/standards/api-reference.md`, `docs/standards/security-design.md`, `docs/standards/ui-design.md` | `app/api/workspaces/serve/route.ts`, `components/dashboard/FileViewer.tsx` | Manual validation — all 6 ACs pass | Done |
 
 ---
 
