@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ActivityEntry } from '@/lib/activity-log';
+import { SessionsChart } from '@/components/dashboard/SessionsChart';
 
 interface SystemStatus {
   status: string;
@@ -126,6 +127,8 @@ export function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <SessionsChart />
 
       {error && (
         <div className="p-4 bg-destructive/10 text-destructive border border-destructive rounded-md">

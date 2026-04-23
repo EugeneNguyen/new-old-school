@@ -1,6 +1,6 @@
 # API Reference
 
-> Last updated: 2026-04-21
+> Last updated: 2026-04-23
 
 All endpoints are served from `localhost:30128`. Workspace context is resolved from the `nos_workspace` cookie via the `withWorkspace()` wrapper.
 
@@ -129,30 +129,42 @@ Replace item body.
 
 ## Comments
 
-### `GET /api/workflows/[id]/items/[itemId]/comments`
-List all comments on an item.
-
-- **Response**: `200 OK` with string array
-
 ### `POST /api/workflows/[id]/items/[itemId]/comments`
 Append a comment.
 
-- **Request Body**: `{ "text": "Comment content" }`
+- **Request Body**: `{ "text": "Comment content", "author?": "agent" | "runtime" | "user" | string }`
+  - `author` is optional; defaults to `"agent"`.
 - **Response**: `201 Created`
-- **Errors**: `400` (invalid JSON)
+```json
+{ "ok": true, "comment": { "text": "...", "createdAt": "ISO-8601", "updatedAt": "ISO-8601", "author": "string" } }
+```
+- **Errors**: `400` (invalid JSON), `404` (workflow/item not found)
 
 ### `PATCH /api/workflows/[id]/items/[itemId]/comments/[index]`
 Update a comment by index.
 
 - **Request Body**: `{ "text": "Updated comment" }`
 - **Response**: `200 OK`
+```json
+{ "ok": true, "comment": { "text": "...", "createdAt": "ISO-8601", "updatedAt": "ISO-8601 (refreshed)", "author": "string" } }
+```
 - **Errors**: `400` (invalid JSON), `404` (index out of range)
 
 ### `DELETE /api/workflows/[id]/items/[itemId]/comments/[index]`
 Delete a comment by index.
 
-- **Response**: `204 No Content`
-- **Errors**: `400` (invalid JSON), `404`
+- **Response**: `200 OK`
+```json
+{ "ok": true, "comments": [...] }
+```
+- **Errors**: `400` (invalid index), `404` (index out of range)
+
+### `POST /api/workflows/[id]/items/[itemId]/restart`
+Restart an item: reset meta.yml (stage to first, status to Todo, sessions cleared), truncate index.md at `## Analysis`, log `restart` activity event.
+
+- **Response**: `200 OK` with restarted item
+- **Side effects**: Emits `item-updated` SSE event; triggers auto-advance if first stage has agent+prompt
+- **Errors**: `400` (already at first stage with Todo status), `404` (workflow/item not found)
 
 ---
 
@@ -399,10 +411,49 @@ Set active workspace (sets cookie).
 - **Response**: `200 OK`
 
 ### `GET /api/workspaces/browse`
-Browse filesystem directories.
+Browse filesystem directories and files.
 
 - **Query Params**: `path` (directory to browse)
-- **Response**: `200 OK` with directory listing
+- **Response**: `200 OK` with directory listing (folders first, alphabetical, with file type/size metadata)
+- **Security**: Path must be within active workspace root (sandbox enforcement with path-separator suffix check)
+
+### `GET /api/workspaces/preview`
+Preview a file's content (text files only, truncated at reasonable limits).
+
+- **Query Params**: `path` (file to preview)
+- **Response**: `200 OK` with `{ "content": "...", "truncated": false }`
+- **Errors**: `400` (path outside workspace), `404` (file not found)
+
+### `GET /api/workspaces/serve`
+Serve a file for direct browser consumption (images, audio, video).
+
+- **Query Params**: `path` (file to serve)
+- **Response**: File content with appropriate `Content-Type` header
+- **Security**: 100MB size guard; path must be within workspace root
+- **Errors**: `400` (path outside workspace, file too large), `404`
+
+### `GET /api/workspaces/active`
+Get the active workspace for the current session.
+
+- **Response**: `200 OK` with workspace object
+- **Errors**: `404` (no active workspace)
+
+---
+
+## Routine
+
+### `GET /api/workflows/[id]/routine`
+Get routine configuration for a workflow.
+
+- **Response**: `200 OK` with routine config (schedule, enabled flag)
+- **Errors**: `404`
+
+### `PUT /api/workflows/[id]/routine`
+Update routine configuration.
+
+- **Request Body**: `{ "schedule": "0 0 * * *", "enabled": true }`
+- **Response**: `200 OK`
+- **Errors**: `400` (invalid cron), `404`
 
 ---
 
@@ -415,3 +466,28 @@ SSE stream for workflow item changes.
 - **Events emitted**: `item-created`, `item-updated`, `item-deleted`, `item-activity`
 - **Event data**: JSON-serialized WorkflowItem or activity entry
 - **Reconnection**: Client uses `EventSource` with auto-reconnect
+
+---
+
+## Analytics
+
+### `GET /api/analytics/sessions`
+Aggregate session counts bucketed by time window.
+
+- **Query Params**: `window` — `24h` (default) | `30d` | `1y`
+- **Response**: `200 OK`
+```json
+{
+  "window": "24h",
+  "buckets": [
+    { "ts": "2026-04-23T00:00:00.000Z", "count": 2 },
+    { "ts": "2026-04-23T01:00:00.000Z", "count": 0 }
+  ],
+  "total": 14,
+  "generatedAt": "2026-04-23T12:00:00.000Z"
+}
+```
+- **Bucket counts**: All buckets in the window are returned, including zeros for empty periods. `24h` → 24 hourly buckets; `30d` → 30 daily buckets; `1y` → 12 monthly buckets.
+- **Data source**: `ItemSession.startedAt` in `meta.yml` files across all workflows. Sessions started, not completed.
+- **Aggregates**: All workflows combined; no per-workflow filter in this iteration.
+- **Refresh**: Client polls every 30 seconds via `useEffect`.
