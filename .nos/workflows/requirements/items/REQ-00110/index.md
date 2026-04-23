@@ -192,3 +192,49 @@ This requirement belongs to the following WBS packages:
 | AC-5 | ✅ — `buildAgentPrompt` prepends `[Skill: /<skill-name>]` before `<system-prompt>` |
 | AC-6 | ✅ — absent/null skill produces byte-identical output (skill section not emitted) |
 | AC-7 | ✅ — UI strips leading `/` before persisting; injection formats as `/<skill-name>` |
+
+## Validation
+
+Validation performed 2026-04-23 by reading all changed files and tracing end-to-end code paths.
+
+### Evidence
+
+**AC-1 — Type:**
+- `types/workflow.ts:19` — `skill?: string | null` present on `Stage` interface with comment explaining usage.
+
+**AC-2 — Persistence:**
+- `lib/workflow-store.ts:156-157` — `readStages` validates type and max length (128), returns trimmed string or `null`.
+- `lib/workflow-store.ts:616` — `StagePatch` interface includes `skill?: string | null`.
+- `lib/workflow-store.ts:667-677` — `updateStage` writes `skill` to YAML, deletes key when null/empty, rejects > 128.
+- `lib/workflow-store.ts:749-752` — `addStage` writes `skill` for new stages.
+
+**AC-3 — API route:**
+- `app/api/workflows/[id]/stages/[stageName]/route.ts:99-115` — PATCH validates `skill` (string or null, max 128 chars after trim, empty string normalizes to null).
+
+**AC-4 — UI control:**
+- `components/dashboard/StageDetailDialog.tsx:33` — `skill` state initialized as `''`.
+- `components/dashboard/StageDetailDialog.tsx:48` — Pre-fills from `stage.skill ?? ''` on dialog open.
+- `components/dashboard/StageDetailDialog.tsx:116` — Strips `/` prefix on save: `skill.startsWith('/') ? skill.slice(1).trim() : skill.trim() || null`.
+- `components/dashboard/StageDetailDialog.tsx:236-246` — Renders "Skill" `<Input>` with placeholder and helper text.
+
+**AC-5 — Prompt injection:**
+- `lib/system-prompt.ts:39-41` — When `skill` is a non-empty string, prepends `[Skill: /<skill.trim()>]\n` to `parts` before `<system-prompt>`.
+- `lib/stage-pipeline.ts:58` — Passes `stage.skill ?? null` into `buildAgentPrompt`.
+
+**AC-6 — No-op when absent:**
+- `lib/system-prompt.ts:39` — Guard `typeof skill === 'string' && skill.trim()` ensures no directive is emitted when absent/null.
+- `readStages` at line 174-178 sets `skill` to `null` when absent/empty, so the absent case produces the same output as before.
+
+**AC-7 — Strips leading slash:**
+- `StageDetailDialog.tsx:116` strips `/` in the UI before sending to API.
+- `system-prompt.ts:40` always formats as `/<skill.trim()>` (re-adds the slash on injection).
+
+### Regressions / Edge Cases
+
+- TypeScript compiles clean on all 6 changed files (pre-existing errors in `lib/scaffolding.test.ts` are unrelated).
+- `addStage` correctly writes `skill` for new stages.
+- `updateStage` handles rename correctly (skill not affected).
+- Null/empty skill in PATCH correctly deletes the key from YAML (consistent with `agentId` behavior via `maxDisplayItems` pattern).
+- 128-char validation is enforced server-side in PATCH route and in `updateStage`/`addStage`.
+
+### Result: All 7 ACs pass ✅
