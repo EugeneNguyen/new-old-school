@@ -820,3 +820,24 @@
 {"ts":"2026-04-23T14:25:49.239Z","workflowId":"requirements","itemId":"REQ-00110","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Implementation","after":"Validation"}}
 {"ts":"2026-04-23T14:25:49.239Z","workflowId":"requirements","itemId":"REQ-00110","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}
 {"ts":"2026-04-23T14:25:57.239Z","workflowId":"requirements","itemId":"REQ-00110","type":"status-changed","actor":"unknown","data":{"kind":"status-changed","before":"Todo","after":"In Progress"}}
+{"ts":"2026-04-23T17:05:42.423Z","workflowId":"requirements","itemId":"REQ-00110","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"In Progress","after":"Done"}}
+{"ts":"2026-04-23T17:05:42.425Z","workflowId":"requirements","itemId":"REQ-00110","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Validation","after":"Done"}}
+{"ts":"2026-04-23T17:05:42.425Z","workflowId":"requirements","itemId":"REQ-00110","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}
+{"ts":"2026-04-24T02:10:29.125Z","workflowId":"requirements","itemId":"REQ-00111","type":"item-created","actor":"ui","data":{"kind":"item-created","title":"File system: delete file/folder","stageId":"Backlog","status":"Todo"}}
+{"ts":"2026-04-24T02:10:31.858Z","workflowId":"requirements","itemId":"REQ-00111","type":"stage-changed","actor":"ui","data":{"kind":"stage-changed","before":"Backlog","after":"Analysis"}}
+{"ts":"2026-04-24T02:10:54.696Z","workflowId":"requirements","itemId":"REQ-00111","type":"status-changed","actor":"unknown","data":{"kind":"status-changed","before":"Todo","after":"In Progress"}}
+{"ts":"2026-04-24T02:12:40.662Z","workflowId":"requirements","itemId":"REQ-00111","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"In Progress","after":"Done"}}
+{"ts":"2026-04-24T02:12:40.663Z","workflowId":"requirements","itemId":"REQ-00111","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Analysis","after":"Documentation"}}
+{"ts":"2026-04-24T02:12:40.663Z","workflowId":"requirements","itemId":"REQ-00111","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}
+{"ts":"2026-04-24T02:12:48.077Z","workflowId":"requirements","itemId":"REQ-00111","type":"status-changed","actor":"unknown","data":{"kind":"status-changed","before":"Todo","after":"In Progress"}}
+{"ts":"2026-04-24T02:16:51.225Z","workflowId":"requirements","itemId":"REQ-00111","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"In Progress","after":"Done"}}
+{"ts":"2026-04-24T02:16:51.227Z","workflowId":"requirements","itemId":"REQ-00111","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Documentation","after":"Implementation"}}
+{"ts":"2026-04-24T02:16:51.227Z","workflowId":"requirements","itemId":"REQ-00111","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}
+{"ts":"2026-04-24T02:16:59.165Z","workflowId":"requirements","itemId":"REQ-00111","type":"status-changed","actor":"unknown","data":{"kind":"status-changed","before":"Todo","after":"In Progress"}}
+{"ts":"2026-04-24T02:21:32.539Z","workflowId":"requirements","itemId":"REQ-00111","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"In Progress","after":"Done"}}
+{"ts":"2026-04-24T02:21:32.541Z","workflowId":"requirements","itemId":"REQ-00111","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Implementation","after":"Validation"}}
+{"ts":"2026-04-24T02:21:32.541Z","workflowId":"requirements","itemId":"REQ-00111","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}
+{"ts":"2026-04-24T02:21:40.261Z","workflowId":"requirements","itemId":"REQ-00111","type":"status-changed","actor":"unknown","data":{"kind":"status-changed","before":"Todo","after":"In Progress"}}
+{"ts":"2026-04-24T02:25:43.018Z","workflowId":"requirements","itemId":"REQ-00111","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"In Progress","after":"Done"}}
+{"ts":"2026-04-24T02:25:43.021Z","workflowId":"requirements","itemId":"REQ-00111","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Validation","after":"Done"}}
+{"ts":"2026-04-24T02:25:43.021Z","workflowId":"requirements","itemId":"REQ-00111","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}

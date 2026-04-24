@@ -1,6 +1,6 @@
 title: (routine) 2026-04-24 00:00
-stage: Fix doc audit findings
-status: In Progress
+stage: Done
+status: Todo
 comments:
   - text: >-
       ## Standards Audit Complete (AUDIT-007)
@@ -208,6 +208,45 @@ comments:
     createdAt: '2026-04-23T17:39:26.796Z'
     updatedAt: '2026-04-23T17:39:26.796Z'
     author: runtime
+  - text: >-
+      The doc audit stage work is complete. Here's what I found and did:
+
+
+      **Verification:** The prior stage 2 agents had already fixed all 4 doc
+      audit findings and updated the fix log accordingly:
+
+
+      1. **High (stale version):** ✅ Already fixed — `project-standards.md`
+      already shows `^16.0.0 (App Router)` and the version-specific notes
+      correctly reference stable.
+
+      2. **Medium (stale timestamp):** ✅ Already fixed —
+      `documentation-standards.md` already reads "2026-04-24".
+
+      3. **Medium (WBS wording):** ✅ Already fixed — WBS line 12 already uses
+      the full `[Skill: /<skill-name>]` directive injection phrasing.
+
+      4. **Low (RTM duplicate):** ✅ Already fixed — RTM has only one GAP-19
+      entry.
+
+
+      All 4 findings retracted (Glossary skill field, UI Design FileBrowser,
+      user-journey Files entry point, React Compiler inline doc) were already
+      correct in the codebase.
+
+
+      **Action taken:** Committed the AUDIT-008 workflow item updates
+      (activity.jsonl, meta.yml changes, index.md doc audit log) as commit
+      `a978aac`. The standards docs in `docs/standards/` are consistent with the
+      codebase and require no further changes.
+
+
+      **Status:** Documentation is aligned — all 17 standards documents reflect
+      the current codebase state including GAP-10 (Next.js stable), GAP-13/03
+      (Biome), GAP-14 (React Compiler), and REQ-00110 (skill field in stages).
+    createdAt: '2026-04-23T17:43:51.250Z'
+    updatedAt: '2026-04-23T17:43:51.250Z'
+    author: runtime
 sessions:
   - stage: Update technology standard
     adapter: claude
@@ -233,5 +272,5 @@ sessions:
     adapter: claude
     sessionId: ca9aad41-03e5-4146-806b-5b6cfa110ab1
     startedAt: '2026-04-23T17:39:34.181Z'
-updatedAt: '2026-04-23T17:39:34.192Z'
+updatedAt: '2026-04-23T17:43:51.255Z'
 origin: routine

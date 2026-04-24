@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { reorderStages, workflowExists, StageError } from '@/lib/workflow-store';
 import { createErrorResponse } from '@/app/api/utils/errors';
+import { mapStageError } from '@/app/api/utils/stage-error';
 import { withWorkspace } from '@/lib/workspace-context';
 
 export async function PUT(
@@ -33,12 +34,7 @@ export async function PUT(
       return NextResponse.json({ stages });
     } catch (error) {
       if (error instanceof StageError) {
-        if (error.code === 'SET_MISMATCH') {
-          return createErrorResponse(error.message, 'ConflictError', 409);
-        }
-        if (error.code === 'NOT_FOUND') {
-          return createErrorResponse(error.message, 'NotFound', 404);
-        }
+        return mapStageError(error, 'reordering workflow stages');
       }
       throw error;
     }

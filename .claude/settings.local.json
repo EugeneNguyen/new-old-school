@@ -59,7 +59,8 @@
       "Bash(curl -s -o /dev/null -w '%{http_code}\\\\n' http://localhost:30128/api/workflows/requirements)",
       "Bash(python3 -c \"import sys,json; d=json.loads\\(sys.stdin.read\\(\\)\\); print\\('type=',d.get\\('type'\\)\\); r=d.get\\('result',''\\); print\\('result:', r[:400] if isinstance\\(r,str\\) else r\\)\")",
       "Bash(curl -s http://localhost:30128/api/workflows/requirements)",
-      "Bash(python3 -c \"import sys,json; d=json.loads\\(sys.stdin.read\\(\\)\\); items=d.get\\('items',[]\\); r=[i for i in items if i['id']=='REQ-00038']; print\\(json.dumps\\(r[0] if r else {}, indent=2\\)[:1500]\\)\")"
+      "Bash(python3 -c \"import sys,json; d=json.loads\\(sys.stdin.read\\(\\)\\); items=d.get\\('items',[]\\); r=[i for i in items if i['id']=='REQ-00038']; print\\(json.dumps\\(r[0] if r else {}, indent=2\\)[:1500]\\)\")",
+      "Bash(curl -s http://localhost:30128)"
     ]
   }
 }

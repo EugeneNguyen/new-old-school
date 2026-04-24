@@ -1,6 +1,6 @@
 # Deployment & Infrastructure Design
 
-> Last updated: 2026-04-23
+> Last updated: 2026-04-24
 
 NOS is a **local-only** application. All components run on the operator's development machine. There is no cloud deployment, staging environment, or production infrastructure.
 

@@ -1,6 +1,6 @@
 title: 'File system: delete file/folder'
-stage: Validation
-status: In Progress
+stage: Done
+status: Todo
 comments:
   - text: >-
       Analysis appended to `REQ-00111/index.md`. Here's a summary of what it
@@ -118,6 +118,39 @@ comments:
     createdAt: '2026-04-24T02:21:32.532Z'
     updatedAt: '2026-04-24T02:21:32.532Z'
     author: runtime
+  - text: >-
+      Validation complete. All 12 acceptance criteria for REQ-00111 pass:
+
+
+      - **AC-1/AC-2**: Context menu with "Delete" appears on right-click for
+      both files and folders
+
+      - **AC-3/AC-4**: Confirmation dialog shows item name; folder deletion
+      shows recursion warning
+
+      - **AC-5/AC-6**: Cancel/Confirm buttons present; Cancel dismisses with no
+      API call
+
+      - **AC-7/AC-8**: Confirm calls `DELETE /api/workspaces/delete`;
+      `fs.rmSync` with `recursive: true` handles folders
+
+      - **AC-9**: `finally` block always calls `load(data.path)` to refresh the
+      listing
+
+      - **AC-10/AC-11**: `toast.error()` on failure; toast is non-blocking
+
+      - **AC-12**: `fs.rmSync` is permanent; no trash integration
+
+
+      One non-blocking note flagged in the Validation section: the sandbox check
+      technically allows deletion of the workspace root itself — worth a
+      hardening pass later but doesn't violate any AC.
+
+
+      RTM updated with the REQ-00111 row and everything committed and pushed.
+    createdAt: '2026-04-24T02:25:43.014Z'
+    updatedAt: '2026-04-24T02:25:43.014Z'
+    author: runtime
 sessions:
   - stage: Analysis
     adapter: claude
@@ -137,4 +170,4 @@ sessions:
     sessionId: dda8e9ff-7678-4dcc-8053-876bb798387a
     startedAt: '2026-04-24T02:21:40.257Z'
     agentId: martin-senior-engineer
-updatedAt: '2026-04-24T02:21:40.259Z'
+updatedAt: '2026-04-24T02:25:43.019Z'

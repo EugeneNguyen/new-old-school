@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { FastForward, MoreVertical, Sparkles, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getItemStatusStyle } from '@/lib/item-status-style';
+import { EmptyState } from '@/components/ui/empty-state';
 import type { Agent, Stage, WorkflowItem } from '@/types/workflow';
 
 interface Props {
@@ -43,9 +44,9 @@ export function KanbanBoard({ stages, items, onOpenItem, onMoveItem, onOpenStage
 
   if (stages.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-muted-foreground">
+      <EmptyState>
         No stages defined for this workflow. Configure stages in your workflow settings.
-      </div>
+      </EmptyState>
     );
   }
 

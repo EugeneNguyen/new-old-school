@@ -1,6 +1,6 @@
 # WBS Dictionary
 
-> Last updated: 2026-04-23
+> Last updated: 2026-04-24 (updated skill field in stages per REQ-00110)
 
 ---
 
@@ -9,7 +9,7 @@
 | ID | Name | Description | Owner | Est. Effort | Dependencies | Acceptance Criteria |
 |----|------|-------------|-------|-------------|--------------|--------------------|
 | 1.1.1 | Workflow CRUD | Create, read, update, and delete workflow definitions; validate id/name/idPrefix patterns | Backend | M | u2014 | Workflows persist as `config.json` + `config/stages.yaml` in `.nos/workflows/<id>/` |
-| 1.1.2 | Stage Pipeline | Define ordered stages with name, description, prompt, agent assignment, and auto-advance flag | Backend | M | 1.1.1 | Stages stored in YAML; order preserved; agent reference validated |
+| 1.1.2 | Stage Pipeline | Define ordered stages with name, description, prompt, agent assignment, skill/slash-command assignment, and auto-advance flag | Backend | M | 1.1.1 | Stages stored in YAML; order preserved; agent reference validated; skill injected as `[Skill: /<skill-name>]` directive |
 | 1.1.3 | Item Lifecycle | Create items in stages, manage status transitions (Todou2192In Progressu2192Done/Failed), move between stages | Backend | L | 1.1.1, 1.1.2 | Items stored as `meta.yml` + `index.md`; status transitions validated; activity logged |
 | 1.1.4 | Auto-Advance System | Heartbeat sweeper detecting session completion, auto-advancing Done items to next stage, auto-starting eligible Todo items | Backend | L | 1.1.3, 1.2.3 | Configurable interval (default 60s); completes sessions; advances items; triggers pipelines |
 | 1.1.5 | Activity Logging | Append-only JSONL log per workflow tracking title/stage/status/body changes with timestamps and hashes | Backend | S | 1.1.3 | Activity entries include type, before/after values, timestamps; supports pagination |
@@ -32,12 +32,15 @@
 |----|------|-------------|-------|-------------|--------------|--------------------|
 | 1.3.1 | Workflow Routes | CRUD endpoints for workflows at `/api/workflows` | Backend | M | 1.1.1 | GET (list), POST (create with validation), GET/PATCH/DELETE by ID |
 | 1.3.2 | Item Routes | CRUD endpoints for items including content and comments | Backend | L | 1.1.3 | POST (create + trigger pipeline), PATCH (update), GET/PUT content, comment CRUD |
-| 1.3.3 | Stage Routes | CRUD and reorder endpoints for stages | Backend | M | 1.1.2 | POST (add), PATCH (update), DELETE (must be empty), POST order (set validated) |
+| 1.3.3 | Stage Routes | CRUD and reorder endpoints for stages; skill assignment via PATCH | Backend | M | 1.1.2 | POST (add), PATCH (update with optional skill field), DELETE (must be empty), POST order (set validated) |
 | 1.3.4 | Agent Routes | CRUD endpoints for agents with reference checking | Backend | M | 1.2.1 | GET (list), POST (create), GET/PATCH/DELETE by ID; DELETE blocked if referenced |
 | 1.3.5 | Activity Routes | Activity log endpoints: global, per-workflow, per-item, SSE events | Backend | M | 1.1.5, 1.1.6 | Pagination via before/limit; SSE streaming; bounds-clamped limit (1u2013500) |
 | 1.3.6 | Session & Chat Routes | Spawn agent sessions, stream output, check status | Backend | L | 1.2.2, 1.2.5 | POST to spawn; SSE streaming; status polling; stop command |
 | 1.3.7 | Settings Routes | System prompt, heartbeat interval, default agent config | Backend | S | 1.2.4 | GET/PUT for each setting; validation on write |
 | 1.3.8 | System Routes | Shell execution, system info, adapter listing, workspace management | Backend | M | 1.6.3 | Shell validates command type; adapters list models; workspace CRUD |
+| 1.3.9 | Analytics Routes | Session count aggregation by time window | Backend | S | 1.1.3 | Bucketed counts from ItemSession.startedAt across all workflows |
+| 1.3.10 | Template Routes | Template listing, detail, and installation | Backend | M | 1.7.5 | List from templates/.nos/workflows; install to workspace .nos/workflows |
+| 1.3.11 | Health Routes | Server health check for monitoring and CLI restart | Backend | S | 1.1.4 | Returns uptime, heartbeat status, stale detection |
 
 ## 1.4 Web Dashboard (UI)
 

@@ -1,6 +1,6 @@
 # Security Design / Threat Model
 
-> Last updated: 2026-04-23
+> Last updated: 2026-04-24
 
 NOS is a **local-only** tool running on the operator's machine. It does not expose services to the network in production. Security considerations are primarily around local process safety and input validation.
 
@@ -48,7 +48,7 @@ NOS is a **local-only** tool running on the operator's machine. It does not expo
 | A03 | Injection | **Medium** | Shell command input validated (`typeof !== 'string'`); Markdown rendered with `rehype-sanitize` allowlist; no SQL |
 | A04 | Insecure Design | Low | File-based storage with atomic writes; no complex auth flows |
 | A05 | Security Misconfiguration | Low | Minimal configuration surface; `serverExternalPackages` for chokidar/fsevents |
-| A06 | Vulnerable Components | **Medium** | Next.js canary (not stable); `next-themes` phantom dependency; `@types/react` version mismatch |
+| A06 | Vulnerable Components | Low | Next.js stable (^16.0.0); `@types/react` at 19.2.14; `next-themes` explicit dependency |
 | A07 | Identification/Auth Failures | N/A | No authentication system |
 | A08 | Software/Data Integrity | Low | Atomic writes prevent corruption; no CI/CD pipeline to compromise |
 | A09 | Logging/Monitoring Failures | Low | Middleware logs all API requests; activity JSONL provides audit trail |
@@ -95,8 +95,8 @@ NOS is a **local-only** tool running on the operator's machine. It does not expo
 
 | Priority | Recommendation |
 |----------|---------------|
-| High | Move from Next.js canary to stable to reduce dependency risk (GAP-10) |
-| Medium | Add `next-themes` as explicit dependency (GAP-15) |
+| High | (Resolved) Move from Next.js canary to stable (GAP-10) |
+| Medium | (Resolved) Add `next-themes` as explicit dependency (GAP-15) |
 | Medium | Configure CSP headers for dashboard (currently none) |
 | Low | Add rate limiting to shell endpoint (defense in depth) |
 | Low | Audit `allowedDevOrigins` in next.config.mjs u2014 currently allows a specific LAN IP |

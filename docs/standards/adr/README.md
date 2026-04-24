@@ -1,6 +1,6 @@
 # Architecture Decision Records (ADR)
 
-> Last updated: 2026-04-23
+> Last updated: 2026-04-24
 
 This directory contains Architecture Decision Records for the NOS project. Each ADR documents a significant architectural decision: the context, the decision made, consequences, and alternatives considered.
 

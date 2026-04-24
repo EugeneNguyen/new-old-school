@@ -149,3 +149,6 @@
 {"ts":"2026-04-23T17:39:26.799Z","workflowId":"audit","itemId":"AUDIT-008","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Audit with the doc standard","after":"Fix doc audit findings"}}
 {"ts":"2026-04-23T17:39:26.799Z","workflowId":"audit","itemId":"AUDIT-008","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}
 {"ts":"2026-04-23T17:39:34.193Z","workflowId":"audit","itemId":"AUDIT-008","type":"status-changed","actor":"unknown","data":{"kind":"status-changed","before":"Todo","after":"In Progress"}}
+{"ts":"2026-04-23T17:43:51.254Z","workflowId":"audit","itemId":"AUDIT-008","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"In Progress","after":"Done"}}
+{"ts":"2026-04-23T17:43:51.256Z","workflowId":"audit","itemId":"AUDIT-008","type":"stage-changed","actor":"runtime","data":{"kind":"stage-changed","before":"Fix doc audit findings","after":"Done"}}
+{"ts":"2026-04-23T17:43:51.256Z","workflowId":"audit","itemId":"AUDIT-008","type":"status-changed","actor":"runtime","data":{"kind":"status-changed","before":"Done","after":"Todo"}}

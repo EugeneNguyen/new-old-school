@@ -1,6 +1,6 @@
 # Performance Budget
 
-> Last updated: 2026-04-23
+> Last updated: 2026-04-24
 
 NOS is a local-only developer tool. Performance budgets are calibrated for the local development context, not public-facing web applications.
 
@@ -79,6 +79,6 @@ NOS is a local-only developer tool. Performance budgets are calibrated for the l
 | Priority | Action |
 |----------|--------|
 | Medium | Lazy-load MDXEditor (dynamic import) to reduce initial bundle |
-| Medium | Enable React Compiler (GAP-14) for automatic memoization |
+| Medium | (Resolved) Enable React Compiler (GAP-14) for automatic memoization |
 | Low | Configure `@next/bundle-analyzer` to track bundle growth |
 | Low | Add `loading.tsx` skeletons with meaningful layout placeholders |

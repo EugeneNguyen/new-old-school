@@ -1,6 +1,6 @@
 title: Allow setting slash command/skill in the stages
-stage: Validation
-status: In Progress
+stage: Done
+status: Todo
 comments:
   - text: >-
       Analysis complete. I've appended an `## Analysis` section to
@@ -108,6 +108,40 @@ comments:
     createdAt: '2026-04-23T14:25:49.235Z'
     updatedAt: '2026-04-23T14:25:49.235Z'
     author: runtime
+  - text: >-
+      Validation complete — all 7 ACs pass. Here's the summary:
+
+
+      - **AC-1** ✅ — `skill?: string | null` added to `Stage` in
+      `types/workflow.ts`
+
+      - **AC-2** ✅ — `readStages`, `StagePatch`, `updateStage`, `addStage` in
+      `lib/workflow-store.ts` all handle `skill`
+
+      - **AC-3** ✅ — PATCH route in
+      `app/api/workflows/[id]/stages/[stageName]/route.ts` validates `skill`
+      (string/null, max 128 chars)
+
+      - **AC-4** ✅ — `StageDetailDialog.tsx` renders Skill input, pre-fills on
+      open, strips `/` prefix, sends `null` when cleared
+
+      - **AC-5** ✅ — `buildAgentPrompt` in `lib/system-prompt.ts` prepends
+      `[Skill: /<skill-name>]` before `<system-prompt>`; `stage-pipeline.ts`
+      passes `stage.skill ?? null`
+
+      - **AC-6** ✅ — absent/null skill produces no directive emission
+      (byte-identical to pre-feature behavior)
+
+      - **AC-7** ✅ — UI strips `/` before persisting; injection re-adds as
+      `/<skill-name>`
+
+
+      No regressions found — TypeScript compiles clean on all changed files, and
+      edge cases (new stage creation, stage rename, null/empty handling) are all
+      correctly handled. RTM updated and pushed.
+    createdAt: '2026-04-23T17:05:42.420Z'
+    updatedAt: '2026-04-23T17:05:42.420Z'
+    author: runtime
 sessions:
   - stage: Analysis
     adapter: claude
@@ -127,4 +161,4 @@ sessions:
     sessionId: bf282137-5b21-471e-bb5d-6735f57917e4
     startedAt: '2026-04-23T14:25:57.235Z'
     agentId: martin-senior-engineer
-updatedAt: '2026-04-23T14:25:57.238Z'
+updatedAt: '2026-04-23T17:05:42.424Z'

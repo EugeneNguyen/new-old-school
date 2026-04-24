@@ -1,6 +1,6 @@
 # Glossary / Domain Model
 
-> Last updated: 2026-04-23
+> Last updated: 2026-04-24
 
 ---
 
@@ -23,8 +23,10 @@ A **workflow** is a named container that organizes work items into a sequence of
 A **stage** is a named step within a workflow pipeline. Items flow through stages sequentially (or non-sequentially via drag-drop). Each stage can have:
 - A `prompt` with instructions for agents
 - An optional assigned **agent** (`agentId`)
+- An optional **skill** (slash command) to invoke when the stage runs
 - An `autoAdvanceOnComplete` flag
 - A `maxDisplayItems` cap for Kanban column display
+- When `skill` is set, `[Skill: /<skill-name>]` is prepended to the assembled prompt
 
 ### WorkflowItem (Item)
 A **workflow item** (or simply "item") is a unit of work within a workflow. It represents a task, requirement, or ticket. Each item has:
@@ -32,7 +34,7 @@ A **workflow item** (or simply "item") is a unit of work within a workflow. It r
 - A `title` and optional `body` (Markdown)
 - A `stage` (current position in the pipeline)
 - A `status` (Todo / In Progress / Done / Failed)
-- `comments` (array of Markdown strings)
+- `comments` (array of Comment objects with text, createdAt, updatedAt, and author fields)
 - `sessions` (history of agent executions on this item)
 
 ### ItemStatus
@@ -41,6 +43,14 @@ The **status** of an item indicates its lifecycle state:
 - **In Progress**: An agent session is active on this item
 - **Done**: Work is complete; auto-advance may move it to the next stage
 - **Failed**: Agent reported a failure; requires manual intervention
+
+### Comment
+A **comment** is a structured annotation on an item. Each comment has:
+- `text` (string) — Markdown content
+- `createdAt` (ISO 8601 string) — When the comment was created
+- `updatedAt` (ISO 8601 string) — When the comment was last edited
+- `author` (string) — Who created the comment: `"agent"`, `"runtime"`, or `"user"`
+- Legacy plain-string comments are lazily migrated to this structure on read
 
 ### Agent
 An **agent** is a persona that executes work on items. Agents are assigned to stages and receive prompts when items enter their stage. An agent has:

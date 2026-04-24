@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { addStage, workflowExists, StageError } from '@/lib/workflow-store';
 import { createErrorResponse } from '@/app/api/utils/errors';
+import { mapStageError } from '@/app/api/utils/stage-error';
 import { withWorkspace } from '@/lib/workspace-context';
 
 export async function POST(
@@ -50,12 +51,7 @@ export async function POST(
     return NextResponse.json({ stages }, { status: 201 });
   } catch (error) {
     if (error instanceof StageError) {
-      if (error.code === 'DUPLICATE') {
-        return createErrorResponse(error.message, 'ConflictError', 409);
-      }
-      if (error.code === 'INVALID_NAME') {
-        return createErrorResponse(error.message, 'ValidationError', 400);
-      }
+      return mapStageError(error, 'creating workflow stage');
     }
     console.error('Error creating workflow stage:', error);
     return createErrorResponse('Failed to create stage');

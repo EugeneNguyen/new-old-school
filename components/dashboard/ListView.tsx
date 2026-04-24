@@ -4,6 +4,7 @@ import { memo, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { getItemStatusStyle } from '@/lib/item-status-style';
 import { formatRelativeUpdatedAt } from '@/lib/workflow-view-mode';
+import { EmptyState } from '@/components/ui/empty-state';
 import type { Stage, WorkflowItem } from '@/types/workflow';
 
 interface Props {
@@ -92,17 +93,17 @@ export function ListView({ stages, items, onOpenItem }: Props) {
 
   if (stages.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-muted-foreground">
+      <EmptyState>
         No stages defined for this workflow. Configure stages in your workflow settings.
-      </div>
+      </EmptyState>
     );
   }
 
   if (items.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+      <EmptyState>
         No items yet
-      </div>
+      </EmptyState>
     );
   }
 

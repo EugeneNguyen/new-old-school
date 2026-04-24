@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { updateStage, deleteStage, workflowExists, StageError, type StagePatch } from '@/lib/workflow-store';
 import { agentExists } from '@/lib/agents-store';
 import { createErrorResponse } from '@/app/api/utils/errors';
+import { mapStageError } from '@/app/api/utils/stage-error';
 import { withWorkspace } from '@/lib/workspace-context';
 
 export async function PATCH(
@@ -135,7 +136,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  req: Request,
+  _req: Request,
   { params }: { params: Promise<{ id: string; stageName: string }> }
 ) {
   return withWorkspace(async () => {
@@ -152,18 +153,7 @@ export async function DELETE(
       return NextResponse.json({ stages });
     } catch (error) {
       if (error instanceof StageError) {
-        if (error.code === 'NOT_FOUND') {
-          return createErrorResponse(error.message, 'NotFound', 404);
-        }
-        if (error.code === 'HAS_ITEMS') {
-          return NextResponse.json(
-            { error: error.message, itemCount: error.itemCount },
-            { status: 409 }
-          );
-        }
-        if (error.code === 'LAST_STAGE') {
-          return createErrorResponse(error.message, 'BadRequest', 400);
-        }
+        return mapStageError(error, 'deleting workflow stage');
       }
       throw error;
     }

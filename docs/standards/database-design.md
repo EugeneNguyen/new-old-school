@@ -1,6 +1,6 @@
 # Database Design
 
-> Last updated: 2026-04-23
+> Last updated: 2026-04-24
 
 NOS uses a **file-based data model** with no external database. All state is persisted as YAML metadata files, Markdown content files, JSON configuration, and JSONL activity logs on the local filesystem. Atomic writes (temp file + rename) ensure consistency.
 
@@ -118,8 +118,8 @@ erDiagram
 
 ### Stage
 - **Storage**: `.nos/workflows/<id>/config/stages.yaml` (ordered array)
-- **Fields**: `name` (pattern: `^[A-Za-z0-9 _-]+$`, max 64 chars), `description`, `prompt` (nullable text), `autoAdvanceOnComplete` (nullable boolean), `agentId` (nullable FK to Agent), `maxDisplayItems` (nullable positive int, 0 = no limit)
-- **Constraints**: Name unique within workflow; order significant (first = default for new items)
+- **Fields**: `name` (pattern: `^[A-Za-z0-9 _-]+$`, max 64 chars), `description`, `prompt` (nullable text), `autoAdvanceOnComplete` (nullable boolean), `agentId` (nullable FK to Agent), `maxDisplayItems` (nullable positive int, 0 = no limit), `skill` (nullable string, max 128 chars) — slash command/skill to invoke when stage runs
+- **Constraints**: Name unique within workflow; order significant (first = default for new items); `skill` when set prepends `[Skill: /<skill-name>]` directive to the assembled prompt
 
 ### WorkflowItem
 - **Storage**: `.nos/workflows/<id>/items/<itemId>/meta.yml` + `index.md`
@@ -136,8 +136,14 @@ erDiagram
 
 ### Comment
 - **Storage**: Embedded in `WorkflowItem.comments[]` array in `meta.yml`
-- **Fields**: Index (0-based position), content (Markdown string)
+- **Fields**:
+  - `text` (string) — Markdown content
+  - `createdAt` (ISO 8601 string) — Timestamp when comment was created; must be single-quoted in YAML to avoid Date object parsing
+  - `updatedAt` (ISO 8601 string) — Timestamp of last edit; equals `createdAt` initially
+  - `author` (string) — Conventional values: `"agent"`, `"runtime"`, `"user"`; free-form string allows extensibility
 - **Operations**: Append (POST), update by index (PATCH), delete by index (DELETE)
+- **Migration**: Legacy plain-string comments are lazily migrated on read to `{ text, createdAt: now, updatedAt: now, author: 'agent' }`
+- **Constraints**: ISO timestamps must be single-quoted in YAML; `js-yaml` otherwise parses them as JavaScript Date objects
 
 ### Agent
 - **Storage**: `.nos/agents/<id>/meta.yml` + `index.md`
