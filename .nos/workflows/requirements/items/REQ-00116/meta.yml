@@ -1,0 +1,82 @@
+title: >-
+  when the user comment to an item, add new comment and re-run the whole
+  pipeline
+stage: Validation
+status: In Progress
+comments:
+  - text: >-
+      Analysis complete for REQ-00116. I appended an `## Analysis` section to
+      `index.md` covering scope (user-authored comments only to avoid infinite
+      loops), feasibility (high — all building blocks exist:
+      `appendItemComment`, `restartItem`, `triggerStagePipeline`), dependencies
+      (workflow-store, auto-advance, comment API route, dashboard UI), and four
+      open questions around orphaned session handling, opt-out comments,
+      debounce behavior, and activity log auditing. The key risk is race
+      conditions with in-progress sessions when a user comments mid-stage.
+    createdAt: '2026-04-24T08:51:07.028Z'
+    updatedAt: '2026-04-24T08:51:07.028Z'
+    author: runtime
+  - text: >-
+      Specification stage complete for REQ-00116. I appended a `##
+      Specification` section to `index.md` containing three user stories
+      (operator feedback loop, author guard against infinite loops, comment
+      preservation), eight testable acceptance criteria in Given/When/Then form,
+      ten technical constraints (referencing the existing restart route pattern,
+      fire-and-forget execution, `actor: 'comment'` for activity log
+      differentiation), six explicit out-of-scope items (debounce, session kill,
+      opt-out flag, selective re-run, UI indicator, edit/delete triggers), an
+      RTM entry mapping to system-architecture and api-reference standards, and
+      WBS mapping to packages 1.1.3, 1.3.2, and 1.1.5. The spec resolves the
+      four open questions from analysis by deferring debounce and session
+      termination to future requirements, omitting opt-out for V1 simplicity,
+      and including activity logging with a distinct `comment` actor value.
+    createdAt: '2026-04-24T08:53:38.541Z'
+    updatedAt: '2026-04-24T08:53:38.541Z'
+    author: runtime
+  - text: >-
+      Implementation complete for REQ-00116. The comment POST route now
+      automatically restarts the pipeline when the author is `"user"`, following
+      the existing restart route pattern. Key changes:
+
+
+      1. **`app/api/workflows/[id]/items/[itemId]/comments/route.ts`** — Added
+      restart trigger after `appendItemComment()` succeeds when `author ===
+      "user"`, with fire-and-forget `restartItem()` + `triggerStagePipeline()`
+      calls and a `comment`-actor activity log entry.
+
+
+      2. **`lib/activity-log.ts`** — Extended `ActivityActor` type to include
+      `'comment'` so the new actor value is properly typed.
+
+
+      All 8 acceptance criteria are satisfied: user-only author guard, pipeline
+      restart, stage pipeline trigger, activity logging, comment preservation
+      (via existing `restartItem()` behavior), zero-stages guard, null-handler
+      for `restartItem()` failure, and unchanged response shape.
+    createdAt: '2026-04-24T08:56:10.638Z'
+    updatedAt: '2026-04-24T08:56:10.638Z'
+    author: runtime
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 2a2ab867-e1ae-4dfb-beed-d7205706b326
+    startedAt: '2026-04-24T08:47:14.337Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: d4ab3e51-c451-41c1-a99f-425a139c7ed0
+    startedAt: '2026-04-24T08:47:19.884Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 744267a0-66c7-4eb8-b3c9-bb9ff8a6493b
+    startedAt: '2026-04-24T08:51:14.426Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 88a7abb6-dca2-4b5e-af3f-bfca0c400ede
+    startedAt: '2026-04-24T08:53:45.995Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 479dad13-dbae-49f1-8500-d8bfaa30e36b
+    startedAt: '2026-04-24T08:56:18.047Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-24T08:56:18.059Z'
