@@ -1,0 +1,140 @@
+title: 'File system: delete file/folder'
+stage: Validation
+status: In Progress
+comments:
+  - text: >-
+      Analysis appended to `REQ-00111/index.md`. Here's a summary of what it
+      covers:
+
+
+      - **Scope** — single-item delete via right-click context menu. Explicitly
+      excludes bulk delete, undo, trash behavior, and keyboard shortcuts.
+
+      - **Feasibility** — High viability, with risks around permission errors,
+      cross-platform path handling, and the irreversibility of permanent
+      deletion.
+
+      - **Dependencies** — Context menu system, file system backend module,
+      confirmation dialog component, and UI state refresh mechanism.
+
+      - **Open Questions** — 7 items flagged: trash vs. permanent delete, error
+      UX, folder recursion, context menu ownership, refresh trigger, file vs.
+      folder confirmation messages, and keyboard shortcut scope.
+    createdAt: '2026-04-24T02:12:40.660Z'
+    updatedAt: '2026-04-24T02:12:40.660Z'
+    author: runtime
+  - text: >-
+      The specification section has been appended to `REQ-00111/index.md`.
+      Here's what was produced:
+
+
+      **Specification Summary:**
+
+
+      1. **User Stories** — 4 stories covering file delete, folder delete,
+      confirmation dialog, and error handling in As-a-role-I-want-benefit
+      format.
+
+
+      2. **Acceptance Criteria** — 12 testable criteria (AC-1 through AC-12)
+      mapping to manual validation, covering context menu, confirmation dialog,
+      recursive folder deletion, auto-refresh, error toast, and permanent
+      deletion behavior.
+
+
+      3. **Technical Constraints** — Defines new `DELETE /api/workspaces/delete`
+      endpoint with request/response shapes, component architecture
+      (FileBrowser, Dialog), Node.js `fs.rm` usage with sandbox validation, and
+      dependencies on existing infrastructure (context menu, workspace context,
+      browse API).
+
+
+      4. **Out of Scope** — Explicitly excludes bulk delete, undo, trash,
+      keyboard shortcuts, and progress indicators.
+
+
+      5. **RTM Entry** — REQ-00111 row structure for `docs/standards/rtm.md`
+      with implementation files and test coverage columns to be filled
+      post-implementation.
+
+
+      6. **WBS Mapping** — Traces to WBS packages 1.4.12 (File Browser), 1.4.12a
+      (Create Folder as pattern reference), 1.3.8 (System Routes), 1.5.1
+      (Primitive Components), and 1.6.7 (File Type Classification).
+
+
+      7. **Open Questions Resolution** — All 7 open questions from the Analysis
+      section are resolved: permanent deletion, error toast UX, recursive folder
+      delete, custom context menu pattern, re-fetch refresh, file/folder same
+      flow, keyboard shortcut deferred.
+    createdAt: '2026-04-24T02:16:51.220Z'
+    updatedAt: '2026-04-24T02:16:51.220Z'
+    author: runtime
+  - text: >-
+      No TypeScript errors in the new or modified files. The only errors are
+      pre-existing in `lib/scaffolding.test.ts`.
+
+
+      The implementation is complete. Here's a summary of what was done:
+
+
+      **API Endpoint (`app/api/workspaces/delete/route.ts`):**
+
+      - `DELETE /api/workspaces/delete` with JSON body `{ path: string }`
+
+      - Follows the same sandbox validation pattern as `mkdir`: absolute path,
+      no traversal, `realpathSync` check
+
+      - Uses `fs.rmSync` with `recursive: true, force: false` for cross-platform
+      recursive deletion
+
+      - Handles `EBUSY` (409), `EPERM` (403), `ENOENT` (404) with appropriate
+      error responses
+
+
+      **FileBrowser (`components/dashboard/FileBrowser.tsx`):**
+
+      - Right-click context menu on file/folder rows (positioned `div` with
+      `onContextMenu` handlers)
+
+      - Delete confirmation dialog using existing `Dialog` + `Button` components
+
+      - Folder deletion shows a recursion warning in the dialog body
+
+      - Success/error toasts via `toast.success()` / `toast.error()`
+
+      - Auto-refresh via `load(data.path)` after successful deletion
+
+
+      **Documentation (`docs/standards/api-reference.md`):**
+
+      - Documented the new endpoint with request/response shapes and error codes
+
+
+      **RTM Update (`REQ-00111/index.md`):**
+
+      - Added `## Implementation Notes` section covering all changes,
+      deviations, and AC coverage table
+    createdAt: '2026-04-24T02:21:32.532Z'
+    updatedAt: '2026-04-24T02:21:32.532Z'
+    author: runtime
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: e46e04bb-f5b9-4a18-a9cd-7c71accd0704
+    startedAt: '2026-04-24T02:10:54.687Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: cecf445c-d660-4b83-ab47-151e16a8e76b
+    startedAt: '2026-04-24T02:12:48.074Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 852f9064-a19c-4f8c-9918-eb88a92a5fa9
+    startedAt: '2026-04-24T02:16:59.151Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: dda8e9ff-7678-4dcc-8053-876bb798387a
+    startedAt: '2026-04-24T02:21:40.257Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-24T02:21:40.259Z'

@@ -1,8 +1,38 @@
 # API Reference
 
-> Last updated: 2026-04-23
+> Last updated: 2026-04-24 (skill field documented in stage PATCH)
 
 All endpoints are served from `localhost:30128`. Workspace context is resolved from the `nos_workspace` cookie via the `withWorkspace()` wrapper.
+
+---
+
+## Health
+
+### `GET /api/health`
+Server health check for monitoring and CLI auto-restart.
+
+- **Response**: `200 OK`
+```json
+{
+  "status": "ok",
+  "uptime": 3600,
+  "heartbeat": {
+    "lastTickAt": "2026-04-24T10:00:00.000Z",
+    "lastTickDurationMs": 125,
+    "lastTickItemsSwept": 3,
+    "nextTickIn": 59875,
+    "stale": false
+  }
+}
+```
+- **Fields**:
+  - `status`: Always `"ok"` when server is running
+  - `uptime`: Seconds since server started
+  - `heartbeat.lastTickAt`: ISO timestamp of last heartbeat sweep
+  - `heartbeat.lastTickDurationMs`: How long the last sweep took
+  - `heartbeat.lastTickItemsSwept`: Number of items processed in last sweep
+  - `heartbeat.nextTickIn`: Milliseconds until next scheduled sweep
+  - `heartbeat.stale`: `true` if last tick was more than 3× the heartbeat interval ago
 
 ---
 
@@ -196,9 +226,20 @@ Add a new stage.
 ### `PATCH /api/workflows/[id]/stages/[stageName]`
 Update stage configuration.
 
-- **Request Body**: Partial stage fields
+- **Request Body**: Partial stage fields including optional `skill` field (string or null, max 128 chars after trim)
+```json
+{
+  "description": "Updated description",
+  "prompt": "New prompt...",
+  "agentId": "claude-audit",
+  "skill": "my-skill",
+  "autoAdvanceOnComplete": true,
+  "maxDisplayItems": 5
+}
+```
+- **Notes**: When `skill` is set, the `[Skill: /<skill-name>]` directive is prepended to the assembled prompt when the stage runs
 - **Response**: `200 OK`
-- **Errors**: `400` (invalid JSON), `404`
+- **Errors**: `400` (invalid JSON, skill too long), `404`
 
 ### `DELETE /api/workflows/[id]/stages/[stageName]`
 Delete a stage (must have no items).
@@ -464,6 +505,122 @@ Create a new directory (folder) inside a workspace directory.
   - `409 ConflictError` — a directory with `name` already exists inside `path` (case-insensitive)
 
 - **Security**: Path must resolve within active workspace root; path traversal (`..`) is rejected
+
+### `DELETE /api/workspaces/delete`
+Permanently delete a file or directory (recursively) from the workspace.
+
+- **Auth**: Workspace context required (via `nos_workspace` cookie)
+- **Request Body**:
+```json
+{
+  "path": "/absolute/path/to/item"
+}
+```
+- **Response**: `200 OK`
+```json
+{
+  "ok": true,
+  "deleted": "/absolute/path/to/item"
+}
+```
+- **Errors**:
+  - `400 ValidationError` — `path` missing/empty, path not absolute, contains traversal segments, or NUL bytes
+  - `403 Forbidden` — `path` resolves outside workspace root, or permission denied (EPERM)
+  - `404 NotFound` — `path` does not exist
+  - `409 ConflictError` — file or folder is currently in use (EBUSY)
+  - `500 InternalError` — unexpected filesystem error
+
+- **Security**: Path must resolve within active workspace root; path traversal (`..`) is rejected; uses `realpathSync` defense-in-depth
+
+### `POST /api/workspaces/upload`
+Upload files to a workspace directory.
+
+- **Auth**: Workspace context required (via `nos_workspace` cookie)
+- **Content-Type**: `multipart/form-data`
+- **Request Body**: File parts plus `path` field (absolute path of target directory within workspace)
+- **Response**: `200 OK`
+```json
+{
+  "files": [
+    { "name": "example.txt", "size": 1024, "path": "/workspace/example.txt" }
+  ]
+}
+```
+- **Errors**:
+  - `400 ValidationError` — filename contains `..`, `/`, `\`, NUL bytes, or leading dots
+  - `403 Forbidden` — resolved path falls outside workspace root
+  - `413 PayloadTooLarge` — total payload exceeds 100 MB
+- **Security**: Each filename sanitized via `path.basename()` + validation; size cap per file and total request; `realpathSync` defense-in-depth
+
+### `POST /api/workspaces/update`
+Sync workspace `.nos/` directory with latest templates from `NOS_TEMPLATES_ROOT`.
+
+- **Auth**: Workspace context required
+- **Request Body**:
+```json
+{
+  "force": false,
+  "dryRun": false
+}
+```
+- **Response**: `200 OK`
+```json
+{
+  "ok": true,
+  "added": ["workflows/new-workflow/config.json", "..."]
+}
+```
+- **Notes**: `force: true` also syncs `system-prompt.md` (normally skipped); additive-only for other files
+
+---
+
+## Templates
+
+### `GET /api/templates`
+List all available workflow templates from `templates/.nos/workflows/`.
+
+- **Response**: `200 OK`
+```json
+[
+  {
+    "id": "requirements",
+    "name": "Requirements",
+    "idPrefix": "REQ",
+    "stageCount": 6,
+    "stages": ["Backlog", "Analysis", "Specification", "Implementation", "Validation", "Done"]
+  }
+]
+```
+
+### `GET /api/templates/[id]`
+Get full template configuration.
+
+- **Response**: `200 OK` with full `config.json` content plus parsed `stages.yaml`
+```json
+{
+  "id": "requirements",
+  "name": "Requirements",
+  "idPrefix": "REQ",
+  "stages": [
+    { "name": "Backlog", "description": "...", "prompt": "...", "autoAdvanceOnComplete": false, "agentId": null }
+  ]
+}
+```
+
+### `POST /api/templates/[id]/install`
+Install a workflow template into the active workspace.
+
+- **Auth**: Workspace context required
+- **Response**: `201 Created`
+```json
+{
+  "ok": true,
+  "workflowId": "requirements"
+}
+```
+- **Errors**:
+  - `400 no_active_workspace` — no `nos_workspace` cookie set
+  - `409 workflow_already_exists` — workflow with same ID already exists in workspace
 
 ---
 

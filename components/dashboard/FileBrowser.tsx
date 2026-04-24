@@ -15,11 +15,15 @@ import {
   Home,
   Upload,
   FolderPlus,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Dialog } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { classifyFile, formatSize } from '@/lib/file-types';
+import { toast } from '@/lib/hooks/use-toast';
 
 export interface BrowseEntry {
   name: string;
@@ -92,6 +96,21 @@ export function FileBrowser({ workspaceRoot, onFileSelect, selectedPath }: FileB
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dragCounterRef = useRef(0);
   const uploadFilesRef = useRef<((fileList: File[]) => Promise<void>) | null>(null);
+
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    open: boolean;
+    x: number;
+    y: number;
+    entry: BrowseEntry | null;
+  }>({ open: false, x: 0, y: 0, entry: null });
+
+  // Delete dialog state
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    entry: BrowseEntry | null;
+  }>({ open: false, entry: null });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const load = useCallback(async (target?: string) => {
     setLoading(true);
@@ -330,6 +349,71 @@ export function FileBrowser({ workspaceRoot, onFileSelect, selectedPath }: FileB
     }
   }, [isCreatingFolder]);
 
+  // Close context menu on click outside
+  useEffect(() => {
+    if (!contextMenu.open) return;
+    function handleClick() {
+      setContextMenu((prev) => ({ ...prev, open: false }));
+    }
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, [contextMenu.open]);
+
+  // Close context menu on Escape
+  useEffect(() => {
+    if (!contextMenu.open) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setContextMenu((prev) => ({ ...prev, open: false }));
+      }
+    }
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [contextMenu.open]);
+
+  const handleContextMenu = (e: React.MouseEvent, entry: BrowseEntry) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ open: true, x: e.clientX, y: e.clientY, entry });
+  };
+
+  const openDeleteDialog = () => {
+    if (!contextMenu.entry) return;
+    setDeleteDialog({ open: true, entry: contextMenu.entry });
+    setContextMenu((prev) => ({ ...prev, open: false }));
+  };
+
+  const cancelDelete = () => {
+    setDeleteDialog({ open: false, entry: null });
+  };
+
+  const confirmDelete = useCallback(async () => {
+    if (!deleteDialog.entry) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch('/api/workspaces/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: deleteDialog.entry.absolutePath }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(body.message ?? `Failed to delete (${res.status})`);
+      } else {
+        toast.success(`Deleted "${deleteDialog.entry.name}"`);
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete');
+    } finally {
+      setIsDeleting(false);
+      setDeleteDialog({ open: false, entry: null });
+      if (data?.path) {
+        load(data.path);
+      }
+    }
+  }, [deleteDialog.entry, data?.path, load]);
+
   return (
     <div
       className={cn('flex flex-col h-full border border-border rounded-md bg-card relative', isDragOver && 'ring-2 ring-primary')}
@@ -526,6 +610,7 @@ export function FileBrowser({ workspaceRoot, onFileSelect, selectedPath }: FileB
                 key={entry.absolutePath}
                 type="button"
                 onClick={() => handleEntryClick(entry)}
+                onContextMenu={(e) => handleContextMenu(e, entry)}
                 className={cn(
                   'flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent text-left transition-colors',
                   selectedPath === entry.absolutePath && 'bg-accent'
@@ -546,6 +631,57 @@ export function FileBrowser({ workspaceRoot, onFileSelect, selectedPath }: FileB
           </div>
         </ScrollArea>
       )}
+
+      {/* Context menu */}
+      {contextMenu.open && contextMenu.entry && (
+        <div
+          className="fixed z-50 min-w-[160px] overflow-hidden rounded-md border bg-popover p-1 shadow-md"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={openDeleteDialog}
+            className="relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive outline-none hover:bg-destructive/10"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete
+          </button>
+        </div>
+      )}
+
+      {/* Delete confirmation dialog */}
+      <Dialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => {
+          if (!open) setDeleteDialog({ open: false, entry: null });
+        }}
+      >
+        <div className="flex items-start justify-between gap-2 border-b px-4 py-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Confirm Delete</p>
+            <p className="mt-0.5 text-sm font-medium">
+              Delete{deleteDialog.entry?.isDirectory ? ' folder' : ''} &ldquo;{deleteDialog.entry?.name}&rdquo;
+            </p>
+          </div>
+        </div>
+        <div className="p-4">
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to permanently delete &ldquo;{deleteDialog.entry?.name}&rdquo;?
+            {deleteDialog.entry?.isDirectory && (
+              <span className="block mt-1 text-warning"> This folder and all its contents will be permanently deleted.</span>
+            )}
+          </p>
+        </div>
+        <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
+          <Button variant="outline" onClick={cancelDelete} disabled={isDeleting}>
+            Cancel
+          </Button>
+          <Button variant="destructive" onClick={confirmDelete} disabled={isDeleting}>
+            {isDeleting ? 'Deleting…' : 'Confirm'}
+          </Button>
+        </div>
+      </Dialog>
     </div>
   );
 }
