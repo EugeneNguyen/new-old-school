@@ -123,6 +123,8 @@
 | REQ-00111 | File system: delete file/folder | Feature request | `docs/standards/api-reference.md`, `docs/standards/system-architecture.md`, `docs/standards/security-design.md`, `docs/standards/glossary.md` (FileBrowser) | `app/api/workspaces/delete/route.ts`, `components/dashboard/FileBrowser.tsx` | Manual validation — all 12 ACs pass (see REQ-00111 Validation section) | Done |
 | REQ-00112 | Rewrite readme.md | Feature request (user) | `docs/standards/glossary.md` (terminology), `docs/standards/documentation-standards.md` | `README.md` | Manual validation — all 11 ACs pass (see REQ-00112 Validation section) | Done |
 | REQ-00113 | Log adapter command to activity | Feature request (user) | `docs/standards/system-architecture.md`, `docs/standards/glossary.md` (ActivityEntry, Adapter) | `lib/activity-log.ts`, `lib/agent-adapter.ts`, `lib/stage-pipeline.ts` | Manual validation — 7/8 ACs pass; AC-5 partial (timing artifact, code path correct) | Done |
+| REQ-00114 | Add abstraction for adapter, add codex CLI adapter | Feature request | `docs/standards/system-architecture.md`, `docs/standards/glossary.md` (Adapter) | `lib/agent-adapter.ts`, `app/api/chat/route.ts`, `app/api/adapters/route.ts`, `app/api/adapters/[name]/models/route.ts` | TypeScript compilation passes; manual validation — all 5 ACs pass | Done |
+| REQ-00115 | Activity page: Commands tab showing adapter invocations | Feature request (user) | `docs/standards/ui-design.md`, `docs/standards/ux-design.md` | `app/dashboard/activity/page.tsx` | Manual validation u2014 6/8 ACs pass, 2 partial (All-tab compact rendering; pagination heuristic) | Done |
 
 ---
 
