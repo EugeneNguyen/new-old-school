@@ -15,7 +15,8 @@ export type ActivityEventType =
   | 'stage-changed'
   | 'status-changed'
   | 'body-changed'
-  | 'restart';
+  | 'restart'
+  | 'session-started';
 
 export interface ActivityEntry {
   ts: string;          // ISO-8601 UTC
@@ -30,7 +31,8 @@ export interface ActivityEntry {
     | { kind: 'stage-changed'; before: string; after: string }
     | { kind: 'status-changed'; before: string; after: string }
     | { kind: 'body-changed'; beforeHash: string; afterHash: string; beforeLength: number; afterLength: number }
-    | { kind: 'restart'; before: { stage: string; status: string }; after: { stage: string; status: string } };
+    | { kind: 'restart'; before: { stage: string; status: string }; after: { stage: string; status: string } }
+    | { kind: 'session-started'; adapter: string; command: string; args: string[]; sessionId: string; model: string | undefined; agentId: string | null; stage: string };
 }
 
 export interface ReadActivityOpts {

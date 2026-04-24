@@ -1,0 +1,119 @@
+title: i want to log the command that adapter use to activity
+stage: Validation
+status: In Progress
+comments:
+  - text: >-
+      The existing analysis is accurate. The key technical claims check out:
+
+
+      - `AgentAdapter` interface at `lib/agent-adapter.ts:5-13` — returns only
+      `{ sessionId }`, no command info
+
+      - `triggerStagePipeline` at `lib/stage-pipeline.ts:60-62` — calls
+      `adapter.startSession()` and has all workflow context in scope
+
+      - `ActivityEventType` at `lib/activity-log.ts:10-17` — no
+      `session-started` variant exists yet
+
+
+      The analysis correctly identifies that `startSession()` would need to
+      return the command/args (option A) or they'd need to be reconstructed
+      (option B), and that `stage-pipeline.ts` is the natural place to emit the
+      activity entry since it holds both the adapter result and the
+      workflow/item context.
+
+
+      Analysis for REQ-00113 is complete. A parallel session already wrote a
+      thorough `## Analysis` section to `index.md` covering scope (log adapter
+      CLI command to `activity.jsonl`), feasibility (high — append-only log
+      infrastructure exists, three files need changes), dependencies
+      (`activity-log.ts`, `agent-adapter.ts`, `stage-pipeline.ts`), and five
+      open questions (command detail level, prompt hashing, event naming, failed
+      invocations, dashboard rendering). I verified the technical claims against
+      the source — they are accurate.
+    createdAt: '2026-04-24T07:37:39.327Z'
+    updatedAt: '2026-04-24T07:37:39.327Z'
+    author: runtime
+  - text: >-
+      Specification for REQ-00113 is complete. I appended a `## Specification`
+      section to `index.md` with 2 user stories, 8 testable acceptance criteria
+      (Given/When/Then), 7 technical constraints referencing the actual source
+      files and types, explicit out-of-scope items, an RTM row, and a WBS
+      mapping to packages 1.1.5, 1.2.2, and 1.2.3. Key decisions resolved from
+      the analysis: event name is `session-started`, adapter interface returns
+      `{ sessionId, command, args }` (option A), actor is `'runtime'`, failed
+      invocations are not logged (deferred), and no prompt content is included.
+    createdAt: '2026-04-24T07:40:10.716Z'
+    updatedAt: '2026-04-24T07:40:10.716Z'
+    author: runtime
+  - text: >-
+      Implementation complete. Let me verify all acceptance criteria are
+      satisfied:
+
+
+      **AC-1: New activity event type exists** ✓ - Added `'session-started'` to
+      `ActivityEventType` union
+
+
+      **AC-2: Discriminated union member for `session-started`** ✓ - Added data
+      shape with all required fields: `adapter`, `command`, `args`, `sessionId`,
+      `model`, `agentId`, `stage`
+
+
+      **AC-3: `AgentAdapter.startSession()` returns command details** ✓ -
+      Interface updated to return `{ sessionId: string; command: string; args:
+      string[] }`, `claudeAdapter` returns `command: 'claude'` and the exact
+      args array
+
+
+      **AC-4: Activity entry emitted on successful session start** ✓ -
+      `appendActivity()` called with all required data in try block
+
+
+      **AC-5: Activity entry written to `activity.jsonl`** ✓ - Uses existing
+      `appendActivity()` function
+
+
+      **AC-6: Failed adapter invocations are NOT logged** ✓ - `appendActivity()`
+      call is only in try block, catch block only logs to console
+
+
+      **AC-7: Backward compatibility preserved** ✓ - Existing consumers with
+      type-safe filtering will skip unknown types gracefully
+
+
+      **AC-8: No prompt content in the activity entry** ✓ - Prompt not included
+      per design
+
+
+      All acceptance criteria satisfied. Implementation complete across three
+      files: `lib/activity-log.ts` (type definitions), `lib/agent-adapter.ts`
+      (interface + implementation), and `lib/stage-pipeline.ts` (integration
+      point). TypeScript compiles successfully with no errors in modified files.
+    createdAt: '2026-04-24T07:44:06.404Z'
+    updatedAt: '2026-04-24T07:44:06.404Z'
+    author: runtime
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 43ccd8cc-b60a-4d8c-81cc-5d4136b0e6d3
+    startedAt: '2026-04-24T07:32:40.485Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 25f7f36f-b399-47e5-9537-b2f7d658a8ee
+    startedAt: '2026-04-24T07:32:43.835Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 68cca14b-d61d-46da-99ee-8f60f2204385
+    startedAt: '2026-04-24T07:37:46.728Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: 5def93f8-73c3-43f6-967f-2de7c260777a
+    startedAt: '2026-04-24T07:40:18.548Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: d7e33b39-f784-420d-8e3a-1911c3eab5d1
+    startedAt: '2026-04-24T07:44:14.129Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-24T07:44:14.141Z'

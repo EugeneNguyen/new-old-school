@@ -9,7 +9,7 @@ export interface AgentAdapter {
     prompt: string;
     cwd?: string;
     model?: string;
-  }): Promise<{ sessionId: string }>;
+  }): Promise<{ sessionId: string; command: string; args: string[] }>;
   listModels(): Promise<Array<{ id: string; label: string }>>;
 }
 
@@ -94,7 +94,7 @@ export const claudeAdapter: AgentAdapter = {
             if (!settled) {
               settled = true;
               clearTimeout(timer);
-              resolve({ sessionId: id });
+              resolve({ sessionId: id, command: 'claude', args });
             }
           }
         }

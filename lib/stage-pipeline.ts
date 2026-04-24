@@ -8,6 +8,7 @@ import { getAdapter, getDefaultAdapter } from '@/lib/agent-adapter';
 import { buildAgentPrompt, loadSystemPrompt } from '@/lib/system-prompt';
 import { readAgent } from '@/lib/agents-store';
 import { getProjectRoot } from '@/lib/project-root';
+import { appendActivity } from '@/lib/activity-log';
 import type { ItemSession, WorkflowItem } from '@/types/workflow';
 
 export async function triggerStagePipeline(
@@ -60,7 +61,7 @@ export async function triggerStagePipeline(
 
   try {
     const adapter = adapterName ? getAdapter(adapterName) : getDefaultAdapter();
-    const { sessionId } = await adapter.startSession({ prompt: fullPrompt, model });
+    const { sessionId, command, args } = await adapter.startSession({ prompt: fullPrompt, model });
     const entry: ItemSession = {
       stage: stage.name,
       adapter: adapter.name,
@@ -69,6 +70,25 @@ export async function triggerStagePipeline(
     };
     if (resolvedAgentId) entry.agentId = resolvedAgentId;
     appendItemSession(workflowId, itemId, entry);
+
+    appendActivity({
+      ts: new Date().toISOString(),
+      workflowId,
+      itemId,
+      type: 'session-started',
+      actor: 'runtime',
+      data: {
+        kind: 'session-started',
+        adapter: adapter.name,
+        command,
+        args,
+        sessionId,
+        model,
+        agentId: resolvedAgentId,
+        stage: stage.name,
+      },
+    });
+
     const updated = updateItemMeta(workflowId, itemId, { status: 'In Progress' });
     const ts4 = new Date().toISOString();
     console.log(
