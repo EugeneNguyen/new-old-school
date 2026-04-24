@@ -1,62 +1,152 @@
-# NOS
+# NOS — AI Orchestration You Control
 
-**NOS** is a workflow and requirements management system designed to streamline project organization and task execution. It provides a CLI tool for launching a local dev environment and a web dashboard for managing requirements, workflows, and tasks through a configurable stage pipeline.
+**No more "trust me bro".** NOS gives you a configurable stage pipeline where every AI prompt is yours to see, set, and own.
 
-## Prerequisites
+[![npm](https://img.shields.io/npm/v/nos.svg)](https://www.npmjs.com/package/nos)
+[![License](https://img.shields.io/github/license/EugeneNguyen/new-old-school)](https://github.com/EugeneNguyen/new-old-school)
+[![GitHub Stars](https://img.shields.io/github/stars/EugeneNguyen/new-old-school)](https://github.com/EugeneNguyen/new-old-school/stargazers)
 
-- **Node.js >= 18** — Required to run the project and CLI tool.
+---
 
-## Installation
+## The Problem
 
-### Global Installation (via npx)
+AI tools are powerful — until they're not. You paste a prompt, cross your fingers, and hope the model does what you meant. When it doesn't, you debug blind. When it does, you're not even sure *why*.
 
-Install and run NOS globally:
+**Sound familiar?**
+
+- "I have no idea what prompt the agent is actually using."
+- "My PM keeps asking what the AI is doing — I can't show them."
+- "I'm tired of doing the same multi-step AI dance every single day."
+
+The industry is leaning hard into "magic" — opaque agents that do stuff. We're building the opposite: ** NOS** — the AI harness that makes you the operator, not the passenger.
+
+---
+
+## The Solution
+
+**NOS** is an AI orchestration layer that puts you in the cockpit.
+
+Instead of one-shot prompts, you define a **stage pipeline** — a configurable sequence of steps your work flows through. Each stage has a prompt, an agent, and clear acceptance criteria. Every prompt that fires is visible to you. Every result is logged. Every step is yours to adjust.
+
+```
+Requirements → Analysis → Specification → Implementation → Done
+     ↓
+  [Agent]    [Agent]       [Agent]        [Agent]
+```
+
+You're not delegating to an AI. You're **orchestrating one**.
+
+---
+
+## Why NOS?
+
+### 🎯 You see every prompt
+
+NOS assembles each agent prompt from your system prompt, the stage instructions, and the item content — then logs the full prompt before it fires. No black boxes.
+
+### 🔧 Fully configurable
+
+Stage pipelines, agent personas, prompts, and auto-advance rules are all defined in plain YAML/Markdown files. No lock-in. No magic config. You own the system.
+
+### 📊 Visibility for everyone
+
+The web dashboard shows every workflow, every item, every agent session — in real time. Your PM can see what's in flight. Your marketing team can track campaigns. No privileged access required.
+
+### 📁 Everything is a file
+
+Workflows and items live in plain Markdown and YAML files on disk — version-controlled, diff-able, and editable with any tool. No database, no vendor lock-in.
+
+### 🔁 Apply to everything, on your schedule
+
+Not just code. Requirements, content pipelines, bug triage, campaign planning — any staged process is a workflow in NOS. Set a routine schedule and NOS creates and runs items automatically.
+
+### 📊 Kanban view out of the box
+
+The web dashboard renders every workflow as a live Kanban board. Drag items between stages, inspect agent sessions, and watch progress update in real time.
+
+---
+
+## Who is this for?
+
+### 🛠️ Engineers running 100 Claude Code sessions a day
+
+Stop losing context between sessions. NOS tracks every item, every prompt, every result. Refactor confidently with a full audit trail.
+
+### 📋 Project managers who need visibility into AI work
+
+You don't need to be technical to understand what's happening. The Kanban board shows every item's stage, status, and agent — in plain English.
+
+### 📣 Solo marketers tired of guiding AI step by step
+
+Build a content pipeline once, let NOS drive it. Stage 1: brief. Stage 2: draft. Stage 3: review. Stage 4: publish. Repeat on a schedule.
+
+---
+
+## Quickstart
+
+### One command to rule them all
 
 ```bash
 npx nos
 ```
 
-This launches the NOS dashboard locally in your browser.
+That's it. The CLI starts the dev server and opens the dashboard at [http://localhost:30128](http://localhost:30128).
 
-### Local Development Setup
+### Three steps to your first workflow
 
-Clone the repository and set up the project locally:
+1. **Open the dashboard** — The browser launches automatically. You'll see the Requirements workflow with sample items.
+2. **Create an item** — Click "New Item" in the Kanban board. Give it a title and body. It'll land in the first stage.
+3. **Watch it flow** — NOS auto-advances items through stages when the agent completes. Drag items manually or let the pipeline run on its schedule.
 
-```bash
-git clone <repository-url>
-cd new-old-school
-npm install
-npm run dev
-```
+### Deeper dive
 
-The dev server starts on **port 30128** and opens automatically at `http://localhost:30128`.
+- [`.nos/system-prompt.md`](.nos/system-prompt.md) — Authoritative runtime spec for agents
+- [`.nos/CLAUDE.md`](.nos/CLAUDE.md) — NOS architecture overview
+- [`CLAUDE.md`](CLAUDE.md) — Project guide with CEO agent framework
 
-## Available Scripts
+---
 
-Run these scripts from the project root:
+## Contributing
+
+Contributions welcome. Before opening a PR:
+
+- Run `npm run lint` — code must pass Biome checks
+- Run `npm run test` — all unit tests must pass
+- Changes must follow the conventions in [`CLAUDE.md`](CLAUDE.md)
+
+For questions about the workflow system, see the NOS documentation linked above.
+
+---
+
+## Technical Reference
+
+<details>
+<summary>Available Scripts, Directory Layout & Tech Stack (click to expand)</summary>
+
+### Available Scripts
 
 | Script | Description |
 |--------|-------------|
-| `npm run dev` | Start the Next.js dev server on port 30128 |
-| `npm run build` | Build the Next.js application for production |
-| `npm run start` | Start the Next.js production server (requires build first) |
-| `npm run lint` | Run ESLint to check code quality and formatting |
-| `npm run test` | Run unit tests using Node's built-in test runner |
+| `npm run dev` | Start Next.js dev server on port 30128 |
+| `npm run build` | Build for production |
+| `npm run start` | Start production server |
+| `npm run lint` | Run Biome linter |
+| `npm run test` | Run Node test suite |
 
-## Directory Layout
+### Directory Layout
 
 ```
 .
-├── app/                      # Next.js App Router pages and layouts
-├── components/               # React components
-│   ├── dashboard/           # Dashboard UI components
+├── app/                      # Next.js App Router pages
+├── components/              # React components
+│   ├── dashboard/            # Dashboard UI components
 │   ├── terminal/            # Terminal/REPL components
 │   └── ui/                  # Reusable UI components
 ├── .nos/                     # NOS workflow subsystem
 │   ├── workflows/           # Workflow definitions and items
 │   ├── agents/              # Agent configurations
-│   ├── system-prompt.md     # NOS runtime specification
-│   └── CLAUDE.md            # NOS subsystem overview
+│   ├── system-prompt.md    # NOS runtime specification
+│   └── CLAUDE.md           # NOS subsystem overview
 ├── bin/                      # Executable scripts
 │   └── cli.mjs              # CLI entry point
 ├── config/                   # Configuration files
@@ -65,95 +155,37 @@ Run these scripts from the project root:
 ├── lib/                      # Utility libraries and core logic
 ├── public/                   # Static assets
 ├── types/                    # TypeScript type definitions
-├── package.json             # Dependencies and scripts
-├── tsconfig.json            # TypeScript configuration
-├── tailwind.config.js       # Tailwind CSS configuration
 └── CLAUDE.md                # Project-level guide
 ```
 
-## NOS Subsystem Overview
+### Technology Stack
 
-The `.nos/` directory contains the **NOS workflow system** — a configurable stage pipeline for managing requirements, tasks, and project items.
+| Layer | Technology |
+|-------|------------|
+| Frontend | [Next.js canary](https://nextjs.org/) — React App Router |
+| UI | [React canary](https://react.dev/) — Experimental React |
+| Styling | [Tailwind CSS](https://tailwindcss.com/) |
+| Components | [Radix UI](https://www.radix-ui.com/) — Accessible primitives |
+| CLI | [Commander.js](https://github.com/tj/commander.js) |
+| Markdown | [MDXEditor](https://mdxeditor.dev/) + remark/rehype |
+| Type Safety | [TypeScript](https://www.typescriptlang.org/) |
 
-### What is NOS?
+### Entry Points
 
-NOS organizes work into **workflows**, where each item flows through **stages** (e.g., Analysis → Specification → Implementation → Done). Each stage has:
-
-- A defined **purpose** and acceptance criteria
-- An assigned **agent** to perform the work
-- A **prompt** guiding the agent's execution
-
-Items are tracked in `meta.yml` with title, status, stage, and comments. Workflows are fully configurable and can be adapted for different project needs (requirements management, feature implementation, bug triage, etc.).
-
-### Documentation
-
-For deeper understanding of NOS, see:
-
-- [`.nos/system-prompt.md`](.nos/system-prompt.md) — **Authoritative runtime spec** for how agents execute workflow stages
-- [`.nos/CLAUDE.md`](.nos/CLAUDE.md) — **Conceptual overview** of the NOS architecture and directory structure
-- [`CLAUDE.md`](CLAUDE.md) — **Project-level guide** covering the CEO agent framework and requirement management conventions
-
-## Technology Stack
-
-- **Frontend Framework**: [Next.js canary](https://nextjs.org/) — React meta-framework with App Router
-- **UI Library**: [React canary](https://react.dev/) — Latest experimental React features
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/) — Utility-first CSS framework
-- **Component Library**: [Radix UI](https://www.radix-ui.com/) — Unstyled, accessible components
-- **CLI Tool**: [Commander.js](https://github.com/tj/commander.js) — Node.js CLI library
-- **Markdown Processing**: [MDXEditor](https://mdxeditor.dev/) and remark/rehype — Markdown rendering and transformation
-- **Type Safety**: [TypeScript](https://www.typescriptlang.org/) — Static typing for JavaScript
-
-## Entry Points
-
-### CLI Tool
-
-The CLI is located at `bin/cli.mjs` and is registered as the `nos` command in `package.json`:
+**CLI Tool** (`bin/cli.mjs`):
 
 ```bash
-nos                 # Launch the NOS dashboard
+nos                          # Launch the NOS dashboard
+NOS_PROJECT_ROOT=/path/to/project nos  # Override project root
+NOS_PORT=3000 nos            # Override port
 ```
 
-When run, the CLI:
-- Starts a Next.js dev server (if not already running)
-- Opens the dashboard in your default browser
+**Development Server**:
+- Port: `30128`
+- URL: `http://localhost:30128`
 
-You can override the default project root and port via environment variables:
+### Stability Note
 
-```bash
-NOS_PROJECT_ROOT=/path/to/project NOS_PORT=3000 npx nos
-```
+This project uses **canary-channel** Next.js and React. These are bleeding-edge, experimental releases. Use this for development, internal tooling, and feature exploration — not production deployments.
 
-### Development Server
-
-The dev server runs on **port 30128** and serves the Next.js application. Access it at:
-
-```
-http://localhost:30128
-```
-
-## Stability Note
-
-This project uses **canary-channel dependencies** for Next.js and React. These are bleeding-edge, experimental releases with frequent updates and potential breaking changes. Use this setup for:
-
-- **Development and experimentation** — testing the latest React and Next.js features
-- **Internal tooling** — not for production deployments
-- **Feature exploration** — evaluating experimental APIs before they stabilize
-
-For production deployments, use stable release versions of Next.js and React.
-
-## Getting Started
-
-1. **Install dependencies**: `npm install`
-2. **Start the dev server**: `npm run dev`
-3. **Open the dashboard**: The browser opens automatically at `http://localhost:30128`
-4. **Explore workflows**: Navigate to the dashboard to see requirements, workflows, and tasks managed by NOS
-
-## Contributing
-
-When contributing, ensure:
-
-- Code passes linting: `npm run lint`
-- Tests pass: `npm run test`
-- Changes follow the project structure and conventions documented in [`CLAUDE.md`](CLAUDE.md)
-
-For details on the NOS workflow system and how requirements are managed, see the project guide and NOS documentation referenced above.
+</details>

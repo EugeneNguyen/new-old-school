@@ -121,6 +121,7 @@
 | REQ-00106 | File system: Able to upload file | Feature request | `docs/standards/ui-design.md`, `docs/standards/security-design.md`, `docs/standards/api-reference.md` | `app/api/workspaces/upload/route.ts`, `components/dashboard/FileBrowser.tsx` | Manual validation — all 9 ACs pass (see REQ-00106 Validation section) | Done |
 | REQ-00104 | NOS server stability & diagnostics | Operator report | `docs/standards/system-architecture.md`, `docs/standards/error-handling-strategy.md` | `lib/auto-advance-sweeper.ts`, `lib/auto-advance.ts`, `lib/stage-pipeline.ts`, `bin/cli.mjs`, `app/api/health/route.ts` | Manual validation — all 6 ACs pass | Done |
 | REQ-00111 | File system: delete file/folder | Feature request | `docs/standards/api-reference.md`, `docs/standards/system-architecture.md`, `docs/standards/security-design.md`, `docs/standards/glossary.md` (FileBrowser) | `app/api/workspaces/delete/route.ts`, `components/dashboard/FileBrowser.tsx` | Manual validation — all 12 ACs pass (see REQ-00111 Validation section) | Done |
+| REQ-00112 | Rewrite readme.md | Feature request (user) | `docs/standards/glossary.md` (terminology), `docs/standards/documentation-standards.md` | `README.md` | Manual validation — all 11 ACs pass (see REQ-00112 Validation section) | Done |
 
 ---
 
