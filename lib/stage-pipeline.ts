@@ -86,6 +86,7 @@ export async function triggerStagePipeline(
         model,
         agentId: resolvedAgentId,
         stage: stage.name,
+        prompt: fullPrompt,
       },
     });
 

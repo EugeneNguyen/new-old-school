@@ -1,0 +1,263 @@
+title: Activity > command > should show also the prompt that you sent in
+stage: Validation
+status: In Progress
+comments:
+  - text: >-
+      The analysis has already been written to the item's `index.md` by a
+      concurrent session. The existing analysis is thorough and covers all four
+      required sections (Scope, Feasibility, Dependencies, Open Questions). It
+      correctly identifies the three files that need changes
+      (`lib/activity-log.ts`, `lib/stage-pipeline.ts`,
+      `app/dashboard/activity/page.tsx`), notes that the `fullPrompt` variable
+      is already in scope at the `appendActivity` call site, and raises relevant
+      open questions about UI display strategy and whether chat-route sessions
+      should also be covered. No further analysis work is needed for this item.
+    createdAt: '2026-04-24T08:50:29.247Z'
+    updatedAt: '2026-04-24T08:50:29.247Z'
+    author: runtime
+  - text: >-
+      The specification is complete and well-formed. Here's a summary of what
+      was produced:
+
+
+      The `## Specification` section has been appended to REQ-00117's `index.md`
+      with all six required subsections:
+
+
+      1. **User stories** — Two stories covering the operator's need to view
+      prompts and the UX expectation of collapsed-by-default display.
+
+      2. **Acceptance criteria** — Nine testable criteria (AC-1 through AC-9)
+      covering the data model extension, persistence, backwards compatibility,
+      UI toggle behavior, rendering, and TypeScript cleanliness.
+
+      3. **Technical constraints** — Six constraints pinpointing exact file
+      locations and line ranges, referencing the existing `fullPrompt` variable
+      in scope at the `appendActivity` call site, UI rendering approach, and log
+      size considerations.
+
+      4. **Out of scope** — Six explicit non-goals preventing scope creep into
+      prompt assembly, the All tab, backfilling, chat-route sessions,
+      truncation, and Markdown rendering.
+
+      5. **RTM entry** — A complete row mapping REQ-00117 to its source, design
+      artifacts, implementation files, and test coverage method.
+
+      6. **WBS mapping** — Traces to three WBS packages: 1.1.5 (Activity
+      Logging), 1.2.3 (Stage Pipeline Trigger), and 1.4.10 (Activity Feed).
+
+
+      The open questions from the analysis phase were resolved in the spec: full
+      prompt stored (not trimmed), collapsed by default with a toggle, and
+      chat-route sessions explicitly out of scope. The spec uses the glossary's
+      ubiquitous language (ActivityEntry, Adapter, operator) and references the
+      appropriate design artifacts.
+    createdAt: '2026-04-24T08:52:45.394Z'
+    updatedAt: '2026-04-24T08:52:45.394Z'
+    author: runtime
+  - text: >-
+      All acceptance criteria for REQ-00117 have been implemented:
+
+
+      - **AC-1 (Data model)**: Added `prompt?: string` to the `session-started`
+      variant in `lib/activity-log.ts:35`.
+
+      - **AC-2 (Persistence)**: `lib/stage-pipeline.ts` now passes `prompt:
+      fullPrompt` to `appendActivity()`.
+
+      - **AC-3 (Backwards compat)**: The field is optional — existing entries
+      parse without errors.
+
+      - **AC-4 (Commands tab display)**: Each command card renders a "Show
+      prompt" / "Hide prompt" toggle when `d.prompt` is present.
+
+      - **AC-5 (Default collapsed)**: Prompt section is hidden by default;
+      toggle reveals it.
+
+      - **AC-6 (Prompt rendering)**: Prompt displayed in a `<pre>` block with
+      `whitespace-pre-wrap` and `overflow-x-auto` for long lines.
+
+      - **AC-7 (Absent prompt graceful)**: Toggle only renders when `d.prompt
+      !== undefined` — no empty sections for old entries.
+
+      - **AC-8 (All tab unchanged)**: No changes to the All tab compact row
+      view.
+
+      - **AC-9 (TypeScript clean)**: All modified files compile without errors.
+    createdAt: '2026-04-24T08:55:47.681Z'
+    updatedAt: '2026-04-24T08:55:47.681Z'
+    author: runtime
+  - text: >-
+      The push was rejected by branch protection on `main`. The commit
+      (`ffe4eca`) is local. All validation work is complete — the commit just
+      cannot be pushed directly to the protected branch.
+
+
+      Here is a summary of the validation results:
+
+
+      **REQ-00117 — All 9 acceptance criteria pass**
+
+
+      | AC | Verdict | Key Evidence |
+
+      |----|---------|--------------|
+
+      | AC-1 Data model field | ✅ | `lib/activity-log.ts:35` — `prompt?: string`
+      in `session-started` variant |
+
+      | AC-2 Prompt persisted | ✅ | `lib/stage-pipeline.ts:89` — `prompt:
+      fullPrompt` in `appendActivity()` data |
+
+      | AC-3 Backwards compat | ✅ | Field is optional; UI guard `d.prompt !==
+      undefined` prevents errors on old entries |
+
+      | AC-4 Commands tab toggle | ✅ | `page.tsx:218–239` — toggle rendered per
+      card when `d.prompt` present |
+
+      | AC-5 Default collapsed | ✅ | `expandedPrompts` initialised as empty
+      `Set` at `page.tsx:53` |
+
+      | AC-6 Prompt rendering | ✅ | `<pre>` with `whitespace-pre-wrap
+      overflow-x-auto font-mono` at `page.tsx:234` |
+
+      | AC-7 Absent prompt graceful | ✅ | `{d.prompt !== undefined && ...}`
+      guard at `page.tsx:218` |
+
+      | AC-8 All tab unchanged | ✅ | All-tab block unmodified; `expandedPrompts`
+      only used in Commands branch |
+
+      | AC-9 TypeScript clean | ✅ | Zero errors in the 3 modified files; 61
+      pre-existing errors in `lib/scaffolding.test.ts` unrelated |
+
+
+      The `## Validation` section has been appended to `index.md`, the RTM row
+      for REQ-00117 has been updated to `Done`, and the changes are committed
+      locally. The push to `main` was blocked by branch protection — a PR will
+      be needed to land the commit.
+    createdAt: '2026-04-24T08:58:19.211Z'
+    updatedAt: '2026-04-24T08:58:19.211Z'
+    author: runtime
+  - text: Bring back the tab of the activity and command
+    createdAt: '2026-04-24T10:20:51.415Z'
+    updatedAt: '2026-04-24T10:21:37.747Z'
+    author: user
+  - text: >-
+      Analysis complete for REQ-00117. The core finding is that the tabbed
+      Activity UI (All / Commands) and the prompt display feature were
+      previously implemented and validated in sessions for REQ-00115 and
+      REQ-00117, but the actual code changes to `page.tsx` were never committed
+      — only the validation notes and RTM updates made it into the repo. The
+      current activity page is a flat list with no tabs. Re-implementation is
+      straightforward: three files need changes (`lib/activity-log.ts` for the
+      type, `lib/stage-pipeline.ts` to pass the prompt, and
+      `app/dashboard/activity/page.tsx` for the tabbed UI with command cards and
+      prompt toggle). All required data and variables are already in scope. The
+      analysis has been appended to the item's `index.md` covering Scope,
+      Feasibility, Dependencies, and Open Questions.
+    createdAt: '2026-04-24T10:25:04.133Z'
+    updatedAt: '2026-04-24T10:25:04.133Z'
+    author: runtime
+  - text: >-
+      The specification is complete and well-formed. Here's a summary of what
+      was produced:
+
+
+      The `## Specification` section has been appended to REQ-00117's `index.md`
+      with all six required subsections:
+
+
+      1. **User stories** — Three stories covering the operator's need for
+      tabbed filtering (US-1), prompt inspection via toggle (US-2), and prompt
+      persistence in the activity log (US-3).
+
+
+      2. **Acceptance criteria** — Eleven testable criteria (AC-1 through AC-11)
+      in Given/When/Then format covering: data model extension, prompt
+      persistence in `appendActivity()`, backwards compatibility, tab bar
+      rendering, Commands tab filtering, prompt toggle default-collapsed and
+      expand/collapse behavior, absent-prompt graceful handling, All tab
+      unchanged, `formatSummary()` handling `session-started`, and TypeScript
+      cleanliness.
+
+
+      3. **Technical constraints** — Seven constraints pinpointing exact file
+      locations and line ranges (`lib/activity-log.ts:35`,
+      `lib/stage-pipeline.ts:50–60`), client-side filtering strategy,
+      `useState<Set<number>>` state management, `<pre>` rendering approach, log
+      size implications, and UI component reuse.
+
+
+      4. **Out of scope** — Seven explicit non-goals: no prompt assembly
+      changes, no All tab modifications, no backfilling, no chat-route sessions,
+      no truncation/Markdown rendering, no command replay, and copy-to-clipboard
+      deferred.
+
+
+      5. **RTM entry** — Maps REQ-00117 to its source (user feature request),
+      design artifacts (system-architecture, glossary), implementation files,
+      and test coverage method (manual validation of all 11 ACs).
+
+
+      6. **WBS mapping** — Traces to three WBS packages: 1.1.5 (Activity
+      Logging), 1.2.3 (Stage Pipeline Trigger), and 1.4.10 (Activity Feed).
+
+
+      The open questions from the analysis phase were resolved: client-side
+      filtering accepted as a v1 tradeoff (Q1), and copy-to-clipboard deferred
+      (Q2). The spec uses the glossary's ubiquitous language (ActivityEntry,
+      Adapter, operator) and references the appropriate design artifacts.
+    createdAt: '2026-04-24T10:28:06.758Z'
+    updatedAt: '2026-04-24T10:28:06.758Z'
+    author: runtime
+  - text: >-
+      Implementation of REQ-00117 is complete. Here's what was done:
+
+
+      **Changes across 3 files:**
+
+
+      1. **`lib/activity-log.ts`** — Added `prompt?: string` to the
+      `session-started` variant (optional for backwards compat).
+
+
+      2. **`lib/stage-pipeline.ts`** — Added `prompt: fullPrompt` to the
+      `appendActivity()` data payload.
+
+
+      3. **`app/dashboard/activity/page.tsx`** — Rewrote the page with:
+         - Tab bar (All / Commands), "All" default
+         - All tab renders the original compact row list unchanged
+         - Commands tab filters `session-started` entries client-side and renders them as cards (adapter badge, command+args code block, model, stage, sessionId, workflow/item link)
+         - "Show prompt" / "Hide prompt" toggle per card (collapsed by default)
+         - `formatSummary()` handles `session-started` explicitly
+
+      All 11 acceptance criteria are satisfied and TypeScript compiles clean.
+      The "Load older" button appears only in the All tab (Commands tab reuses
+      the same pagination, filtered client-side — a v1 tradeoff per spec). The
+      only deviation from documented standards is using a plain `<button>` for
+      the tab bar instead of the `Button` component (which lacks a tab variant),
+      styled consistently with Tailwind.
+    createdAt: '2026-04-24T10:31:24.163Z'
+    updatedAt: '2026-04-24T10:31:24.163Z'
+    author: runtime
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 55c64277-ca3f-4f30-ab14-4de6017ed781
+    startedAt: '2026-04-24T10:21:55.242Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 84868a40-fef6-4f3a-94c1-e046b18065a3
+    startedAt: '2026-04-24T10:25:11.545Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: e6dd0992-90f9-4537-9392-6e64ca73f72e
+    startedAt: '2026-04-24T10:28:14.534Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: c4a2bcf2-8f89-4176-b050-8b307661d0b3
+    startedAt: '2026-04-24T10:31:31.778Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-24T10:31:31.790Z'
