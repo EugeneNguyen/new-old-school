@@ -32,7 +32,7 @@ export interface ActivityEntry {
     | { kind: 'status-changed'; before: string; after: string }
     | { kind: 'body-changed'; beforeHash: string; afterHash: string; beforeLength: number; afterLength: number }
     | { kind: 'restart'; before: { stage: string; status: string }; after: { stage: string; status: string } }
-    | { kind: 'session-started'; adapter: string; command: string; args: string[]; sessionId: string; model: string | undefined; agentId: string | null; stage: string };
+    | { kind: 'session-started'; adapter: string; command: string; args: string[]; sessionId: string; model: string | undefined; agentId: string | null; stage: string; prompt?: string };
 }
 
 export interface ReadActivityOpts {

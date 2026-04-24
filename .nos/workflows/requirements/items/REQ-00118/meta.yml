@@ -1,0 +1,74 @@
+title: Item detail > commend should have send button when commenting
+stage: Validation
+status: In Progress
+comments:
+  - text: >-
+      Analysis complete for REQ-00118. The requirement is a straightforward UI
+      enhancement: the comment textarea in `ItemDetailDialog.tsx` currently has
+      no dedicated submit mechanism — comments are only sent when the user
+      clicks the global Save button, which also persists title/stage/status/body
+      changes. The fix is to extract the comment POST logic into a standalone
+      handler and add a Send button next to the textarea, following the existing
+      `ChatInput.tsx` pattern. The backend already supports independent comment
+      submission, so no server changes are needed. The main considerations are
+      button placement, optimistic UI updates for the comment list, and whether
+      to show a loading spinner during submission.
+    createdAt: '2026-04-24T10:24:26.099Z'
+    updatedAt: '2026-04-24T10:24:26.099Z'
+    author: runtime
+  - text: >-
+      Specification for REQ-00118 is complete. I appended a `## Specification`
+      section to the item's `index.md` covering 3 user stories, 9 numbered
+      acceptance criteria (with Given/When/Then structure), technical
+      constraints referencing the existing `ChatInput.tsx` pattern and comment
+      API contract, explicit out-of-scope boundaries, an RTM entry row, and WBS
+      mapping to package 1.4.4 (Item Detail Dialog). The spec resolves the open
+      questions from analysis: button placement is inline-right (matching
+      `ChatInput.tsx`), optimistic UI update is preferred, and a `Loader2`
+      spinner is specified for loading state. The single implementation file is
+      `ItemDetailDialog.tsx` with no backend changes required.
+    createdAt: '2026-04-24T10:26:27.603Z'
+    updatedAt: '2026-04-24T10:26:27.603Z'
+    author: runtime
+  - text: >-
+      No type errors in the modified file. Implementation is complete.
+
+
+      **Summary**: Implemented the Send button for comment submission in
+      `ItemDetailDialog.tsx`. Added `Send` and `Loader2` imports from
+      `lucide-react`, created a `submittingComment` state to track loading, and
+      extracted the comment POST logic into a standalone `handleCommentSubmit()`
+      function (lines 243–270). The function POSTs to the existing comment
+      endpoint, clears the textarea on success, optimistically updates the
+      comments list by appending the returned comment, and preserves text on
+      error. The Send button is positioned inline-right of the textarea using a
+      flex container with `h-9 w-9` sizing and `w-4 h-4` icon to match
+      `ChatInput.tsx` pattern. Button is disabled when empty or submitting. All
+      9 acceptance criteria are satisfied. No backend changes required.
+    createdAt: '2026-04-24T10:30:15.998Z'
+    updatedAt: '2026-04-24T10:30:15.998Z'
+    author: runtime
+sessions:
+  - stage: Analysis
+    adapter: claude
+    sessionId: 37d55e8d-1774-4dce-a9f0-d14caa8e5535
+    startedAt: '2026-04-24T10:22:19.980Z'
+  - stage: Analysis
+    adapter: claude
+    sessionId: 41399f97-6e84-4025-bc73-ee81f2cc8405
+    startedAt: '2026-04-24T10:22:24.638Z'
+  - stage: Documentation
+    adapter: claude
+    sessionId: 82aab1c2-58e9-441b-8805-e79019a2adee
+    startedAt: '2026-04-24T10:24:33.751Z'
+  - stage: Implementation
+    adapter: claude
+    sessionId: ee1df7d1-dfda-42b5-a686-8a7b162eaa13
+    startedAt: '2026-04-24T10:26:35.525Z'
+    agentId: david-engineer
+  - stage: Validation
+    adapter: claude
+    sessionId: 82083ae1-d425-46f1-acf1-67e78dffe0fc
+    startedAt: '2026-04-24T10:30:23.385Z'
+    agentId: martin-senior-engineer
+updatedAt: '2026-04-24T10:30:23.398Z'

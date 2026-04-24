@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import dynamic from 'next/dynamic';
-import { X, Trash2, RotateCcw } from 'lucide-react';
+import { X, Trash2, RotateCcw, Send, Loader2 } from 'lucide-react';
 import { Dialog } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -94,6 +94,7 @@ export function ItemDetailDialog({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingText, setEditingText] = useState('');
   const [deleteConfirmIndex, setDeleteConfirmIndex] = useState<number | null>(null);
+  const [submittingComment, setSubmittingComment] = useState(false);
   const [restartConfirmOpen, setRestartConfirmOpen] = useState(false);
 
   const itemId = item?.id;
@@ -236,6 +237,35 @@ export function ItemDetailDialog({
       setError(e instanceof Error ? e.message : 'Failed to save item');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleCommentSubmit() {
+    if (!item || !newComment.trim()) return;
+    setSubmittingComment(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/workflows/${encodeURIComponent(workflowId)}/items/${encodeURIComponent(item.id)}/comments`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: newComment.trim(), author: 'user' }),
+        }
+      );
+      if (!res.ok) {
+        throw new Error((await res.text()) || `Comment failed: ${res.status}`);
+      }
+      const data: { comment?: Comment } = await res.json();
+      setNewComment('');
+      if (data.comment) {
+        setComments((prev) => [...prev, data.comment!]);
+      }
+    } catch (e) {
+      console.error('Failed to submit comment:', e);
+      setError(e instanceof Error ? e.message : 'Failed to submit comment');
+    } finally {
+      setSubmittingComment(false);
     }
   }
 
@@ -482,12 +512,28 @@ export function ItemDetailDialog({
                 </div>
               ))}
             </div>
-            <textarea
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Add a comment\u2026"
-              className="min-h-[60px] w-full rounded-md border border-input bg-background p-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
+            <div className="flex items-start gap-2">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Add a comment\u2026"
+                className="min-h-[60px] w-full resize-y rounded-md border border-input bg-background p-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              <button
+                type="button"
+                onClick={() => void handleCommentSubmit()}
+                disabled={!newComment.trim() || submittingComment}
+                className="mt-1.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-input bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Send comment"
+                title="Send comment"
+              >
+                {submittingComment ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
 
           <div className="flex flex-col gap-2">
